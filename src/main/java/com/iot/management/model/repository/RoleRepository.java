@@ -1,4 +1,4 @@
-package com.iot.management.repository;
+package com.iot.management.model.repository;
 
 import com.iot.management.model.entity.Role;
 import org.springframework.data.jpa.repository.JpaRepository;

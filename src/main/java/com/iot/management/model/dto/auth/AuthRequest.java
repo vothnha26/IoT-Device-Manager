@@ -1,9 +1,8 @@
-package com.iot.management.model.dto;
+package com.iot.management.model.dto.auth;
 
-public class UserRegisterRequest {
+public class AuthRequest {
     private String email;
     private String password;
-    private String fullName;
 
     public String getEmail() {
         return email;
@@ -19,13 +18,5 @@ public class UserRegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
     }
 }

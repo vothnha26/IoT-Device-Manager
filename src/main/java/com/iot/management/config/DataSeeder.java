@@ -1,7 +1,8 @@
 package com.iot.management.config;
 
 import com.iot.management.model.entity.Role;
-import com.iot.management.repository.RoleRepository;
+import com.iot.management.model.repository.RoleRepository;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 

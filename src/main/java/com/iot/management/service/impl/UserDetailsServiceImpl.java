@@ -1,7 +1,8 @@
 package com.iot.management.service.impl;
 
 import com.iot.management.model.entity.User;
-import com.iot.management.repository.UserRepository;
+import com.iot.management.model.repository.UserRepository;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -1,4 +1,4 @@
-package com.iot.management.controller.api;
+package com.iot.management.controller.api.test;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize; // Đảm bảo đã import
