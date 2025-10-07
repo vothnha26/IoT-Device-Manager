@@ -20,10 +20,10 @@ public class TestController {
         return ResponseEntity.ok("This is an authenticated endpoint.");
     }
 
-    @GetMapping("/admin")
-    // Dùng @PreAuthorize với hasAuthority thay vì hasRole
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> adminAccess() {
-        return ResponseEntity.ok("This is an ADMIN endpoint.");
+    @GetMapping("/manager")
+    // Dùng @PreAuthorize với hasAuthority để kiểm tra quyền MANAGER
+    @PreAuthorize("hasAuthority('MANAGER')")
+    public ResponseEntity<String> managerAccess() {
+        return ResponseEntity.ok("This is a MANAGER endpoint.");
     }
 }

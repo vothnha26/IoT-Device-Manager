@@ -1,7 +1,7 @@
 package com.iot.management.config;
 
-import com.iot.management.model.entity.Role;
-import com.iot.management.model.repository.RoleRepository;
+import com.iot.management.model.entity.VaiTro;
+import com.iot.management.model.repository.VaiTroRepository;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -13,10 +13,10 @@ import java.util.Optional;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private final RoleRepository roleRepository;
+    private final VaiTroRepository vaiTroRepository;
 
-    public DataSeeder(RoleRepository roleRepository) {
-        this.roleRepository = roleRepository;
+    public DataSeeder(VaiTroRepository vaiTroRepository) {
+        this.vaiTroRepository = vaiTroRepository;
     }
 
     @Override
@@ -25,13 +25,14 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedRoles() {
-        List<String> roleNames = Arrays.asList("ROLE_USER", "ROLE_MANAGER", "ROLE_ADMIN");
+        // Only create two roles as requested: user and manager
+        List<String> roleNames = Arrays.asList("USER", "MANAGER");
         for (String roleName : roleNames) {
-            Optional<Role> existingRole = roleRepository.findByName(roleName);
+            Optional<VaiTro> existingRole = vaiTroRepository.findByName(roleName);
             if (existingRole.isEmpty()) {
-                Role newRole = new Role();
+                VaiTro newRole = new VaiTro();
                 newRole.setName(roleName);
-                roleRepository.save(newRole);
+                vaiTroRepository.save(newRole);
                 System.out.println("Seeded role: " + roleName);
             }
         }

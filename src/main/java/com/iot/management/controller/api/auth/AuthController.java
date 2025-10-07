@@ -6,10 +6,10 @@ import com.iot.management.model.dto.auth.ForgotPasswordRequest;
 import com.iot.management.model.dto.auth.ResetPasswordRequest;
 import com.iot.management.model.dto.auth.UserRegisterRequest;
 import com.iot.management.model.dto.auth.VerifyAccountRequest;
-import com.iot.management.model.entity.Role;
-import com.iot.management.model.entity.User;
-import com.iot.management.model.repository.RoleRepository;
-import com.iot.management.model.repository.UserRepository;
+import com.iot.management.model.entity.VaiTro;
+import com.iot.management.model.entity.NguoiDung;
+import com.iot.management.model.repository.VaiTroRepository;
+import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.security.JwtUtil;
 import com.iot.management.service.EmailService;
 import org.springframework.http.ResponseEntity;
@@ -28,14 +28,14 @@ import java.util.Random;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final NguoiDungRepository userRepository;
+    private final VaiTroRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final EmailService emailService;
 
-    public AuthController(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, UserDetailsService userDetailsService, EmailService emailService) {
+    public AuthController(NguoiDungRepository userRepository, VaiTroRepository roleRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, UserDetailsService userDetailsService, EmailService emailService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -50,34 +50,35 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Email already exists");
         }
 
-        User user = new User();
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setFullName(registerRequest.getFullName());
+    NguoiDung user = new NguoiDung();
+    user.setEmail(registerRequest.getEmail());
+    user.setMatKhauBam(passwordEncoder.encode(registerRequest.getPassword()));
+    user.setTenDangNhap(registerRequest.getEmail());
+    user.setKichHoat(false); // Đăng ký xong chưa active, chờ xác thực OTP
 
-        Optional<Role> userRole = roleRepository.findByName("ROLE_USER");
-        user.setRoles(new HashSet<>(Collections.singletonList(userRole.orElseThrow(() -> new RuntimeException("ROLE_USER not found.")))));
+    Optional<VaiTro> userRole = roleRepository.findByName("USER");
+    user.setVaiTro(new HashSet<>(Collections.singletonList(userRole.orElseThrow(() -> new RuntimeException("USER role not found.")))));
 
-        // Tạo và lưu mã xác thực
-        String verificationCode = generateRandomCode();
-        user.setVerificationCode(verificationCode);
-        user.setVerificationCodeExpiry(LocalDateTime.now().plusMinutes(15)); // Mã hết hạn sau 15 phút
+    // Tạo và lưu mã xác thực
+    String verificationCode = generateRandomCode();
+    user.setVerificationCode(verificationCode);
+    user.setVerificationCodeExpiry(LocalDateTime.now().plusMinutes(15)); // Mã hết hạn sau 15 phút
 
-        userRepository.save(user);
+    userRepository.save(user);
 
-        // Gửi email chứa mã xác thực
-        emailService.sendVerificationCode(user.getEmail(), verificationCode);
+    // Gửi email chứa mã xác thực
+    emailService.sendVerificationCode(user.getEmail(), verificationCode);
 
-        return ResponseEntity.ok("User registered successfully. A verification code has been sent to your email.");
+    return ResponseEntity.ok("User registered successfully. A verification code has been sent to your email.");
     }
 
     // Endpoint mới để xác thực tài khoản
     @PostMapping("/verify-account")
     public ResponseEntity<String> verifyAccount(@RequestBody VerifyAccountRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElse(null);
+    NguoiDung user = userRepository.findByEmail(request.getEmail())
+        .orElse(null);
 
-        if (user == null || user.getIsActive()) {
+    if (user == null || user.getKichHoat()) {
             return ResponseEntity.badRequest().body("Invalid request or user is already active.");
         }
 
@@ -90,9 +91,9 @@ public class AuthController {
         }
 
         // Kích hoạt tài khoản
-        user.setIsActive(true);
-        user.setVerificationCode(null);
-        user.setVerificationCodeExpiry(null);
+    user.setKichHoat(true);
+    user.setVerificationCode(null);
+    user.setVerificationCodeExpiry(null);
         userRepository.save(user);
 
         return ResponseEntity.ok("Account verified successfully.");
@@ -126,7 +127,7 @@ public class AuthController {
     // Xử lý yêu cầu quên mật khẩu (gửi OTP)
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        NguoiDung user = userRepository.findByEmail(request.getEmail()).orElse(null);
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found.");
         }
@@ -146,7 +147,7 @@ public class AuthController {
     // Đặt lại mật khẩu (sử dụng OTP)
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+    NguoiDung user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
         // Kiểm tra người dùng, mã OTP và thời gian hết hạn
         if (user == null) {
@@ -162,7 +163,7 @@ public class AuthController {
         }
 
         // Cập nhật mật khẩu mới và xóa mã xác thực cũ
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+    user.setMatKhauBam(passwordEncoder.encode(request.getNewPassword()));
         user.setVerificationCode(null);
         user.setVerificationCodeExpiry(null);
         userRepository.save(user);

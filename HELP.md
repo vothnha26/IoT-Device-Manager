@@ -33,3 +33,15 @@ While most of the inheritance is fine, it also inherits unwanted elements like `
 To prevent this, the project POM contains empty overrides for these elements.
 If you manually switch to a different parent and actually want the inheritance, you need to remove those overrides.
 
+Running with an in-memory H2 database (dev profile)
+-------------------------------------------------
+If you don't have a SQL Server instance available locally you can run the app with an H2 in-memory database for development and testing:
+
+- Build and run with the `dev` profile (uses H2):
+
+	mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+- The H2 console will be available at http://localhost:8080/h2-console (JDBC URL: jdbc:h2:mem:iotdev)
+
+If you want to use SQL Server, set the correct connection properties in an `.env` file or in `application.properties`.
+
