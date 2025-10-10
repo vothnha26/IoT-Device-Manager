@@ -21,4 +21,4 @@ public class IotManagementApplication {
     public static void main(String[] args) {
         SpringApplication.run(IotManagementApplication.class, args);
     }
-}
+}	

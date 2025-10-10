@@ -31,7 +31,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/verify-account", "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                // Thêm endpoint mới vào đây - tạm thời cho phép tất cả admin endpoints
+                .requestMatchers("/api/auth/**", "/api/packages/recommended", "/api/admin/**").permitAll()
                 .anyRequest().authenticated())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -52,4 +53,6 @@ public class SecurityConfig {
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
+    
+    
 }
