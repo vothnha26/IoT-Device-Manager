@@ -56,8 +56,8 @@ public class AuthController {
     user.setTenDangNhap(registerRequest.getEmail());
     user.setKichHoat(false); // Đăng ký xong chưa active, chờ xác thực OTP
 
-    Optional<VaiTro> userRole = roleRepository.findByName("USER");
-    user.setVaiTro(new HashSet<>(Collections.singletonList(userRole.orElseThrow(() -> new RuntimeException("USER role not found.")))));
+    Optional<VaiTro> userRole = roleRepository.findByName("ROLE_USER");
+    user.setVaiTro(new HashSet<>(Collections.singletonList(userRole.orElseThrow(() -> new RuntimeException("ROLE_USER role not found.")))));
 
     // Tạo và lưu mã xác thực
     String verificationCode = generateRandomCode();
@@ -73,7 +73,8 @@ public class AuthController {
     }
 
     // Endpoint mới để xác thực tài khoản
-    @PostMapping("/verify-account")
+    // Support both /verify-account and /verify-email (some clients use verify-email)
+    @PostMapping({"/verify-account", "/verify-email"})
     public ResponseEntity<String> verifyAccount(@RequestBody VerifyAccountRequest request) {
     NguoiDung user = userRepository.findByEmail(request.getEmail())
         .orElse(null);

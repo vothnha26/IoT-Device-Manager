@@ -41,9 +41,9 @@ public class NguoiDungServiceImpl implements NguoiDungService {
         // Mã hóa mật khẩu
         nguoiDung.setMatKhauBam(passwordEncoder.encode(nguoiDung.getMatKhauBam()));
 
-        // Tìm vai trò "USER"
-        VaiTro userRole = vaiTroRepository.findByName("USER")
-                .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy vai trò USER."));
+    // Tìm vai trò "ROLE_USER"
+    VaiTro userRole = vaiTroRepository.findByName("ROLE_USER")
+        .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy vai trò ROLE_USER."));
 
         // Gán vai trò cho người dùng
         Set<VaiTro> roles = new HashSet<>();
