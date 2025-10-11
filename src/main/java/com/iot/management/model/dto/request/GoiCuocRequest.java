@@ -10,6 +10,9 @@ public class GoiCuocRequest {
     private Integer slThietBiToiDa;
     private Integer slLuatToiDa;
     private Integer soNgayLuuDuLieu;
+    // New fields added to match entity
+    private Integer slKhuVucToiDa;
+    private Integer slTokenToiDa;
 
     // Getters and Setters
     public String getTenGoi() {
@@ -50,5 +53,21 @@ public class GoiCuocRequest {
 
     public void setSoNgayLuuDuLieu(Integer soNgayLuuDuLieu) {
         this.soNgayLuuDuLieu = soNgayLuuDuLieu;
+    }
+
+    public Integer getSlKhuVucToiDa() {
+        return slKhuVucToiDa;
+    }
+
+    public void setSlKhuVucToiDa(Integer slKhuVucToiDa) {
+        this.slKhuVucToiDa = slKhuVucToiDa;
+    }
+
+    public Integer getSlTokenToiDa() {
+        return slTokenToiDa;
+    }
+
+    public void setSlTokenToiDa(Integer slTokenToiDa) {
+        this.slTokenToiDa = slTokenToiDa;
     }
 }

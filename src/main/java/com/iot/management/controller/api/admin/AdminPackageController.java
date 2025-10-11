@@ -5,6 +5,7 @@ import com.iot.management.model.entity.GoiCuoc;
 import com.iot.management.service.GoiCuocService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,6 +45,9 @@ public class AdminPackageController {
             GoiCuoc savedGoiCuoc = goiCuocService.save(request);
             System.out.println("✅ Package created successfully: " + savedGoiCuoc.getTenGoi());
             return new ResponseEntity<>(savedGoiCuoc, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            // Duplicate name
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (Exception e) {
             System.err.println("❌ Error creating package: " + e.getMessage());
             e.printStackTrace();
@@ -56,8 +60,12 @@ public class AdminPackageController {
         try {
             GoiCuoc updatedGoiCuoc = goiCuocService.update(id, request);
             return ResponseEntity.ok(updatedGoiCuoc);
-        } catch (Exception e) {
+        } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

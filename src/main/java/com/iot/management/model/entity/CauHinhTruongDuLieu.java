@@ -1,6 +1,7 @@
 package com.iot.management.model.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "CauHinhTruongDuLieu", uniqueConstraints = {
@@ -13,61 +14,114 @@ public class CauHinhTruongDuLieu {
     @Column(name = "ma_cau_hinh_truong")
     private Long maCauHinhTruong;
 
-    @Column(name = "ma_loai_thiet_bi")
-    private Long maLoaiThietBi;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_loai_thiet_bi", nullable = false)
+    private LoaiThietBi loaiThietBi;
 
-    @Column(name = "ten_truong", length = 150)
+    @Column(name = "ten_truong", nullable = false, length = 50)
     private String tenTruong;
 
-    @Column(name = "ten_hien_thi", length = 150)
+    @Column(name = "ten_hien_thi", length = 100)
     private String tenHienThi;
 
-    @Column(name = "kieu_du_lieu", length = 50)
+    @Column(name = "kieu_du_lieu", nullable = false, length = 20)
     private String kieuDuLieu;
 
-    @Column(name = "don_vi", length = 50)
+    @Column(name = "don_vi", length = 20)
     private String donVi;
 
-    @Column(name = "gia_tri_min")
-    private Double giaTriMin;
+    @Column(name = "gia_tri_min", precision = 18, scale = 4)
+    private BigDecimal giaTriMin;
 
-    @Column(name = "gia_tri_max")
-    private Double giaTriMax;
+    @Column(name = "gia_tri_max", precision = 18, scale = 4)
+    private BigDecimal giaTriMax;
 
     @Column(name = "dinh_nghia_enum", length = 1000)
     private String dinhNghiaEnum;
 
-    @Column(name = "ghi_chu", length = 500)
+    @Column(name = "ghi_chu", length = 255)
     private String ghiChu;
 
-    // Getters/Setters
-    public Long getMaCauHinhTruong() { return maCauHinhTruong; }
-    public void setMaCauHinhTruong(Long maCauHinhTruong) { this.maCauHinhTruong = maCauHinhTruong; }
+    public CauHinhTruongDuLieu() {
+    }
 
-    public Long getMaLoaiThietBi() { return maLoaiThietBi; }
-    public void setMaLoaiThietBi(Long maLoaiThietBi) { this.maLoaiThietBi = maLoaiThietBi; }
+    public Long getMaCauHinhTruong() {
+        return maCauHinhTruong;
+    }
 
-    public String getTenTruong() { return tenTruong; }
-    public void setTenTruong(String tenTruong) { this.tenTruong = tenTruong; }
+    public void setMaCauHinhTruong(Long maCauHinhTruong) {
+        this.maCauHinhTruong = maCauHinhTruong;
+    }
 
-    public String getTenHienThi() { return tenHienThi; }
-    public void setTenHienThi(String tenHienThi) { this.tenHienThi = tenHienThi; }
+    public LoaiThietBi getLoaiThietBi() {
+        return loaiThietBi;
+    }
 
-    public String getKieuDuLieu() { return kieuDuLieu; }
-    public void setKieuDuLieu(String kieuDuLieu) { this.kieuDuLieu = kieuDuLieu; }
+    public void setLoaiThietBi(LoaiThietBi loaiThietBi) {
+        this.loaiThietBi = loaiThietBi;
+    }
 
-    public String getDonVi() { return donVi; }
-    public void setDonVi(String donVi) { this.donVi = donVi; }
+    public String getTenTruong() {
+        return tenTruong;
+    }
 
-    public Double getGiaTriMin() { return giaTriMin; }
-    public void setGiaTriMin(Double giaTriMin) { this.giaTriMin = giaTriMin; }
+    public void setTenTruong(String tenTruong) {
+        this.tenTruong = tenTruong;
+    }
 
-    public Double getGiaTriMax() { return giaTriMax; }
-    public void setGiaTriMax(Double giaTriMax) { this.giaTriMax = giaTriMax; }
+    public String getTenHienThi() {
+        return tenHienThi;
+    }
 
-    public String getDinhNghiaEnum() { return dinhNghiaEnum; }
-    public void setDinhNghiaEnum(String dinhNghiaEnum) { this.dinhNghiaEnum = dinhNghiaEnum; }
+    public void setTenHienThi(String tenHienThi) {
+        this.tenHienThi = tenHienThi;
+    }
 
-    public String getGhiChu() { return ghiChu; }
-    public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
+    public String getKieuDuLieu() {
+        return kieuDuLieu;
+    }
+
+    public void setKieuDuLieu(String kieuDuLieu) {
+        this.kieuDuLieu = kieuDuLieu;
+    }
+
+    public String getDonVi() {
+        return donVi;
+    }
+
+    public void setDonVi(String donVi) {
+        this.donVi = donVi;
+    }
+
+    public BigDecimal getGiaTriMin() {
+        return giaTriMin;
+    }
+
+    public void setGiaTriMin(BigDecimal giaTriMin) {
+        this.giaTriMin = giaTriMin;
+    }
+
+    public BigDecimal getGiaTriMax() {
+        return giaTriMax;
+    }
+
+    public void setGiaTriMax(BigDecimal giaTriMax) {
+        this.giaTriMax = giaTriMax;
+    }
+
+    public String getDinhNghiaEnum() {
+        return dinhNghiaEnum;
+    }
+
+    public void setDinhNghiaEnum(String dinhNghiaEnum) {
+        this.dinhNghiaEnum = dinhNghiaEnum;
+    }
+
+    public String getGhiChu() {
+        return ghiChu;
+    }
+
+    public void setGhiChu(String ghiChu) {
+        this.ghiChu = ghiChu;
+    }
 }

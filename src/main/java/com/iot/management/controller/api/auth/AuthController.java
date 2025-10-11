@@ -107,22 +107,34 @@ public class AuthController {
     // Đăng nhập
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
+        try {
+            if (authRequest.getEmail() == null || authRequest.getPassword() == null) {
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, "Email and password are required"));
+            }
 
-        if (!userDetails.isEnabled()) {
-            // Tùy chỉnh phản hồi cho tài khoản chưa kích hoạt
-            return ResponseEntity.status(401).body(new AuthResponse(null, "Account is not active. Please verify your email."));
-        }
+            UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
 
-        if (passwordEncoder.matches(authRequest.getPassword(), userDetails.getPassword())) {
-            String token = jwtUtil.generateToken(userDetails.getUsername());
-            AuthResponse response = new AuthResponse();
-            response.setToken(token);
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(401).body(null);
-        }
+            if (!userDetails.isEnabled()) {
+                return ResponseEntity.status(401)
+                    .body(new AuthResponse(null, "Account is not active. Please verify your email."));
+            }
+
+            if (passwordEncoder.matches(authRequest.getPassword(), userDetails.getPassword())) {
+                String token = jwtUtil.generateToken(userDetails);  // Truyền UserDetails để có thông tin về roles
+                return ResponseEntity.ok(new AuthResponse(token, "Login successful"));
+            } else {
+                return ResponseEntity.status(401)
+                    .body(new AuthResponse(null, "Invalid credentials"));
+            }
+        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+            return ResponseEntity.status(401)
+                .body(new AuthResponse(null, "Invalid credentials"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new AuthResponse(null, "An error occurred during authentication"));
     }
+}
     
     // Xử lý yêu cầu quên mật khẩu (gửi OTP)
     @PostMapping("/forgot-password")

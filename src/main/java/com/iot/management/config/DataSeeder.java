@@ -2,75 +2,254 @@ package com.iot.management.config;
 
 import com.iot.management.model.entity.GoiCuoc;
 import com.iot.management.model.entity.VaiTro;
-import com.iot.management.model.repository.GoiCuocRepository;
-import com.iot.management.model.repository.VaiTroRepository;
+import com.iot.management.model.entity.*;
+import com.iot.management.model.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Component
+@Transactional
 public class DataSeeder implements CommandLineRunner {
+    private static final Logger logger = LoggerFactory.getLogger(DataSeeder.class);
 
     private final VaiTroRepository vaiTroRepository;
     private final GoiCuocRepository goiCuocRepository;
+    private final NguoiDungRepository nguoiDungRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final LoaiThietBiRepository loaiThietBiRepository;
+    private final KhuVucRepository khuVucRepository;
+    private final ThietBiRepository thietBiRepository;
 
-    // Cập nhật constructor để inject GoiCuocRepository
-    public DataSeeder(VaiTroRepository vaiTroRepository, GoiCuocRepository goiCuocRepository) {
+    public DataSeeder(VaiTroRepository vaiTroRepository,
+                      GoiCuocRepository goiCuocRepository,
+                      NguoiDungRepository nguoiDungRepository,
+                      PasswordEncoder passwordEncoder,
+                      LoaiThietBiRepository loaiThietBiRepository,
+                      KhuVucRepository khuVucRepository,
+                      ThietBiRepository thietBiRepository) {
         this.vaiTroRepository = vaiTroRepository;
         this.goiCuocRepository = goiCuocRepository;
+        this.nguoiDungRepository = nguoiDungRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.loaiThietBiRepository = loaiThietBiRepository;
+        this.khuVucRepository = khuVucRepository;
+        this.thietBiRepository = thietBiRepository;
     }
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
-        seedRoles();
-        seedGoiCuoc(); // Gọi phương thức thêm gói cước
-    }
+        try {
+            // Seed roles and packages first
+            List<VaiTro> roles = seedVaiTro();
+            seedGoiCuoc();
 
-    private void seedRoles() {
-        List<String> roleNames = Arrays.asList("USER", "MANAGER");
-        for (String roleName : roleNames) {
-            Optional<VaiTro> existingRole = vaiTroRepository.findByName(roleName);
-            if (existingRole.isEmpty()) {
-                VaiTro newRole = new VaiTro();
-                newRole.setName(roleName);
-                vaiTroRepository.save(newRole);
-                System.out.println("✅ Seeded role: " + roleName);
-            } else {
-                System.out.println("⏩ Role already exists: " + roleName);
-            }
+            // Seed admin and test users
+            seedAdminAccount();
+            seedTestUser(roles);
+
+            // Seed device types, locations and devices
+            seedDeviceTypes();
+            seedLocations();
+            seedDevices();
+
+            logger.info("Data seeding completed");
+        } catch (Exception e) {
+            logger.error("Error seeding data: ", e);
+            throw e;
         }
     }
 
-    // Phương thức mới để thêm các gói cước
-    private void seedGoiCuoc() {
-        // 1. Gói Free - tránh ký tự đặc biệt
-        createGoiCuocIfNotFound("Gói Free", new BigDecimal("0.00"), 5, 5, 7);
-
-        // 2. Gói Cá Nhân - UTF-8 OK 
-        createGoiCuocIfNotFound("Cá Nhân", new BigDecimal("5.00"), 25, 20, 30);
-
-        // 3. Gói Pro - tránh ký tự đặc biệt
-        createGoiCuocIfNotFound("Gói Pro", new BigDecimal("20.00"), 100, 75, 180);
-    }
-
-    // Phương thức trợ giúp để tạo gói cước nếu chưa tồn tại
-    private void createGoiCuocIfNotFound(String tenGoi, BigDecimal giaTien, int slThietBi, int slLuat, int soNgayLuu) {
-        Optional<GoiCuoc> existingPackage = goiCuocRepository.findByTenGoi(tenGoi);
-        if (existingPackage.isEmpty()) {
-            GoiCuoc goiCuoc = new GoiCuoc();
-            goiCuoc.setTenGoi(tenGoi);
-            goiCuoc.setGiaTien(giaTien);
-            goiCuoc.setSlThietBiToiDa(slThietBi);
-            goiCuoc.setSlLuatToiDa(slLuat);
-            goiCuoc.setSoNgayLuuDuLieu(soNgayLuu);
-            goiCuocRepository.save(goiCuoc);
-            System.out.println("✅ Seeded package: " + tenGoi);
+    private List<VaiTro> seedVaiTro() {
+        List<VaiTro> roles = new ArrayList<>();
+        if (vaiTroRepository.count() == 0) {
+            roles.add(createVaiTro("ROLE_USER", "Người dùng thông thường"));
+            roles.add(createVaiTro("ROLE_MANAGER", "Quản lý hệ thống"));
+            roles = vaiTroRepository.saveAll(roles);
+            logger.info("Roles seeded successfully");
         } else {
-            System.out.println("⏩ Package already exists: " + tenGoi);
+            roles = vaiTroRepository.findAll();
         }
+        return roles;
+    }
+
+    private VaiTro createVaiTro(String tenVaiTro, String moTa) {
+        VaiTro role = new VaiTro();
+        role.setTenVaiTro(tenVaiTro);
+        return role;
+    }
+
+    private void seedGoiCuoc() {
+        // 1. Gói Free
+        createGoiCuocIfNotFound("Goi Free", new BigDecimal("0.00"), 5, 5, 7);
+        // 2. Gói Cá Nhân
+        createGoiCuocIfNotFound("Ca Nhan", new BigDecimal("5.00"), 25, 20, 30);
+        // 3. Gói Pro
+        createGoiCuocIfNotFound("Goi Pro", new BigDecimal("20.00"), 100, 75, 180);
+    }
+
+    private void createGoiCuocIfNotFound(String tenGoi, BigDecimal giaTien, int slThietBi, int slLuat, int soNgayLuu) {
+        Optional<GoiCuoc> existing = goiCuocRepository.findByTenGoi(tenGoi);
+        if (existing.isEmpty()) {
+            GoiCuoc g = new GoiCuoc();
+            g.setTenGoi(tenGoi);
+            g.setGiaTien(giaTien);
+            g.setSlThietBiToiDa(slThietBi);
+            g.setSlLuatToiDa(slLuat);
+            g.setSoNgayLuuDuLieu(soNgayLuu);
+            // defaults for new columns if required
+            g.setSlKhuVucToiDa(10);
+            g.setSlTokenToiDa(5);
+            goiCuocRepository.save(g);
+            logger.info("Seeded package: {}", tenGoi);
+        }
+    }
+
+    private void seedTestUser(List<VaiTro> roles) {
+        try {
+            String email = "test@example.com";
+            if (nguoiDungRepository.findByEmail(email).isEmpty()) {
+                NguoiDung testUser = new NguoiDung();
+                testUser.setTenDangNhap("test");
+                testUser.setEmail(email);
+                testUser.setMatKhauBam(passwordEncoder.encode("test123"));
+                testUser.setKichHoat(true);
+                testUser.setVaiTro(new HashSet<>(roles));
+                nguoiDungRepository.save(testUser);
+                logger.info("Test user seeded successfully");
+            }
+        } catch (Exception e) {
+            logger.error("Error seeding test user: ", e);
+            throw e;
+        }
+    }
+
+    private void seedDeviceTypes() {
+        try {
+            if (loaiThietBiRepository.count() == 0) {
+                List<LoaiThietBi> deviceTypes = Arrays.asList(
+                    createDeviceType("Den LED RGB", "Den LED co the dieu chinh mau sac"),
+                    createDeviceType("Cam bien nhiet do", "Thiet bi do nhiet do moi truong"),
+                    createDeviceType("Cam bien do am", "Thiet bi do do am trong khong khi")
+                );
+                loaiThietBiRepository.saveAll(deviceTypes);
+                logger.info("Device types seeded successfully");
+            }
+        } catch (Exception e) {
+            logger.error("Error seeding device types: ", e);
+            throw e;
+        }
+    }
+
+    private LoaiThietBi createDeviceType(String name, String description) {
+        LoaiThietBi t = new LoaiThietBi();
+        t.setTenLoai(name);
+        t.setMoTa(description);
+        return t;
+    }
+
+    private void seedLocations() {
+        try {
+            Optional<NguoiDung> maybe = nguoiDungRepository.findByEmail("test@example.com");
+            if (maybe.isEmpty()) return;
+            NguoiDung testUser = maybe.get();
+
+            if (khuVucRepository.findByChuSoHuu_MaNguoiDung(testUser.getMaNguoiDung()).isEmpty()) {
+                KhuVuc home = new KhuVuc();
+                home.setChuSoHuu(testUser);
+                home.setTenKhuVuc("Nha cua toi");
+                home.setLoaiKhuVuc("can ho");
+                home = khuVucRepository.save(home);
+
+                List<KhuVuc> rooms = Arrays.asList(
+                    createRoom(testUser, home, "Phong khach", "phong"),
+                    createRoom(testUser, home, "Phong ngu", "phong")
+                );
+                khuVucRepository.saveAll(rooms);
+                logger.info("Locations seeded successfully");
+            }
+        } catch (Exception e) {
+            logger.error("Error seeding locations: ", e);
+            throw e;
+        }
+    }
+
+    private KhuVuc createRoom(NguoiDung owner, KhuVuc parent, String name, String type) {
+        KhuVuc k = new KhuVuc();
+        k.setChuSoHuu(owner);
+        k.setKhuVucCha(parent);
+        k.setTenKhuVuc(name);
+        k.setLoaiKhuVuc(type);
+        return k;
+    }
+
+    private void seedDevices() {
+        try {
+            Optional<NguoiDung> maybe = nguoiDungRepository.findByEmail("test@example.com");
+            if (maybe.isEmpty()) return;
+            NguoiDung testUser = maybe.get();
+
+            if (thietBiRepository.findByChuSoHuu_MaNguoiDung(testUser.getMaNguoiDung()).isEmpty()) {
+                List<KhuVuc> locations = khuVucRepository.findByChuSoHuu_MaNguoiDung(testUser.getMaNguoiDung());
+                List<LoaiThietBi> deviceTypes = loaiThietBiRepository.findAll();
+                if (!locations.isEmpty() && !deviceTypes.isEmpty()) {
+                    List<ThietBi> devices = new ArrayList<>();
+                    for (KhuVuc location : locations) {
+                        if (location.getKhuVucCha() != null) continue; // keep simple
+                        devices.add(createDevice(testUser, location, deviceTypes.get(0), "Den " + location.getTenKhuVuc()));
+                    }
+                    thietBiRepository.saveAll(devices);
+                    logger.info("Devices seeded successfully");
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error seeding devices: ", e);
+            throw e;
+        }
+    }
+
+    private ThietBi createDevice(NguoiDung owner, KhuVuc location, LoaiThietBi type, String name) {
+        ThietBi device = new ThietBi();
+        device.setChuSoHuu(owner);
+        device.setKhuVuc(location);
+        device.setLoaiThietBi(type);
+        device.setTenThietBi(name);
+        device.setTokenThietBi(UUID.randomUUID().toString());
+        device.setTrangThai("hoat dong");
+        device.setLanHoatDongCuoi(LocalDateTime.now());
+        device.setNgayLapDat(LocalDate.now());
+        return device;
+    }
+
+    private void seedAdminAccount() {
+        String adminEmail = "admin@system.com";
+        if (nguoiDungRepository.findByEmail(adminEmail).isPresent()) {
+            logger.info("Admin account already exists");
+            return;
+        }
+
+        Optional<VaiTro> managerRole = vaiTroRepository.findByName("ROLE_MANAGER");
+        if (managerRole.isEmpty()) {
+            logger.error("Could not create admin account: ROLE_MANAGER not found");
+            return;
+        }
+
+        NguoiDung admin = new NguoiDung();
+        admin.setEmail(adminEmail);
+        admin.setTenDangNhap("admin");
+        admin.setMatKhauBam(passwordEncoder.encode("Admin@123"));
+        admin.setKichHoat(true);
+        admin.setVaiTro(new HashSet<>(Collections.singletonList(managerRole.get())));
+        nguoiDungRepository.save(admin);
+        logger.info("Created admin account with email: {}", adminEmail);
     }
 }

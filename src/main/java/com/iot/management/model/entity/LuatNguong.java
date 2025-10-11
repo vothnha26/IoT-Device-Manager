@@ -11,43 +11,81 @@ public class LuatNguong {
     @Column(name = "ma_luat")
     private Long maLuat;
 
-    @Column(name = "ma_thiet_bi")
-    private Long maThietBi;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_thiet_bi", nullable = false)
+    private ThietBi thietBi;
 
-    @Column(name = "ten_truong", length = 150)
+    @Column(name = "ten_truong", nullable = false, length = 50)
     private String tenTruong;
 
-    @Column(name = "phep_toan", length = 10)
+    @Column(name = "phep_toan", nullable = false, length = 10)
     private String phepToan;
 
-    @Column(name = "gia_tri_nguong")
-    private Double giaTriNguong;
+    @Column(name = "gia_tri_nguong", nullable = false, length = 255)
+    private String giaTriNguong;
 
-    @Column(name = "lenh_hanh_dong", length = 1000)
+    @Column(name = "lenh_hanh_dong", length = 50)
     private String lenhHanhDong;
 
-    @Column(name = "kich_hoat")
-    private Boolean kichHoat;
+    @Column(name = "kich_hoat", nullable = false)
+    private boolean kichHoat = true;
 
-    // Getters/Setters
-    public Long getMaLuat() { return maLuat; }
-    public void setMaLuat(Long maLuat) { this.maLuat = maLuat; }
+    public LuatNguong() {
+    }
 
-    public Long getMaThietBi() { return maThietBi; }
-    public void setMaThietBi(Long maThietBi) { this.maThietBi = maThietBi; }
+    public Long getMaLuat() {
+        return maLuat;
+    }
 
-    public String getTenTruong() { return tenTruong; }
-    public void setTenTruong(String tenTruong) { this.tenTruong = tenTruong; }
+    public void setMaLuat(Long maLuat) {
+        this.maLuat = maLuat;
+    }
 
-    public String getPhepToan() { return phepToan; }
-    public void setPhepToan(String phepToan) { this.phepToan = phepToan; }
+    public ThietBi getThietBi() {
+        return thietBi;
+    }
 
-    public Double getGiaTriNguong() { return giaTriNguong; }
-    public void setGiaTriNguong(Double giaTriNguong) { this.giaTriNguong = giaTriNguong; }
+    public void setThietBi(ThietBi thietBi) {
+        this.thietBi = thietBi;
+    }
 
-    public String getLenhHanhDong() { return lenhHanhDong; }
-    public void setLenhHanhDong(String lenhHanhDong) { this.lenhHanhDong = lenhHanhDong; }
+    public String getTenTruong() {
+        return tenTruong;
+    }
 
-    public Boolean getKichHoat() { return kichHoat; }
-    public void setKichHoat(Boolean kichHoat) { this.kichHoat = kichHoat; }
+    public void setTenTruong(String tenTruong) {
+        this.tenTruong = tenTruong;
+    }
+
+    public String getPhepToan() {
+        return phepToan;
+    }
+
+    public void setPhepToan(String phepToan) {
+        this.phepToan = phepToan;
+    }
+
+    public String getGiaTriNguong() {
+        return giaTriNguong;
+    }
+
+    public void setGiaTriNguong(String giaTriNguong) {
+        this.giaTriNguong = giaTriNguong;
+    }
+
+    public String getLenhHanhDong() {
+        return lenhHanhDong;
+    }
+
+    public void setLenhHanhDong(String lenhHanhDong) {
+        this.lenhHanhDong = lenhHanhDong;
+    }
+
+    public boolean isKichHoat() {
+        return kichHoat;
+    }
+
+    public void setKichHoat(boolean kichHoat) {
+        this.kichHoat = kichHoat;
+    }
 }
