@@ -1,8 +1,10 @@
 package com.iot.management.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Set;
+import jakarta.persistence.OneToMany;
 
 @Entity
 @Table(name = "NguoiDung")
@@ -40,6 +42,10 @@ public class NguoiDung {
 		inverseJoinColumns = @JoinColumn(name = "ma_vai_tro")
 	)
 	private Set<VaiTro> vaiTro;
+
+	@JsonManagedReference("owner-regions")
+	@OneToMany(mappedBy = "chuSoHuu")
+	private Set<KhuVuc> khuVucs;
 
 	// Getters and Setters
 	public Long getMaNguoiDung() {
@@ -96,6 +102,14 @@ public class NguoiDung {
 
 	public void setVaiTro(Set<VaiTro> vaiTro) {
 		this.vaiTro = vaiTro;
+	}
+
+	public Set<KhuVuc> getKhuVucs() {
+		return khuVucs;
+	}
+
+	public void setKhuVucs(Set<KhuVuc> khuVucs) {
+		this.khuVucs = khuVucs;
 	}
 
 	public String getVerificationCode() {

@@ -1,6 +1,7 @@
 package com.iot.management.model.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,43 +13,83 @@ public class LenhDieuKhien {
     @Column(name = "ma_lenh")
     private Long maLenh;
 
-    @Column(name = "ma_thiet_bi")
-    private Long maThietBi;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_thiet_bi", nullable = false)
+    private ThietBi thietBi;
 
-    @Column(name = "ten_lenh", length = 200)
+    @Column(name = "ten_lenh", nullable = false, length = 50)
     private String tenLenh;
 
-    @Column(name = "gia_tri_lenh", length = 1000)
+    @Column(name = "gia_tri_lenh", length = 100)
     private String giaTriLenh;
 
-    @Column(name = "trang_thai", length = 50)
+    @Column(name = "trang_thai", nullable = false, length = 20)
     private String trangThai;
 
-    @Column(name = "ma_nguoi_gui")
-    private Long maNguoiGui;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_nguoi_gui")
+    private NguoiDung nguoiGui;
 
-    @Column(name = "ngay_tao")
+    @CreationTimestamp
+    @Column(name = "ngay_tao", nullable = false, updatable = false)
     private LocalDateTime ngayTao;
 
-    // Getters/Setters
-    public Long getMaLenh() { return maLenh; }
-    public void setMaLenh(Long maLenh) { this.maLenh = maLenh; }
+    public LenhDieuKhien() {
+    }
 
-    public Long getMaThietBi() { return maThietBi; }
-    public void setMaThietBi(Long maThietBi) { this.maThietBi = maThietBi; }
+    public Long getMaLenh() {
+        return maLenh;
+    }
 
-    public String getTenLenh() { return tenLenh; }
-    public void setTenLenh(String tenLenh) { this.tenLenh = tenLenh; }
+    public void setMaLenh(Long maLenh) {
+        this.maLenh = maLenh;
+    }
 
-    public String getGiaTriLenh() { return giaTriLenh; }
-    public void setGiaTriLenh(String giaTriLenh) { this.giaTriLenh = giaTriLenh; }
+    public ThietBi getThietBi() {
+        return thietBi;
+    }
 
-    public String getTrangThai() { return trangThai; }
-    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+    public void setThietBi(ThietBi thietBi) {
+        this.thietBi = thietBi;
+    }
 
-    public Long getMaNguoiGui() { return maNguoiGui; }
-    public void setMaNguoiGui(Long maNguoiGui) { this.maNguoiGui = maNguoiGui; }
+    public String getTenLenh() {
+        return tenLenh;
+    }
 
-    public LocalDateTime getNgayTao() { return ngayTao; }
-    public void setNgayTao(LocalDateTime ngayTao) { this.ngayTao = ngayTao; }
+    public void setTenLenh(String tenLenh) {
+        this.tenLenh = tenLenh;
+    }
+
+    public String getGiaTriLenh() {
+        return giaTriLenh;
+    }
+
+    public void setGiaTriLenh(String giaTriLenh) {
+        this.giaTriLenh = giaTriLenh;
+    }
+
+    public String getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(String trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public NguoiDung getNguoiGui() {
+        return nguoiGui;
+    }
+
+    public void setNguoiGui(NguoiDung nguoiGui) {
+        this.nguoiGui = nguoiGui;
+    }
+
+    public LocalDateTime getNgayTao() {
+        return ngayTao;
+    }
+
+    public void setNgayTao(LocalDateTime ngayTao) {
+        this.ngayTao = ngayTao;
+    }
 }

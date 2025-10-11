@@ -1,7 +1,6 @@
 package com.iot.management.controller.api.test;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize; // Đảm bảo đã import
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,8 +20,7 @@ public class TestController {
     }
 
     @GetMapping("/manager")
-    // Dùng @PreAuthorize với hasAuthority để kiểm tra quyền MANAGER
-    @PreAuthorize("hasAuthority('MANAGER')")
+    // @PreAuthorize("hasAuthority('MANAGER')")  // Tạm thời bỏ kiểm tra quyền
     public ResponseEntity<String> managerAccess() {
         return ResponseEntity.ok("This is a MANAGER endpoint.");
     }

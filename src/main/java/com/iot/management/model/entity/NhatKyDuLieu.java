@@ -1,7 +1,9 @@
 package com.iot.management.model.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "NhatKyDuLieu")
@@ -11,50 +13,109 @@ public class NhatKyDuLieu {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ma_nhat_ky")
     private Long maNhatKy;
+    
+    // Giữ lại trường đối tượng này
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_thiet_bi", nullable = false)
+    private ThietBi thietBi;
 
-    @Column(name = "ma_thiet_bi")
-    private Long maThietBi;
-
-    @Column(name = "thoi_gian")
+    @Column(name = "thoi_gian", nullable = false)
     private LocalDateTime thoiGian;
 
-    @Column(name = "ten_truong", length = 150)
+    // Hỗ trợ nhận maThietBi trực tiếp từ JSON request body (không map vào relationship)
+    @Transient
+    @JsonProperty("maThietBi")
+    private Long maThietBi;
+
+    @Column(name = "ten_truong", nullable = false, length = 50)
     private String tenTruong;
 
-    @Column(name = "kieu_gia_tri", length = 50)
-    private String kieuGiaTri;
+    @Column(name = "kieu_gia_tri", nullable = false)
+    private byte kieuGiaTri;
 
-    @Column(name = "gia_tri_chuoi", length = 2000)
+    @Column(name = "gia_tri_chuoi")
     private String giaTriChuoi;
 
     @Column(name = "gia_tri_so")
-    private Double giaTriSo;
+    private BigDecimal giaTriSo;
 
     @Column(name = "gia_tri_logic")
     private Boolean giaTriLogic;
 
-    // Getters/Setters
-    public Long getMaNhatKy() { return maNhatKy; }
-    public void setMaNhatKy(Long maNhatKy) { this.maNhatKy = maNhatKy; }
+    // Constructors
+    public NhatKyDuLieu() {
+    }
 
-    public Long getMaThietBi() { return maThietBi; }
-    public void setMaThietBi(Long maThietBi) { this.maThietBi = maThietBi; }
+    // Getters and Setters
+    public Long getMaNhatKy() {
+        return maNhatKy;
+    }
 
-    public LocalDateTime getThoiGian() { return thoiGian; }
-    public void setThoiGian(LocalDateTime thoiGian) { this.thoiGian = thoiGian; }
+    public void setMaNhatKy(Long maNhatKy) {
+        this.maNhatKy = maNhatKy;
+    }
 
-    public String getTenTruong() { return tenTruong; }
-    public void setTenTruong(String tenTruong) { this.tenTruong = tenTruong; }
+    public ThietBi getThietBi() {
+        return thietBi;
+    }
 
-    public String getKieuGiaTri() { return kieuGiaTri; }
-    public void setKieuGiaTri(String kieuGiaTri) { this.kieuGiaTri = kieuGiaTri; }
+    public void setThietBi(ThietBi thietBi) {
+        this.thietBi = thietBi;
+    }
 
-    public String getGiaTriChuoi() { return giaTriChuoi; }
-    public void setGiaTriChuoi(String giaTriChuoi) { this.giaTriChuoi = giaTriChuoi; }
+    public LocalDateTime getThoiGian() {
+        return thoiGian;
+    }
 
-    public Double getGiaTriSo() { return giaTriSo; }
-    public void setGiaTriSo(Double giaTriSo) { this.giaTriSo = giaTriSo; }
+    public void setThoiGian(LocalDateTime thoiGian) {
+        this.thoiGian = thoiGian;
+    }
 
-    public Boolean getGiaTriLogic() { return giaTriLogic; }
-    public void setGiaTriLogic(Boolean giaTriLogic) { this.giaTriLogic = giaTriLogic; }
+    public String getTenTruong() {
+        return tenTruong;
+    }
+
+    public void setTenTruong(String tenTruong) {
+        this.tenTruong = tenTruong;
+    }
+
+    public byte getKieuGiaTri() {
+        return kieuGiaTri;
+    }
+
+    public void setKieuGiaTri(byte kieuGiaTri) {
+        this.kieuGiaTri = kieuGiaTri;
+    }
+
+    public String getGiaTriChuoi() {
+        return giaTriChuoi;
+    }
+
+    public void setGiaTriChuoi(String giaTriChuoi) {
+        this.giaTriChuoi = giaTriChuoi;
+    }
+
+    public BigDecimal getGiaTriSo() {
+        return giaTriSo;
+    }
+
+    public void setGiaTriSo(BigDecimal giaTriSo) {
+        this.giaTriSo = giaTriSo;
+    }
+
+    public Boolean getGiaTriLogic() {
+        return giaTriLogic;
+    }
+
+    public void setGiaTriLogic(Boolean giaTriLogic) {
+        this.giaTriLogic = giaTriLogic;
+    }
+
+    public Long getMaThietBi() {
+        return maThietBi;
+    }
+
+    public void setMaThietBi(Long maThietBi) {
+        this.maThietBi = maThietBi;
+    }
 }

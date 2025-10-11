@@ -1,0 +1,803 @@
+{
+	"info": {
+		"_postman_id": "8d01e9c8-5999-4c1c-a141-b7f816f2b846",
+		"name": "IoT Device Manager API",
+		"description": "Collection of API endpoints for testing IoT Device Manager application",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "your_jwt_token_here",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@system.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Đăng nhập vào hệ thống"
+					}
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"User123\",\n    \"fullName\": \"Test User\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Đăng ký tài khoản mới"
+					}
+				},
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"code\": \"{{verification_code}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/verify-account",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "verify-account"]
+						},
+						"description": "Xác thực email sau khi đăng ký bằng mã OTP nhận được trong email"
+					}
+				},
+				{
+					"name": "Request Password Reset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/forgot-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "forgot-password"]
+						},
+						"description": "Yêu cầu đặt lại mật khẩu"
+					}
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{reset_token}}\",\n    \"newPassword\": \"NewPassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/reset-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "reset-password"]
+						},
+						"description": "Đặt lại mật khẩu với token được gửi qua email"
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"oldPassword\": \"OldPassword123\",\n    \"newPassword\": \"NewPassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/change-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "change-password"]
+						},
+						"description": "Thay đổi mật khẩu khi đã đăng nhập"
+					}
+				}
+			]
+		},
+		{
+			"name": "Devices",
+			"item": [
+				{
+					"name": "Get My Devices",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/devices",
+							"host": ["{{base_url}}"],
+							"path": ["api", "devices"]
+						},
+						"description": "Lấy danh sách thiết bị của người dùng"
+					}
+				},
+				{
+					"name": "Create Device",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenThietBi\": \"Sensor Nhiệt độ 1\",\n    \"moTa\": \"Cảm biến đo nhiệt độ và độ ẩm\",\n    \"loaiThietBi\": {\n        \"maLoaiThietBi\": 1\n    },\n    \"khuVuc\": {\n        \"maKhuVuc\": 1\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/devices",
+							"host": ["{{base_url}}"],
+							"path": ["api", "devices"]
+						},
+						"description": "Tạo thiết bị mới"
+					}
+				},
+				{
+					"name": "Get Device by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/devices/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "devices", "1"]
+						},
+						"description": "Lấy thông tin chi tiết của một thiết bị"
+					}
+				},
+				{
+					"name": "Update Device",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenThietBi\": \"Sensor Nhiệt độ 1 - Cập nhật\",\n    \"moTa\": \"Cảm biến đo nhiệt độ và độ ẩm - Đã cập nhật\",\n    \"loaiThietBi\": {\n        \"maLoaiThietBi\": 1\n    },\n    \"khuVuc\": {\n        \"maKhuVuc\": 1\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/devices/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "devices", "1"]
+						},
+						"description": "Cập nhật thông tin thiết bị"
+					}
+				},
+				{
+					"name": "Delete Device",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/devices/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "devices", "1"]
+						},
+						"description": "Xóa một thiết bị"
+					}
+				}
+			]
+		},
+		{
+			"name": "Automation",
+			"item": [
+				{
+					"name": "Create Rule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenTruong\": \"nhietDo\",\n    \"phepToan\": \">\",\n    \"giaTriNguong\": \"30\",\n    \"lenhHanhDong\": \"BAT_QUAT\",\n    \"thietBi\": {\n        \"maThietBi\": 1\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/rules",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rules"]
+						},
+						"description": "Tạo luật tự động hóa mới"
+					}
+				},
+				{
+					"name": "Create Schedule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenLichTrinh\": \"Lịch bật đèn\",\n    \"thoiGianBatDau\": \"2025-10-10T08:00:00\",\n    \"thoiGianKetThuc\": \"2025-10-10T17:00:00\",\n    \"lapLai\": true,\n    \"hanhDong\": \"TURN_ON\",\n    \"thietBi\": {\n        \"maThietBi\": 1\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/schedules",
+							"host": ["{{base_url}}"],
+							"path": ["api", "schedules"]
+						},
+						"description": "Tạo lịch trình tự động — yêu cầu đăng nhập (Authorization: Bearer {{token}})."
+					}
+				},
+				{
+					"name": "Delete Rule",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/rules/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rules", "1"]
+						},
+						"description": "Xóa một luật tự động"
+					}
+				},
+				{
+					"name": "Delete Schedule",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/schedules/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "schedules", "1"]
+						},
+						"description": "Xóa một lịch trình"
+					}
+				}
+			]
+		},
+		{
+			"name": "Khu vực (Locations)",
+			"item": [
+				{
+					"name": "Get All Regions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization", 
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/locations",
+							"host": ["{{base_url}}"],
+							"path": ["api", "locations"]
+						},
+						"description": "Lấy danh sách khu vực"
+					}
+				},
+				{
+					"name": "Create Region",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenKhuVuc\": \"Phòng khách\",\n    \"loaiKhuVuc\": \"INDOOR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/regions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "regions"]
+						},
+						"description": "Tạo khu vực mới"
+					}
+				},
+				{
+					"name": "Update Region",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenKhuVuc\": \"Phòng khách - Cập nhật\",\n    \"loaiKhuVuc\": \"NHA\",\n    \"maKhuVucCha\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/regions/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "regions", "1"]
+						},
+						"description": "Cập nhật thông tin khu vực"
+					}
+				},
+				{
+					"name": "Delete Region",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/regions/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "regions", "1"]
+						},
+						"description": "Xóa khu vực"
+					}
+				}
+			]
+		},
+		{
+			"name": "Loại thiết bị (Device Types)",
+			"item": [
+				{
+					"name": "Get All Device Types",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/device-types",
+							"host": ["{{base_url}}"],
+							"path": ["api", "device-types"]
+						},
+						"description": "Lấy danh sách loại thiết bị"
+					}
+				},
+				{
+					"name": "Create Device Type",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenLoai\": \"Cảm biến nhiệt độ\",\n    \"moTa\": \"Đo nhiệt độ môi trường\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/device-types",
+							"host": ["{{base_url}}"],
+							"path": ["api", "device-types"]
+						},
+						"description": "Tạo loại thiết bị mới"
+					}
+				}
+			]
+		},
+		{
+			"name": "Nhật ký dữ liệu (Data Logs)",
+			"item": [
+				{
+					"name": "Get Device Data Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/data-logs/device/1?from=2025-01-01&to=2025-12-31",
+							"host": ["{{base_url}}"],
+							"path": ["api", "data-logs", "device", "1"],
+							"query": [
+								{
+									"key": "from",
+									"value": "2025-01-01"
+								},
+								{
+									"key": "to",
+									"value": "2025-12-31"
+								}
+							]
+						},
+						"description": "Lấy nhật ký dữ liệu của thiết bị"
+					}
+				},
+				{
+					"name": "Create Data Log",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"maThietBi\": 1,\n    \"giaTri\": 25.5,\n    \"donVi\": \"°C\",\n    \"thoiGian\": \"2025-10-10T10:00:00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/data-logs",
+							"host": ["{{base_url}}"],
+							"path": ["api", "data-logs"]
+						},
+						"description": "Tạo nhật ký dữ liệu mới"
+					}
+				}
+			]
+		},
+		{
+			"name": "Người dùng (Users)",
+			"item": [
+				{
+					"name": "Get User Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "profile"]
+						},
+						"description": "Lấy thông tin cá nhân"
+					}
+				},
+				{
+					"name": "Update User Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenDangNhap\": \"new_username\",\n    \"matKhau\": \"NewPassword123\",\n    \"kichHoat\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "profile"]
+						},
+						"description": "Cập nhật thông tin cá nhân (KHÔNG cho phép thay đổi email)."
+					}
+				}
+			]
+		},
+		{
+			"name": "Lịch trình (Schedules)",
+			"item": [
+				{
+					"name": "Get Device Schedules",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/schedules/device/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "schedules", "device", "1"]
+						},
+						"description": "Lấy danh sách lịch trình của thiết bị"
+					}
+				},
+				{
+					"name": "Create Schedule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"maThietBi\": 1,\n    \"thoiGianBatDau\": \"2025-10-10T08:00:00\",\n    \"thoiGianKetThuc\": \"2025-10-10T17:00:00\",\n    \"lapLai\": true,\n    \"hanhDong\": \"TURN_ON\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/schedules",
+							"host": ["{{base_url}}"],
+							"path": ["api", "schedules"]
+						},
+						"description": "Tạo lịch trình mới"
+					}
+				},
+				{
+					"name": "Update Schedule",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"thoiGianBatDau\": \"2025-10-10T09:00:00\",\n    \"thoiGianKetThuc\": \"2025-10-10T18:00:00\",\n    \"lapLai\": true,\n    \"hanhDong\": \"TURN_ON\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/schedules/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "schedules", "1"]
+						},
+						"description": "Cập nhật lịch trình"
+					}
+				},
+				{
+					"name": "Delete Schedule",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/schedules/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "schedules", "1"]
+						},
+						"description": "Xóa lịch trình"
+					}
+				}
+			]
+		},
+		{
+			"name": "Luật ngưỡng (Threshold Rules)",
+			"item": [
+				{
+					"name": "Get Device Rules",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/rules/device/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rules", "device", "1"]
+						},
+						"description": "Lấy danh sách luật ngưỡng của thiết bị"
+					}
+				},
+				{
+					"name": "Create Rule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"maThietBi\": 1,\n    \"tenTruong\": \"temperature\",\n    \"phepToan\": \">\",\n    \"giaTri\": 30,\n    \"hanhDong\": \"TURN_ON_FAN\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/rules",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rules"]
+						},
+						"description": "Tạo luật ngưỡng mới"
+					}
+				},
+				{
+					"name": "Update Rule",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenTruong\": \"temperature\",\n    \"phepToan\": \">\",\n    \"giaTri\": 32,\n    \"hanhDong\": \"TURN_ON_FAN\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/rules/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rules", "1"]
+						},
+						"description": "Cập nhật luật ngưỡng"
+					}
+				},
+				{
+					"name": "Delete Rule",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/rules/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rules", "1"]
+						},
+						"description": "Xóa luật ngưỡng"
+					}
+				}
+			]
+		}
+	]
+}
