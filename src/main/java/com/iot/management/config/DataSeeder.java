@@ -1,9 +1,16 @@
 package com.iot.management.config;
 
-import com.iot.management.model.entity.GoiCuoc;
-import com.iot.management.model.entity.VaiTro;
-import com.iot.management.model.entity.*;
-import com.iot.management.model.repository.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.Collections;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -11,10 +18,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
+import com.iot.management.model.entity.GoiCuoc;
+import com.iot.management.model.entity.KhuVuc;
+import com.iot.management.model.entity.LoaiThietBi;
+import com.iot.management.model.entity.NguoiDung;
+import com.iot.management.model.entity.ThietBi;
+import com.iot.management.model.entity.VaiTro;
+import com.iot.management.model.repository.GoiCuocRepository;
+import com.iot.management.model.repository.KhuVucRepository;
+import com.iot.management.model.repository.LoaiThietBiRepository;
+import com.iot.management.model.repository.NguoiDungRepository;
+import com.iot.management.model.repository.ThietBiRepository;
+import com.iot.management.model.repository.VaiTroRepository;
 
 @Component
 @Transactional
@@ -61,7 +76,6 @@ public class DataSeeder implements CommandLineRunner {
             seedDeviceTypes();
             seedLocations();
             seedDevices();
-
             logger.info("Data seeding completed");
         } catch (Exception e) {
             logger.error("Error seeding data: ", e);
@@ -92,9 +106,9 @@ public class DataSeeder implements CommandLineRunner {
         // 1. Gói Free
         createGoiCuocIfNotFound("Goi Free", new BigDecimal("0.00"), 5, 5, 7);
         // 2. Gói Cá Nhân
-        createGoiCuocIfNotFound("Ca Nhan", new BigDecimal("5.00"), 25, 20, 30);
+        createGoiCuocIfNotFound("Ca Nhan", new BigDecimal("200000.00"), 25, 20, 30);
         // 3. Gói Pro
-        createGoiCuocIfNotFound("Goi Pro", new BigDecimal("20.00"), 100, 75, 180);
+        createGoiCuocIfNotFound("Goi Pro", new BigDecimal("500000.00"), 100, 75, 180);
     }
 
     private void createGoiCuocIfNotFound(String tenGoi, BigDecimal giaTien, int slThietBi, int slLuat, int soNgayLuu) {
@@ -229,8 +243,8 @@ public class DataSeeder implements CommandLineRunner {
         device.setNgayLapDat(LocalDate.now());
         return device;
     }
-
-    private void seedAdminAccount() {
+    
+private void seedAdminAccount() {
         String adminEmail = "admin@system.com";
         if (nguoiDungRepository.findByEmail(adminEmail).isPresent()) {
             logger.info("Admin account already exists");

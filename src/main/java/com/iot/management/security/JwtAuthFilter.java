@@ -1,9 +1,7 @@
 package com.iot.management.security;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,7 +11,10 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -68,8 +69,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 handleAuthError(response, "Invalid token");
             }
         } catch (Exception e) {
-            logger.error("Authentication error: " + e.getMessage());
-            handleAuthError(response, "Authentication failed");
+            // Log full stacktrace for debugging
+            logger.error("Authentication error", e);
+            String msg = e.getMessage() == null ? "Authentication failed" : e.getMessage();
+            handleAuthError(response, msg);
         }
     }
 
@@ -86,9 +89,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private void handleAuthError(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(String.format(
-            "{\"error\": \"%s\", \"message\": \"Please login at /api/auth/login first\"}",
-            message
-        ));
+        // Return a consistent error field and include the specific message for easier debugging/client handling.
+        String safeMessage = message == null ? "Authentication failed" : message.replace("\"", "\\\"");
+        String json = String.format("{\"error\": \"Authentication failed\", \"message\": \"%s\"}", safeMessage);
+        response.getWriter().write(json);
     }
 }
