@@ -1,0 +1,26 @@
+/* Theme styles for the dashboard */
+body { background:#f5f7fb; }
+#sidebar { width:250px; min-height:100vh; }
+#sidebar.collapsed { width:70px; }
+#sidebar .sidebar-header { background:linear-gradient(90deg,#293a63,#1b2b46); }
+#sidebar .components { padding-left:0; }
+#sidebar .components li { padding:12px 20px; }
+#sidebar .components li a { color:#ddd; text-decoration:none; display:block; }
+#sidebar .components li.active a { background:rgba(255,255,255,0.06); color:#fff; }
+#page-content-wrapper { flex:1; }
+.icon-circle { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.icon-circle.bg-primary { background:#007bff; }
+.icon-circle.bg-success { background:#20c997; }
+.icon-circle.bg-warning { background:#ffc107; }
+.icon-circle.bg-info { background:#0dcaf0; }
+.summary-card { border:0; }
+.room-card { border:0; }
+.device-actions .device-row { display:flex; align-items:center; margin-bottom:8px; }
+.device-name { min-width:100px; }
+.btn-outline-primary { border-color: #007bff; color:#007bff; }
+.btn-outline-secondary { border-color: #6c757d; color:#6c757d; }
+
+/* responsive tweaks */
+@media (max-width: 768px) {
+  #sidebar { display:none; }
+}
