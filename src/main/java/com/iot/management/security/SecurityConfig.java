@@ -33,10 +33,19 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.disable())
             .authorizeHttpRequests(auth -> auth
+                // public API for authentication and public resources
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                // H2 console and error page
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()
+                // Allow demo UI, root and static assets so dashboard can be used without JWT
+                .requestMatchers("/", "/dashboard").permitAll()
+                .requestMatchers("/static/**", "/js/**", "/css/**", "/images/**", "/webjars/**").permitAll()
+                // WebSocket handshake endpoint and test endpoints (fake telemetry)
+                .requestMatchers("/ws/**").permitAll()
+                .requestMatchers("/api/test/**").permitAll()
+                // everything else requires authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
