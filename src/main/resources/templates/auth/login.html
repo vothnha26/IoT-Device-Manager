@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Đăng nhập - IoT Manager</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom Auth CSS -->
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-container">
+            <div class="auth-card">
+                <!-- Logo & Title -->
+                <div class="auth-logo">
+                    <i class="fas fa-microchip"></i>
+                    <h2>IoT Manager</h2>
+                    <p>Đăng nhập để tiếp tục</p>
+                </div>
+
+                <!-- Error Message -->
+                <div th:if="${errorMessage}" class="auth-alert auth-alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span th:text="${errorMessage}"></span>
+                </div>
+
+                <!-- Success Message -->
+                <div th:if="${successMessage}" class="auth-alert auth-alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span th:text="${successMessage}"></span>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form">
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i> Email
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-user"></i>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email"
+                                   placeholder="email@example.com" 
+                                   required>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-1"></i> Mật khẩu
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-key"></i>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password"
+                                   placeholder="Nhập mật khẩu" 
+                                   required>
+                            <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+                        </div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">
+                                Ghi nhớ đăng nhập
+                            </label>
+                        </div>
+                        <a th:href="@{/auth/forgot-password}" class="text-decoration-none">
+                            <small>Quên mật khẩu?</small>
+                        </a>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-auth-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i> Đăng nhập
+                    </button>
+
+                    <!-- Loading Spinner -->
+                    <div class="auth-loading" id="loadingSpinner">
+                        <div class="spinner-border text-primary spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>Đang xử lý...</span>
+                    </div>
+                </form>
+
+                <!-- Divider -->
+                <div class="auth-divider">
+                    <span>hoặc</span>
+                </div>
+
+                <!-- Register Link -->
+                <div class="auth-links">
+                    <p class="mb-0">
+                        Chưa có tài khoản? 
+                        <a th:href="@{/auth/register}">
+                            <strong>Đăng ký ngay</strong>
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="auth-footer">
+                <p class="mb-0">&copy; 2025 IoT Manager. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Custom Script -->
+    <script>
+        $(document).ready(function() {
+            // Toggle password visibility
+            $('#togglePassword').click(function() {
+                const passwordInput = $('#password');
+                const icon = $(this);
+                
+                if (passwordInput.attr('type') === 'password') {
+                    passwordInput.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    passwordInput.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Handle form submission
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+                
+                const email = $('#email').val();
+                const password = $('#password').val();
+                
+                // Validate
+                if (!email || !password) {
+                    showAlert('Vui lòng nhập đầy đủ thông tin!', 'error');
+                    return;
+                }
+                
+                // Show loading
+                $('#loadingSpinner').addClass('active');
+                $(this).find('button[type="submit"]').prop('disabled', true);
+                
+                // Call API
+                $.ajax({
+                    url: '/api/auth/login',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        email: email,
+                        password: password
+                    }),
+                    success: function(response) {
+                        // Show success message
+                        showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+                        
+                        // Cookie is already set by server
+                        // Redirect to dashboard after short delay
+                        setTimeout(function() {
+                            window.location.href = '/dashboard';
+                        }, 500);
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Đăng nhập thất bại!';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.status === 401) {
+                            errorMessage = 'Email hoặc mật khẩu không đúng!';
+                        }
+                        
+                        showAlert(errorMessage, 'error');
+                    },
+                    complete: function() {
+                        $('#loadingSpinner').removeClass('active');
+                        $('#loginForm button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            });
+
+            // Helper function to show alerts
+            function showAlert(message, type) {
+                const alertClass = type === 'success' ? 'auth-alert-success' : 'auth-alert-error';
+                const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+                
+                const alertHtml = `
+                    <div class="auth-alert ${alertClass}">
+                        <i class="fas ${iconClass}"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                // Remove existing alerts
+                $('.auth-alert').remove();
+                
+                // Add new alert
+                $('.auth-logo').after(alertHtml);
+            }
+        });
+    </script>
+</body>
+</html>

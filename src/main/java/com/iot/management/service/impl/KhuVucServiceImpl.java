@@ -62,4 +62,33 @@ public class KhuVucServiceImpl implements KhuVucService {
         
         return khuVucRepository.save(khuVuc);
     }
+
+    @Override
+    public List<KhuVuc> getRootKhuVucsByUser(Long userId) {
+        return khuVucRepository.findByChuSoHuu_MaNguoiDungAndKhuVucChaIsNull(userId);
+    }
+
+    @Override
+    public List<KhuVuc> getAllKhuVucsByUser(Long userId) {
+        return khuVucRepository.findByChuSoHuu_MaNguoiDung(userId);
+    }
+
+    @Override
+    public KhuVuc getKhuVucById(Long id) {
+        return khuVucRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khu vực với ID: " + id));
+    }
+
+    @Override
+    public void deleteKhuVuc(Long id) {
+        KhuVuc khuVuc = getKhuVucById(id);
+        
+        // Kiểm tra xem có khu vực con không
+        List<KhuVuc> children = khuVucRepository.findByKhuVucCha_MaKhuVuc(id);
+        if (!children.isEmpty()) {
+            throw new RuntimeException("Không thể xóa khu vực có khu vực con. Vui lòng xóa các khu vực con trước.");
+        }
+        
+        khuVucRepository.delete(khuVuc);
+    }
 }

@@ -15,4 +15,24 @@ public interface KhuVucService {
     
     // Cập nhật thông tin khu vực
     KhuVuc updateLocation(Long ownerId, KhuVuc khuVuc);
+    
+    /**
+     * Lấy danh sách khu vực gốc (không có cha) của user
+     */
+    List<KhuVuc> getRootKhuVucsByUser(Long userId);
+    
+    /**
+     * Lấy tất cả khu vực của user
+     */
+    List<KhuVuc> getAllKhuVucsByUser(Long userId);
+    
+    /**
+     * Lấy chi tiết một khu vực
+     */
+    KhuVuc getKhuVucById(Long id);
+    
+    /**
+     * Xóa khu vực
+     */
+    void deleteKhuVuc(Long id);
 }

@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -31,29 +32,45 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
         throws ServletException, IOException {
         try {
-            final String authHeader = request.getHeader("Authorization");
-            final String requestURI = request.getRequestURI();
+            String token = null;
             
-            // Skip authentication for non-secured paths
-            if (!isAuthenticationRequired(request)) {
+            System.out.println("=== JWT FILTER ===");
+            System.out.println("Request URI: " + request.getRequestURI());
+            
+            // 1. Try to get token from Authorization header (for API calls)
+            final String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7).trim();
+                System.out.println("Token from Authorization header");
+            }
+            
+            // 2. If no header token, try to get from Cookie (for browser requests)
+            if (token == null || token.isEmpty()) {
+                Cookie[] cookies = request.getCookies();
+                System.out.println("Cookies: " + (cookies != null ? cookies.length : 0));
+                if (cookies != null) {
+                    for (Cookie cookie : cookies) {
+                        System.out.println("Cookie: " + cookie.getName() + " = " + cookie.getValue().substring(0, Math.min(20, cookie.getValue().length())) + "...");
+                        if ("authToken".equals(cookie.getName())) {
+                            token = cookie.getValue();
+                            System.out.println("Token found in cookie!");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // No token found - continue without authentication
+            if (token == null || token.isEmpty()) {
+                System.out.println("No token found - continuing without auth");
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            // No auth header or invalid format
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                handleAuthError(response, "Unauthorized - No valid token provided");
-                return;
-            }
-
             // Extract and validate token
-            String token = authHeader.substring(7).trim();
-            if (token.isEmpty()) {
-                handleAuthError(response, "Unauthorized - Empty token");
-                return;
-            }
-
             String email = jwtUtil.extractUsername(token);
+            System.out.println("Email from token: " + email);
+            
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 if (jwtUtil.validateToken(token, userDetails)) {
@@ -61,43 +78,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    filterChain.doFilter(request, response);
+                    System.out.println("Authentication set in SecurityContext for: " + email);
                 } else {
-                    handleAuthError(response, "Invalid token");
+                    System.out.println("Token validation failed");
                 }
-            } else {
-                handleAuthError(response, "Invalid token");
             }
+            
+            filterChain.doFilter(request, response);
+            
         } catch (Exception e) {
             // Log full stacktrace for debugging
-            logger.error("Authentication error", e);
-            String msg = e.getMessage() == null ? "Authentication failed" : e.getMessage();
-            handleAuthError(response, msg);
+            System.out.println("Authentication error: " + e.getMessage());
+            e.printStackTrace();
+            filterChain.doFilter(request, response);
         }
-    }
-
-    private boolean isAuthenticationRequired(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        // Only enforce authentication for API endpoints under /api/
-        // Allow unauthenticated access for non-API paths (UI, static, websocket handshake, etc.)
-        if (!path.startsWith("/api/")) {
-            return false;
-        }
-
-        // For API paths, skip auth for public endpoints
-        return !(
-            path.startsWith("/api/auth/") ||
-            path.startsWith("/api/public/") ||
-            path.startsWith("/api/test/")
-        );
-    }
-
-    private void handleAuthError(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json;charset=UTF-8");
-        // Return a consistent error field and include the specific message for easier debugging/client handling.
-        String safeMessage = message == null ? "Authentication failed" : message.replace("\"", "\\\"");
-        String json = String.format("{\"error\": \"Authentication failed\", \"message\": \"%s\"}", safeMessage);
-        response.getWriter().write(json);
     }
 }

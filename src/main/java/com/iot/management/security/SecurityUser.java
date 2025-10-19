@@ -49,10 +49,18 @@ public class SecurityUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return nguoiDung.getKichHoat();
+        // Handle null as false for safety
+        return nguoiDung.getKichHoat() != null && nguoiDung.getKichHoat();
     }
 
     public NguoiDung getNguoiDung() {
         return nguoiDung;
+    }
+    
+    /**
+     * Helper method để lấy ID người dùng
+     */
+    public Long getMaNguoiDung() {
+        return nguoiDung != null ? nguoiDung.getMaNguoiDung() : null;
     }
 }

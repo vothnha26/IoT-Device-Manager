@@ -11,6 +11,7 @@ import com.iot.management.model.repository.ThietBiRepository;
 import com.iot.management.service.ThietBiService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -62,7 +63,17 @@ public class ThietBiServiceImpl implements ThietBiService {
 
         // 4. Các logic khác
         thietBi.setTokenThietBi(UUID.randomUUID().toString());
-        thietBi.setTrangThai("da_tao");
+        
+        // Nếu không có trạng thái được set từ client, mặc định là "hoat dong"
+        if (thietBi.getTrangThai() == null || thietBi.getTrangThai().trim().isEmpty()) {
+            thietBi.setTrangThai("hoat dong");
+        }
+        
+        // Nếu không có ngày lắp đặt, set ngày hiện tại
+        if (thietBi.getNgayLapDat() == null) {
+            thietBi.setNgayLapDat(LocalDate.now());
+        }
+        
         thietBi.setLanHoatDongCuoi(LocalDateTime.now());
 
         return thietBiRepository.save(thietBi);
@@ -118,6 +129,19 @@ public class ThietBiServiceImpl implements ThietBiService {
             KhuVuc khuVuc = khuVucRepository.findById(thietBiMoi.getKhuVuc().getMaKhuVuc())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy khu vực"));
             thietBiCu.setKhuVuc(khuVuc);
+        } else if (thietBiMoi.getKhuVuc() != null && thietBiMoi.getKhuVuc().getMaKhuVuc() == null) {
+            // Nếu client gửi khuVuc = null, có nghĩa là muốn bỏ khu vực
+            thietBiCu.setKhuVuc(null);
+        }
+
+        // Cập nhật trạng thái nếu có
+        if (thietBiMoi.getTrangThai() != null && !thietBiMoi.getTrangThai().trim().isEmpty()) {
+            thietBiCu.setTrangThai(thietBiMoi.getTrangThai());
+        }
+
+        // Cập nhật ngày lắp đặt nếu có
+        if (thietBiMoi.getNgayLapDat() != null) {
+            thietBiCu.setNgayLapDat(thietBiMoi.getNgayLapDat());
         }
 
         thietBiCu.setLanHoatDongCuoi(LocalDateTime.now());

@@ -12,6 +12,8 @@ import com.iot.management.model.repository.VaiTroRepository;
 import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.security.JwtUtil;
 import com.iot.management.service.EmailService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -107,35 +109,72 @@ public class AuthController {
     
     // Đăng nhập
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) {
+    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest, HttpServletResponse response) {
         try {
+            System.out.println("=== LOGIN REQUEST ===");
+            System.out.println("Email: " + authRequest.getEmail());
+            System.out.println("Password received: " + (authRequest.getPassword() != null ? "Yes" : "No"));
+            
             if (authRequest.getEmail() == null || authRequest.getPassword() == null) {
                 return ResponseEntity.badRequest()
                     .body(new AuthResponse(null, "Email and password are required"));
             }
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
+            UserDetails userDetails;
+            try {
+                userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
+                System.out.println("User found: " + userDetails.getUsername());
+                System.out.println("User enabled: " + userDetails.isEnabled());
+            } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+                System.out.println("User not found: " + authRequest.getEmail());
+                return ResponseEntity.status(401)
+                    .body(new AuthResponse(null, "Invalid credentials"));
+            }
 
-            if (!userDetails.isEnabled()) {
+            // Check if account is enabled (handle null as false)
+            if (userDetails.isEnabled() == false) {
+                System.out.println("Account not active");
                 return ResponseEntity.status(401)
                     .body(new AuthResponse(null, "Account is not active. Please verify your email."));
             }
 
-            if (passwordEncoder.matches(authRequest.getPassword(), userDetails.getPassword())) {
-                String token = jwtUtil.generateToken(userDetails);  // Truyền UserDetails để có thông tin về roles
+            boolean passwordMatches = passwordEncoder.matches(authRequest.getPassword(), userDetails.getPassword());
+            System.out.println("Password matches: " + passwordMatches);
+            
+            if (passwordMatches) {
+                String token = jwtUtil.generateToken(userDetails);
+                System.out.println("Token generated successfully");
+                
+                // Tạo cookie chứa JWT token với SameSite=Lax
+                Cookie jwtCookie = new Cookie("authToken", token);
+                jwtCookie.setHttpOnly(true);
+                jwtCookie.setSecure(false);
+                jwtCookie.setPath("/");
+                jwtCookie.setMaxAge(24 * 60 * 60);
+                jwtCookie.setDomain(null); // Let browser determine domain
+                
+                // Add SameSite attribute manually via Set-Cookie header
+                response.setHeader("Set-Cookie", String.format(
+                    "authToken=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax",
+                    token,
+                    24 * 60 * 60
+                ));
+                
+                System.out.println("Cookie set: authToken with SameSite=Lax");
+                
                 return ResponseEntity.ok(new AuthResponse(token, "Login successful"));
             } else {
+                System.out.println("Password does not match");
                 return ResponseEntity.status(401)
                     .body(new AuthResponse(null, "Invalid credentials"));
             }
-        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
-            return ResponseEntity.status(401)
-                .body(new AuthResponse(null, "Invalid credentials"));
         } catch (Exception e) {
+            System.out.println("Exception during login: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(500)
-                .body(new AuthResponse(null, "An error occurred during authentication"));
+                .body(new AuthResponse(null, "An error occurred during authentication: " + e.getMessage()));
+        }
     }
-}
     
     // Xử lý yêu cầu quên mật khẩu (gửi OTP)
     @PostMapping("/forgot-password")

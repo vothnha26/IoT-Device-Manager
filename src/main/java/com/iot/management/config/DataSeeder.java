@@ -137,12 +137,15 @@ public class DataSeeder implements CommandLineRunner {
         try {
             if (loaiThietBiRepository.count() == 0) {
                 List<LoaiThietBi> deviceTypes = Arrays.asList(
-                    createDeviceType("Den LED RGB", "Den LED co the dieu chinh mau sac"),
-                    createDeviceType("Cam bien nhiet do", "Thiet bi do nhiet do moi truong"),
-                    createDeviceType("Cam bien do am", "Thiet bi do do am trong khong khi")
+                    createDeviceType("Den LED RGB", "Den LED co the dieu chinh mau sac", NhomThietBi.CONTROLLER),
+                    createDeviceType("Cam bien nhiet do", "Thiet bi do nhiet do moi truong", NhomThietBi.SENSOR),
+                    createDeviceType("Cam bien do am", "Thiet bi do do am trong khong khi", NhomThietBi.SENSOR)
                 );
                 loaiThietBiRepository.saveAll(deviceTypes);
                 logger.info("Device types seeded successfully");
+            } else {
+                // Cập nhật nhóm thiết bị cho các loại đã có (nếu chưa có)
+                updateDeviceTypeGroups();
             }
         } catch (Exception e) {
             logger.error("Error seeding device types: ", e);
@@ -150,10 +153,45 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
-    private LoaiThietBi createDeviceType(String name, String description) {
+    private void updateDeviceTypeGroups() {
+        List<LoaiThietBi> allTypes = loaiThietBiRepository.findAll();
+        boolean updated = false;
+        
+        for (LoaiThietBi type : allTypes) {
+            if (type.getNhomThietBi() == null) {
+                String tenLoai = type.getTenLoai().toLowerCase();
+                
+                // Xác định nhóm dựa trên tên
+                if (tenLoai.contains("đèn") || tenLoai.contains("led") || 
+                    tenLoai.contains("light") || tenLoai.contains("switch") || 
+                    tenLoai.contains("công tắc") || tenLoai.contains("relay")) {
+                    type.setNhomThietBi(NhomThietBi.CONTROLLER);
+                    updated = true;
+                } else if (tenLoai.contains("cảm biến") || tenLoai.contains("sensor") ||
+                          tenLoai.contains("nhiệt độ") || tenLoai.contains("độ ẩm") ||
+                          tenLoai.contains("temperature") || tenLoai.contains("humidity")) {
+                    type.setNhomThietBi(NhomThietBi.SENSOR);
+                    updated = true;
+                } else if (tenLoai.contains("motor") || tenLoai.contains("servo") ||
+                          tenLoai.contains("van") || tenLoai.contains("quạt") ||
+                          tenLoai.contains("fan")) {
+                    type.setNhomThietBi(NhomThietBi.ACTUATOR);
+                    updated = true;
+                }
+            }
+        }
+        
+        if (updated) {
+            loaiThietBiRepository.saveAll(allTypes);
+            logger.info("Device type groups updated successfully");
+        }
+    }
+
+    private LoaiThietBi createDeviceType(String name, String description, NhomThietBi nhomThietBi) {
         LoaiThietBi t = new LoaiThietBi();
         t.setTenLoai(name);
         t.setMoTa(description);
+        t.setNhomThietBi(nhomThietBi);
         return t;
     }
 

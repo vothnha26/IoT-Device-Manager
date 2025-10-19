@@ -1,6 +1,7 @@
 package com.iot.management.service;
 
 import com.iot.management.model.entity.NguoiDung;
+import java.util.List;
 import java.util.Optional;
 
 public interface NguoiDungService {
@@ -18,4 +19,7 @@ public interface NguoiDungService {
 
     // Cập nhật mật khẩu cho người dùng (raw password -> encode)
     void updatePassword(Long userId, String rawPassword);
+    
+    // Lấy tất cả người dùng (dành cho admin)
+    List<NguoiDung> findAllUsers();
 }

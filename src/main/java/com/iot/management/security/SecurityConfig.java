@@ -36,12 +36,16 @@ public class SecurityConfig {
                 // public API for authentication and public resources
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                // Auth UI pages (login, register, verify, forgot-password, reset-password)
+                .requestMatchers("/auth/**").permitAll()
                 // H2 console and error page
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 // Allow demo UI, root and static assets so dashboard can be used without JWT
                 .requestMatchers("/", "/dashboard").permitAll()
                 .requestMatchers("/static/**", "/js/**", "/css/**", "/images/**", "/webjars/**").permitAll()
+                // Favicon
+                .requestMatchers("/favicon.ico").permitAll()
                 // WebSocket handshake endpoint and test endpoints (fake telemetry)
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/test/**").permitAll()

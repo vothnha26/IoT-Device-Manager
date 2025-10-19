@@ -11,4 +11,7 @@ public interface LenhDieuKhienRepository extends JpaRepository<LenhDieuKhien, Lo
 
     // Tìm tất cả các lệnh đang chờ xử lý cho một thiết bị
     List<LenhDieuKhien> findByThietBi_MaThietBiAndTrangThai(Long maThietBi, String trangThai);
+    
+    // Tìm 50 lệnh gần nhất của một thiết bị
+    List<LenhDieuKhien> findTop50ByThietBi_MaThietBiOrderByNgayTaoDesc(Long maThietBi);
 }

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Gói cước - IoT Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/theme.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #e9ecef;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #sidebar {
+            min-height: 100vh;
+            width: 240px;
+            min-width: 240px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            transition: width 0.3s;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-brand {
+            padding: 20px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-brand img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+        }
+
+        .sidebar-brand-text {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        #sidebar .nav-link {
+            padding: 15px 20px;
+            text-align: left;
+            color: rgba(255,255,255,0.6);
+            transition: all 0.3s;
+            position: relative;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        #sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.05);
+        }
+
+        #sidebar .nav-link.active {
+            color: white;
+            background: rgba(52, 152, 219, 0.2);
+            border-left-color: #3498db;
+        }
+
+        #sidebar .nav-link i {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        #sidebar .nav-link span {
+            font-size: 14px;
+        }
+
+        .main-content {
+            margin-left: 240px;
+            min-height: 100vh;
+            background-color: #e9ecef;
+        }
+
+        .top-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar-header {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #e74c3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .content-area {
+            padding: 25px 30px;
+        }
+
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .stat-icon.total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-icon.price {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-info h3 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .stat-info p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .packages-table-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 25px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .package-table {
+            width: 100%;
+        }
+
+        .package-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .package-table td {
+            padding: 15px 12px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .package-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .package-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-basic {
+            background: #3498db;
+            color: white;
+        }
+
+        .badge-pro {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .badge-enterprise {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .price-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 3px;
+        }
+
+        .action-btn.edit {
+            background: #f39c12;
+            color: white;
+        }
+
+        .action-btn.edit:hover {
+            background: #e67e22;
+        }
+
+        .action-btn.delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .action-btn.delete:hover {
+            background: #c0392b;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .feature-list li {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .feature-list li i {
+            color: #27ae60;
+            margin-right: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #bdc3c7;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h5 {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-brand">
+            <img src="https://ui-avatars.com/api/?name=IoT&background=3498db&color=fff&size=128" alt="Logo">
+            <span class="sidebar-brand-text">IoT Manager</span>
+        </div>
+        <ul class="nav flex-column flex-grow-1 mt-2">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>Bảng điều khiển</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/profile">
+                    <i class="fas fa-user"></i>
+                    <span>Thông tin cá nhân</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/khu-vuc">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>Quản lý khu vực</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/thiet-bi">
+                    <i class="fas fa-microchip"></i>
+                    <span>Quản lý thiết bị</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Dữ liệu cảm biến</span>
+                </a>
+            </li>
+            <li class="nav-item mt-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <a class="nav-link" href="/admin/users">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Quản lý Người dùng</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/admin/packages">
+                    <i class="fas fa-box"></i>
+                    <span>Quản lý Gói cước</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/device-types">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Quản lý Loại thiết bị</span>
+                </a>
+            </li>
+        </ul>
+        <div class="p-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <button class="btn btn-danger btn-sm w-100" onclick="logout()">
+                <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <div class="top-header">
+            <h5 class="mb-0" style="color: #2c3e50;">
+                <i class="fas fa-box me-2"></i>
+                Quản lý Gói cước
+            </h5>
+            <div class="user-info">
+                <div class="user-avatar-header">
+                    <span th:text="${username != null ? #strings.substring(username, 0, 1).toUpperCase() : 'A'}">A</span>
+                </div>
+                <div>
+                    <div style="font-size: 14px; color: #2c3e50;">
+                        <strong th:text="${username}">Admin</strong>
+                    </div>
+                    <div style="font-size: 12px; color: #7f8c8d;">
+                        Quản trị viên
+                    </div>
+                </div>
+                <button class="btn btn-link" onclick="logout()" title="Đăng xuất">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">Quản lý Gói cước</h1>
+                <p class="page-subtitle">Quản lý các gói cước dịch vụ trong hệ thống IoT</p>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalPackages">0</h3>
+                        <p>Tổng số gói cước</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon price">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="avgPrice">0đ</h3>
+                        <p>Giá trung bình</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Packages Table -->
+            <div class="packages-table-card">
+                <div class="table-header">
+                    <h2 class="table-title">
+                        <i class="fas fa-list me-2"></i>
+                        Danh sách Gói cước
+                    </h2>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-2" onclick="loadPackages()">
+                            <i class="fas fa-sync-alt me-2"></i>Làm mới
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="showAddModal()">
+                            <i class="fas fa-plus me-2"></i>Thêm gói cước
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="package-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>Tên gói</th>
+                                <th>Giá tiền</th>
+                                <th>Thiết bị</th>
+                                <th>Khu vực</th>
+                                <th>Luật</th>
+                                <th>Lưu dữ liệu</th>
+                                <th>Token</th>
+                                <th style="width: 100px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="packagesTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Đang tải dữ liệu...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Package Modal -->
+    <div class="modal fade" id="packageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="bi bi-plus-circle"></i> Thêm gói cước mới
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="packageForm">
+                        <input type="hidden" id="packageId">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tên gói <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="tenGoi" required maxlength="50">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Giá tiền (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="giaTien" required min="0" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số lượng thiết bị tối đa</label>
+                                <input type="number" class="form-control" id="slThietBiToiDa" min="0">
+                                <small class="text-muted">Để trống = không giới hạn</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số lượng khu vực tối đa <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="slKhuVucToiDa" required min="0">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số lượng luật tối đa</label>
+                                <input type="number" class="form-control" id="slLuatToiDa" min="0">
+                                <small class="text-muted">Để trống = không giới hạn</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số ngày lưu dữ liệu</label>
+                                <input type="number" class="form-control" id="soNgayLuuDuLieu" min="0">
+                                <small class="text-muted">Để trống = không giới hạn</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số lượng token tối đa <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="slTokenToiDa" required min="0">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="savePackage()">
+                        <i class="bi bi-save"></i> Lưu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        let allPackages = [];
+        const packageModal = new bootstrap.Modal(document.getElementById('packageModal'));
+
+        // Logout function
+        function logout() {
+            document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            window.location.href = '/auth/login';
+        }
+
+        // Load packages from API
+        function loadPackages() {
+            $.ajax({
+                url: '/api/admin/packages',
+                method: 'GET',
+                success: function(packages) {
+                    allPackages = packages;
+                    updateStatistics();
+                    renderPackages(packages);
+                },
+                error: function(xhr) {
+                    console.error('Error loading packages:', xhr);
+                    showError('Không thể tải danh sách gói cước');
+                }
+            });
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const total = allPackages.length;
+            document.getElementById('totalPackages').textContent = total;
+            
+            if (total > 0) {
+                const avgPrice = allPackages.reduce((sum, p) => sum + (parseFloat(p.giaTien) || 0), 0) / total;
+                document.getElementById('avgPrice').textContent = formatCurrency(avgPrice);
+            } else {
+                document.getElementById('avgPrice').textContent = '0đ';
+            }
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        // Render packages table
+        function renderPackages(packages) {
+            const tbody = document.getElementById('packagesTableBody');
+            
+            if (packages.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="fas fa-box"></i>
+                                <h5>Chưa có gói cước nào</h5>
+                                <p>Nhấn "Thêm gói cước" để tạo gói cước đầu tiên.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            packages.forEach((pkg, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>
+                        <strong>${pkg.tenGoi || 'N/A'}</strong>
+                    </td>
+                    <td class="price-text">${formatCurrency(pkg.giaTien || 0)}</td>
+                    <td>${pkg.slThietBiToiDa || '∞'}</td>
+                    <td>${pkg.slKhuVucToiDa || 0}</td>
+                    <td>${pkg.slLuatToiDa || '∞'}</td>
+                    <td>${pkg.soNgayLuuDuLieu || '∞'} ngày</td>
+                    <td>${pkg.slTokenToiDa || 0}</td>
+                    <td>
+                        <button class="action-btn edit" onclick="showEditModal(${pkg.maGoiCuoc})" title="Sửa">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="deletePackage(${pkg.maGoiCuoc})" title="Xóa">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Show add modal
+        function showAddModal() {
+            document.getElementById('modalTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Thêm gói cước mới';
+            document.getElementById('packageForm').reset();
+            document.getElementById('packageId').value = '';
+            packageModal.show();
+        }
+
+        // Show edit modal
+        function showEditModal(id) {
+            const pkg = allPackages.find(p => p.maGoiCuoc === id);
+            if (!pkg) {
+                showError('Không tìm thấy gói cước');
+                return;
+            }
+            
+            document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil"></i> Chỉnh sửa gói cước';
+            document.getElementById('packageId').value = pkg.maGoiCuoc;
+            document.getElementById('tenGoi').value = pkg.tenGoi || '';
+            document.getElementById('giaTien').value = pkg.giaTien || '';
+            document.getElementById('slThietBiToiDa').value = pkg.slThietBiToiDa || '';
+            document.getElementById('slKhuVucToiDa').value = pkg.slKhuVucToiDa || 0;
+            document.getElementById('slLuatToiDa').value = pkg.slLuatToiDa || '';
+            document.getElementById('soNgayLuuDuLieu').value = pkg.soNgayLuuDuLieu || '';
+            document.getElementById('slTokenToiDa').value = pkg.slTokenToiDa || 0;
+            
+            packageModal.show();
+        }
+
+        // Save package (create or update)
+        function savePackage() {
+            const id = document.getElementById('packageId').value;
+            const data = {
+                tenGoi: document.getElementById('tenGoi').value,
+                giaTien: parseFloat(document.getElementById('giaTien').value),
+                slThietBiToiDa: document.getElementById('slThietBiToiDa').value ? parseInt(document.getElementById('slThietBiToiDa').value) : null,
+                slKhuVucToiDa: parseInt(document.getElementById('slKhuVucToiDa').value) || 0,
+                slLuatToiDa: document.getElementById('slLuatToiDa').value ? parseInt(document.getElementById('slLuatToiDa').value) : null,
+                soNgayLuuDuLieu: document.getElementById('soNgayLuuDuLieu').value ? parseInt(document.getElementById('soNgayLuuDuLieu').value) : null,
+                slTokenToiDa: parseInt(document.getElementById('slTokenToiDa').value) || 0
+            };
+            
+            const url = id ? `/api/admin/packages/${id}` : '/api/admin/packages';
+            const method = id ? 'PUT' : 'POST';
+            
+            $.ajax({
+                url: url,
+                method: method,
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    showSuccess(response.message || (id ? 'Cập nhật gói cước thành công' : 'Tạo gói cước thành công'));
+                    packageModal.hide();
+                    loadPackages();
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON;
+                    showError(error?.message || 'Lỗi khi lưu gói cước');
+                }
+            });
+        }
+
+        // Delete package
+        function deletePackage(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa gói cước này?')) {
+                return;
+            }
+            
+            $.ajax({
+                url: `/api/admin/packages/${id}`,
+                method: 'DELETE',
+                success: function(response) {
+                    showSuccess(response.message || 'Xóa gói cước thành công');
+                    loadPackages();
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON;
+                    showError(error?.message || 'Lỗi khi xóa gói cước');
+                }
+            });
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            alert('✅ ' + message);
+        }
+
+        // Show error message
+        function showError(message) {
+            alert('❌ ' + message);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPackages();
+        });
+    </script>
+</body>
+</html>

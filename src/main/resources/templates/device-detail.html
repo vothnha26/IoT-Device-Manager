@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Chi tiết thiết bị - ' + ${device.tenThietBi}">Chi tiết thiết bị</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/theme.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .control-btn {
+            min-width: 120px;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .control-btn.active {
+            box-shadow: 0 0 20px rgba(13, 110, 253, 0.6);
+        }
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .status-online {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .status-offline {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        .data-card {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .data-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .data-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        .color-picker-wrapper {
+            display: inline-block;
+            position: relative;
+        }
+        .color-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            border: 3px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .color-preview:hover {
+            border-color: #0d6efd;
+            transform: scale(1.05);
+        }
+        input[type="color"] {
+            opacity: 0;
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+        }
+        .schedule-item, .rule-item {
+            border-left: 4px solid #0d6efd;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .schedule-item.inactive, .rule-item.inactive {
+            border-left-color: #6c757d;
+            opacity: 0.6;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-cpu"></i> IoT Manager
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/khu-vuc">
+                            <i class="bi bi-diagram-3"></i> Khu vực
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/thiet-bi">
+                            <i class="bi bi-device-hdd"></i> Thiết bị
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="/thiet-bi">Quản lý thiết bị</a></li>
+                <li class="breadcrumb-item active" th:text="${device.tenThietBi}">Chi tiết thiết bị</li>
+            </ol>
+        </nav>
+
+        <!-- Section 1: Device Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Thông tin thiết bị
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Tên thiết bị:</th>
+                                <td th:text="${device.tenThietBi}">LED RGB</td>
+                            </tr>
+                            <tr>
+                                <th>Loại thiết bị:</th>
+                                <td th:text="${device.loaiThietBi?.tenLoai}">Đèn LED RGB</td>
+                            </tr>
+                            <tr>
+                                <th>Nhóm thiết bị:</th>
+                                <td th:text="${nhomThietBi}">CONTROLLER</td>
+                            </tr>
+                            <tr>
+                                <th>Khu vực:</th>
+                                <td th:text="${device.khuVuc?.tenKhuVuc}">Phòng khách</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Trạng thái:</th>
+                                <td>
+                                    <span class="status-badge" 
+                                          th:classappend="${device.trangThai == 'hoat_dong'} ? 'status-online' : 'status-offline'"
+                                          th:text="${device.trangThai == 'hoat_dong'} ? 'Hoạt động' : 'Không hoạt động'">
+                                        Hoạt động
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Ngày lắp đặt:</th>
+                                <td th:text="${#temporals.format(device.ngayLapDat, 'dd/MM/yyyy')}">01/01/2024</td>
+                            </tr>
+                            <tr>
+                                <th>Lần hoạt động cuối:</th>
+                                <td th:text="${device.lanHoatDongCuoi != null} ? ${#temporals.format(device.lanHoatDongCuoi, 'dd/MM/yyyy HH:mm:ss')} : 'Chưa có'">
+                                    01/01/2024 12:00:00
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Token:</th>
+                                <td>
+                                    <code th:text="${device.tokenThietBi}">abc-123-def-456</code>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Direct Controls (visible for CONTROLLER and ACTUATOR devices) -->
+        <div class="card mb-4" th:if="${nhomThietBi == 'CONTROLLER' or nhomThietBi == 'ACTUATOR'}">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-toggles"></i> Điều khiển trực tiếp
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Switch controls -->
+                    <div class="col-md-6">
+                        <h6>Điều khiển bật/tắt</h6>
+                        <div class="d-flex gap-3 mb-3">
+                            <button class="btn btn-success control-btn" onclick="sendCommand('ON')">
+                                <i class="bi bi-power"></i> BẬT
+                            </button>
+                            <button class="btn btn-danger control-btn" onclick="sendCommand('OFF')">
+                                <i class="bi bi-x-circle"></i> TẮT
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- RGB Color picker (for LED RGB devices) -->
+                    <div class="col-md-6" th:if="${device.loaiThietBi?.tenLoai?.toLowerCase().contains('rgb') or device.loaiThietBi?.tenLoai?.toLowerCase().contains('led')}">
+                        <h6>Chọn màu (RGB)</h6>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="color-picker-wrapper">
+                                <div class="color-preview" id="colorPreview" style="background-color: #ffffff;"></div>
+                                <input type="color" id="colorPicker" value="#ffffff">
+                            </div>
+                            <button class="btn btn-primary" onclick="sendColorCommand()">
+                                <i class="bi bi-palette"></i> Áp dụng màu
+                            </button>
+                            <div>
+                                <small class="text-muted">Màu hiện tại:</small><br>
+                                <code id="currentColor">#FFFFFF</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Real-time Data Display -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-broadcast"></i> Dữ liệu thời gian thực
+                    <span class="badge bg-light text-dark ms-2" id="connectionStatus">
+                        <i class="bi bi-circle-fill text-danger"></i> Đang kết nối...
+                    </span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row" id="realtimeDataContainer">
+                    <div class="col-md-12 text-center text-muted">
+                        <p><i class="bi bi-hourglass-split"></i> Đang chờ dữ liệu từ thiết bị...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Data History Charts -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Biểu đồ lịch sử dữ liệu
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Chọn khoảng thời gian:</label>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary active" onclick="loadChartData(1)">1 giờ</button>
+                        <button class="btn btn-outline-primary" onclick="loadChartData(6)">6 giờ</button>
+                        <button class="btn btn-outline-primary" onclick="loadChartData(24)">24 giờ</button>
+                        <button class="btn btn-outline-primary" onclick="loadChartData(168)">7 ngày</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="dataChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Section 5: Schedule Management -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-check"></i> Lịch trình tự động
+                        </h5>
+                        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                            <i class="bi bi-plus-lg"></i> Thêm
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="scheduleList">
+                            <p class="text-muted text-center">
+                                <i class="bi bi-calendar-x"></i> Chưa có lịch trình nào
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Rule Management -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> Luật ngưỡng
+                        </h5>
+                        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRuleModal">
+                            <i class="bi bi-plus-lg"></i> Thêm
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="ruleList">
+                            <p class="text-muted text-center">
+                                <i class="bi bi-shield-x"></i> Chưa có luật ngưỡng nào
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Schedule Modal -->
+    <div class="modal fade" id="addScheduleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-calendar-plus"></i> Thêm lịch trình
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="scheduleForm">
+                        <div class="mb-3">
+                            <label class="form-label">Tên lịch trình <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="scheduleName" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Thời gian bắt đầu <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="scheduleStartTime" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Thời gian kết thúc <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="scheduleEndTime" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Lệnh khi bắt đầu <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="scheduleStartCmd" placeholder="ON" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Lệnh khi kết thúc <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="scheduleEndCmd" placeholder="OFF" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ngày trong tuần <span class="text-danger">*</span></label>
+                            <select class="form-select" id="scheduleDays">
+                                <option value="*">Mỗi ngày</option>
+                                <option value="1,2,3,4,5">Thứ 2 - Thứ 6</option>
+                                <option value="0,6">Cuối tuần</option>
+                                <option value="1">Thứ 2</option>
+                                <option value="2">Thứ 3</option>
+                                <option value="3">Thứ 4</option>
+                                <option value="4">Thứ 5</option>
+                                <option value="5">Thứ 6</option>
+                                <option value="6">Thứ 7</option>
+                                <option value="0">Chủ nhật</option>
+                            </select>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="scheduleActive" checked>
+                            <label class="form-check-label" for="scheduleActive">Kích hoạt</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSchedule()">
+                        <i class="bi bi-save"></i> Lưu lịch trình
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Rule Modal -->
+    <div class="modal fade" id="addRuleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-shield-plus"></i> Thêm luật ngưỡng
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="ruleForm">
+                        <div class="mb-3">
+                            <label class="form-label">Tên trường dữ liệu <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ruleField" placeholder="temperature" required>
+                            <small class="text-muted">Ví dụ: temperature, humidity, brightness</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phép toán <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ruleOperator" required>
+                                    <option value=">">&gt; (Lớn hơn)</option>
+                                    <option value=">=">&gt;= (Lớn hơn hoặc bằng)</option>
+                                    <option value="<">&lt; (Nhỏ hơn)</option>
+                                    <option value="<=">&lt;= (Nhỏ hơn hoặc bằng)</option>
+                                    <option value="==">== (Bằng)</option>
+                                    <option value="!=">!= (Khác)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Giá trị ngưỡng <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="ruleThreshold" placeholder="30" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Hành động <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ruleAction" placeholder="OFF" required>
+                            <small class="text-muted">Lệnh sẽ được gửi khi điều kiện thỏa mãn</small>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="ruleActive" checked>
+                            <label class="form-check-label" for="ruleActive">Kích hoạt</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" onclick="saveRule()">
+                        <i class="bi bi-save"></i> Lưu luật
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/js/sockjs.min.js"></script>
+    <script src="/js/stomp.min.js"></script>
+    
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const deviceId = /*[[${deviceId}]]*/ 0;
+        const deviceName = /*[[${device.tenThietBi}]]*/ '';
+        const nhomThietBi = /*[[${nhomThietBi}]]*/ 'SENSOR';
+        
+        let stompClient = null;
+        let dataChart = null;
+        let realtimeData = {};
+        
+        // WebSocket connection
+        function connectWebSocket() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('Connected: ' + frame);
+                updateConnectionStatus(true);
+                
+                // Subscribe to device-specific channel
+                stompClient.subscribe('/topic/device/' + deviceId, function(message) {
+                    const data = JSON.parse(message.body);
+                    updateRealtimeData(data);
+                });
+            }, function(error) {
+                console.error('WebSocket error:', error);
+                updateConnectionStatus(false);
+                // Reconnect after 5 seconds
+                setTimeout(connectWebSocket, 5000);
+            });
+        }
+        
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.innerHTML = '<i class="bi bi-circle-fill text-success"></i> Đã kết nối';
+            } else {
+                statusEl.innerHTML = '<i class="bi bi-circle-fill text-danger"></i> Mất kết nối';
+            }
+        }
+        
+        function updateRealtimeData(data) {
+            console.log('Received data:', data);
+            
+            // Update realtime data object
+            if (data.type) {
+                realtimeData[data.type] = data.value || data.state;
+            }
+            
+            // Render data cards
+            const container = document.getElementById('realtimeDataContainer');
+            container.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(realtimeData)) {
+                const col = document.createElement('div');
+                col.className = 'col-md-3';
+                col.innerHTML = `
+                    <div class="data-card text-center">
+                        <div class="data-label">${key}</div>
+                        <div class="data-value">${value}</div>
+                    </div>
+                `;
+                container.appendChild(col);
+            }
+        }
+        
+        // Send command to device
+        function sendCommand(command) {
+            $.ajax({
+                url: '/api/commands/send',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    maThietBi: deviceId,
+                    tenLenh: command,
+                    giaTriLenh: null
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Lệnh đã được gửi thành công!', 'success');
+                    }
+                },
+                error: function(xhr) {
+                    showToast('Lỗi khi gửi lệnh: ' + xhr.responseText, 'danger');
+                }
+            });
+        }
+        
+        // Send RGB color command
+        function sendColorCommand() {
+            const color = document.getElementById('colorPicker').value;
+            // Convert hex to RGB
+            const r = parseInt(color.substr(1,2), 16);
+            const g = parseInt(color.substr(3,2), 16);
+            const b = parseInt(color.substr(5,2), 16);
+            
+            $.ajax({
+                url: '/api/commands/send',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    maThietBi: deviceId,
+                    tenLenh: 'RGB',
+                    giaTriLenh: `${r},${g},${b}`
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        document.getElementById('currentColor').textContent = color.toUpperCase();
+                        showToast('Màu đã được cập nhật!', 'success');
+                    }
+                },
+                error: function(xhr) {
+                    showToast('Lỗi khi gửi lệnh: ' + xhr.responseText, 'danger');
+                }
+            });
+        }
+        
+        // Color picker preview
+        document.addEventListener('DOMContentLoaded', function() {
+            const colorPicker = document.getElementById('colorPicker');
+            const colorPreview = document.getElementById('colorPreview');
+            
+            if (colorPicker && colorPreview) {
+                colorPicker.addEventListener('input', function() {
+                    colorPreview.style.backgroundColor = this.value;
+                });
+            }
+        });
+        
+        // Load chart data
+        function loadChartData(hours) {
+            const endTime = new Date();
+            const startTime = new Date(endTime.getTime() - hours * 60 * 60 * 1000);
+            
+            $.ajax({
+                url: `/api/data-logs/history/${deviceId}`,
+                method: 'GET',
+                data: {
+                    startTime: startTime.toISOString(),
+                    endTime: endTime.toISOString()
+                },
+                success: function(data) {
+                    renderChart(data);
+                },
+                error: function(xhr) {
+                    console.error('Error loading chart data:', xhr);
+                }
+            });
+        }
+        
+        function renderChart(data) {
+            const ctx = document.getElementById('dataChart');
+            
+            // Group data by field name
+            const datasets = {};
+            data.forEach(item => {
+                if (!datasets[item.tenTruong]) {
+                    datasets[item.tenTruong] = {
+                        label: item.tenTruong,
+                        data: [],
+                        borderColor: getRandomColor(),
+                        tension: 0.4
+                    };
+                }
+                datasets[item.tenTruong].data.push({
+                    x: new Date(item.thoiGian),
+                    y: parseFloat(item.giaTri)
+                });
+            });
+            
+            if (dataChart) {
+                dataChart.destroy();
+            }
+            
+            dataChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: Object.values(datasets)
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function getRandomColor() {
+            const colors = [
+                '#0d6efd', '#6f42c1', '#d63384', '#dc3545', 
+                '#fd7e14', '#ffc107', '#198754', '#20c997'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        // Load schedules
+        function loadSchedules() {
+            $.ajax({
+                url: `/api/schedules/device/${deviceId}`,
+                method: 'GET',
+                success: function(schedules) {
+                    renderSchedules(schedules);
+                },
+                error: function(xhr) {
+                    console.error('Error loading schedules:', xhr);
+                }
+            });
+        }
+        
+        function renderSchedules(schedules) {
+            const container = document.getElementById('scheduleList');
+            
+            if (schedules.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center"><i class="bi bi-calendar-x"></i> Chưa có lịch trình nào</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            schedules.forEach(schedule => {
+                const div = document.createElement('div');
+                div.className = 'schedule-item' + (schedule.kichHoat ? '' : ' inactive');
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${schedule.tenLichTrinh}</strong>
+                            <br>
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i> ${schedule.thoiGianBatDau} - ${schedule.thoiGianKetThuc}
+                                <br>
+                                <i class="bi bi-calendar3"></i> ${getDayNames(schedule.ngayTrongTuan)}
+                                <br>
+                                <i class="bi bi-lightning"></i> ${schedule.lenhKhiBatDau} → ${schedule.lenhKhiKetThuc}
+                            </small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${schedule.maLichTrinh})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        function getDayNames(dayString) {
+            if (dayString === '*') return 'Mỗi ngày';
+            const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+            return dayString.split(',').map(d => days[parseInt(d)]).join(', ');
+        }
+        
+        function saveSchedule() {
+            const schedule = {
+                maThietBi: deviceId,
+                tenLichTrinh: document.getElementById('scheduleName').value,
+                thoiGianBatDau: document.getElementById('scheduleStartTime').value,
+                thoiGianKetThuc: document.getElementById('scheduleEndTime').value,
+                lenhKhiBatDau: document.getElementById('scheduleStartCmd').value,
+                lenhKhiKetThuc: document.getElementById('scheduleEndCmd').value,
+                ngayTrongTuan: document.getElementById('scheduleDays').value,
+                kichHoat: document.getElementById('scheduleActive').checked
+            };
+            
+            $.ajax({
+                url: '/api/schedules',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(schedule),
+                success: function(response) {
+                    showToast('Lịch trình đã được tạo!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addScheduleModal')).hide();
+                    document.getElementById('scheduleForm').reset();
+                    loadSchedules();
+                },
+                error: function(xhr) {
+                    showToast('Lỗi khi tạo lịch trình: ' + xhr.responseText, 'danger');
+                }
+            });
+        }
+        
+        function deleteSchedule(id) {
+            if (!confirm('Bạn có chắc muốn xóa lịch trình này?')) return;
+            
+            $.ajax({
+                url: `/api/schedules/${id}`,
+                method: 'DELETE',
+                success: function() {
+                    showToast('Lịch trình đã được xóa!', 'success');
+                    loadSchedules();
+                },
+                error: function(xhr) {
+                    showToast('Lỗi khi xóa lịch trình: ' + xhr.responseText, 'danger');
+                }
+            });
+        }
+        
+        // Load rules
+        function loadRules() {
+            $.ajax({
+                url: `/api/rules/device/${deviceId}`,
+                method: 'GET',
+                success: function(rules) {
+                    renderRules(rules);
+                },
+                error: function(xhr) {
+                    console.error('Error loading rules:', xhr);
+                }
+            });
+        }
+        
+        function renderRules(rules) {
+            const container = document.getElementById('ruleList');
+            
+            if (rules.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center"><i class="bi bi-shield-x"></i> Chưa có luật ngưỡng nào</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            rules.forEach(rule => {
+                const div = document.createElement('div');
+                div.className = 'rule-item' + (rule.kichHoat ? '' : ' inactive');
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${rule.tenTruong} ${rule.phepToan} ${rule.giaTriNguong}</strong>
+                            <br>
+                            <small class="text-muted">
+                                <i class="bi bi-lightning-fill"></i> Hành động: <code>${rule.lenhHanhDong || 'N/A'}</code>
+                            </small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-danger" onclick="deleteRule(${rule.maLuat})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        function saveRule() {
+            const rule = {
+                maThietBi: deviceId,
+                tenTruong: document.getElementById('ruleField').value,
+                phepToan: document.getElementById('ruleOperator').value,
+                giaTriNguong: document.getElementById('ruleThreshold').value,
+                lenhHanhDong: document.getElementById('ruleAction').value,
+                kichHoat: document.getElementById('ruleActive').checked
+            };
+            
+            $.ajax({
+                url: '/api/rules',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(rule),
+                success: function(response) {
+                    showToast('Luật ngưỡng đã được tạo!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addRuleModal')).hide();
+                    document.getElementById('ruleForm').reset();
+                    loadRules();
+                },
+                error: function(xhr) {
+                    showToast('Lỗi khi tạo luật: ' + xhr.responseText, 'danger');
+                }
+            });
+        }
+        
+        function deleteRule(id) {
+            if (!confirm('Bạn có chắc muốn xóa luật này?')) return;
+            
+            $.ajax({
+                url: `/api/rules/${id}`,
+                method: 'DELETE',
+                success: function() {
+                    showToast('Luật đã được xóa!', 'success');
+                    loadRules();
+                },
+                error: function(xhr) {
+                    showToast('Lỗi khi xóa luật: ' + xhr.responseText, 'danger');
+                }
+            });
+        }
+        
+        function showToast(message, type) {
+            // Simple alert for now, can be replaced with a toast library
+            alert(message);
+        }
+        
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/login')
+                    .catch(err => console.error('Logout error:', err));
+            }
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            connectWebSocket();
+            loadChartData(1);
+            loadSchedules();
+            loadRules();
+        });
+        /*]]>*/
+    </script>
+</body>
+</html>

@@ -12,6 +12,9 @@ public interface KhuVucRepository extends JpaRepository<KhuVuc, Long> {
     // Tìm tất cả khu vực của một người dùng
     List<KhuVuc> findByChuSoHuu_MaNguoiDung(Long maNguoiDung);
     
+    // Đếm số khu vực của một người dùng
+    Long countByChuSoHuu_MaNguoiDung(Long maNguoiDung);
+    
     // Tìm tất cả khu vực gốc (không có cha) của một người dùng
     List<KhuVuc> findByChuSoHuu_MaNguoiDungAndKhuVucChaIsNull(Long maNguoiDung);
     

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Đăng ký - IoT Manager</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom Auth CSS -->
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-container">
+            <div class="auth-card">
+                <!-- Logo & Title -->
+                <div class="auth-logo">
+                    <i class="fas fa-user-plus"></i>
+                    <h2>Tạo tài khoản mới</h2>
+                    <p>Đăng ký để bắt đầu quản lý thiết bị IoT</p>
+                </div>
+
+                <!-- Register Form -->
+                <form id="registerForm" class="auth-form">
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i> Email
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email"
+                                   placeholder="email@example.com" 
+                                   required>
+                        </div>
+                        <small class="text-muted">Email sẽ được sử dụng để xác thực tài khoản</small>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-1"></i> Mật khẩu
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-key"></i>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password"
+                                   placeholder="Tối thiểu 6 ký tự" 
+                                   required
+                                   minlength="6">
+                            <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+                        </div>
+                        <!-- Password Strength Indicator -->
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="strengthBar"></div>
+                        </div>
+                        <small id="strengthText" class="text-muted"></small>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">
+                            <i class="fas fa-lock me-1"></i> Xác nhận mật khẩu
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-key"></i>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="confirmPassword" 
+                                   name="confirmPassword"
+                                   placeholder="Nhập lại mật khẩu" 
+                                   required>
+                            <i class="fas fa-eye password-toggle" id="toggleConfirmPassword"></i>
+                        </div>
+                    </div>
+
+                    <!-- Terms & Conditions -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                        <label class="form-check-label" for="agreeTerms">
+                            Tôi đồng ý với <a href="#" class="text-decoration-none">Điều khoản sử dụng</a> 
+                            và <a href="#" class="text-decoration-none">Chính sách bảo mật</a>
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-auth-primary">
+                        <i class="fas fa-user-plus me-2"></i> Đăng ký
+                    </button>
+
+                    <!-- Loading Spinner -->
+                    <div class="auth-loading" id="loadingSpinner">
+                        <div class="spinner-border text-primary spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>Đang tạo tài khoản...</span>
+                    </div>
+                </form>
+
+                <!-- Divider -->
+                <div class="auth-divider">
+                    <span>hoặc</span>
+                </div>
+
+                <!-- Login Link -->
+                <div class="auth-links">
+                    <p class="mb-0">
+                        Đã có tài khoản? 
+                        <a th:href="@{/auth/login}">
+                            <strong>Đăng nhập ngay</strong>
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="auth-footer">
+                <p class="mb-0">&copy; 2025 IoT Manager. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Custom Script -->
+    <script>
+        $(document).ready(function() {
+            // Toggle password visibility
+            $('#togglePassword').click(function() {
+                togglePasswordVisibility('#password', $(this));
+            });
+
+            $('#toggleConfirmPassword').click(function() {
+                togglePasswordVisibility('#confirmPassword', $(this));
+            });
+
+            function togglePasswordVisibility(inputId, icon) {
+                const input = $(inputId);
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            }
+
+            // Password strength checker
+            $('#password').on('input', function() {
+                const password = $(this).val();
+                let strength = 0;
+                let strengthText = '';
+                let strengthClass = '';
+
+                if (password.length === 0) {
+                    $('#strengthBar').removeClass().addClass('password-strength-bar');
+                    $('#strengthText').text('');
+                    return;
+                }
+
+                if (password.length >= 6) strength++;
+                if (password.length >= 10) strength++;
+                if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+                if (/\d/.test(password)) strength++;
+                if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+                if (strength <= 2) {
+                    strengthClass = 'strength-weak';
+                    strengthText = 'Mật khẩu yếu';
+                } else if (strength <= 3) {
+                    strengthClass = 'strength-medium';
+                    strengthText = 'Mật khẩu trung bình';
+                } else {
+                    strengthClass = 'strength-strong';
+                    strengthText = 'Mật khẩu mạnh';
+                }
+
+                $('#strengthBar').removeClass().addClass('password-strength-bar ' + strengthClass);
+                $('#strengthText').text(strengthText);
+            });
+
+            // Handle form submission
+            $('#registerForm').submit(function(e) {
+                e.preventDefault();
+                
+                const email = $('#email').val();
+                const password = $('#password').val();
+                const confirmPassword = $('#confirmPassword').val();
+                const agreeTerms = $('#agreeTerms').is(':checked');
+                
+                // Validation
+                if (!email || !password || !confirmPassword) {
+                    showAlert('Vui lòng nhập đầy đủ thông tin!', 'error');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showAlert('Mật khẩu phải có ít nhất 6 ký tự!', 'error');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    showAlert('Mật khẩu xác nhận không khớp!', 'error');
+                    return;
+                }
+                
+                if (!agreeTerms) {
+                    showAlert('Vui lòng đồng ý với điều khoản sử dụng!', 'error');
+                    return;
+                }
+                
+                // Show loading
+                $('#loadingSpinner').addClass('active');
+                $(this).find('button[type="submit"]').prop('disabled', true);
+                
+                // Call API
+                $.ajax({
+                    url: '/api/auth/register',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        email: email,
+                        password: password
+                    }),
+                    success: function(response) {
+                        showAlert('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác thực.', 'success');
+                        
+                        // Redirect to verify page after 2 seconds
+                        setTimeout(function() {
+                            window.location.href = '/auth/verify-account?email=' + encodeURIComponent(email);
+                        }, 2000);
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Đăng ký thất bại!';
+                        
+                        if (xhr.responseText) {
+                            errorMessage = xhr.responseText;
+                        } else if (xhr.status === 400) {
+                            errorMessage = 'Email đã tồn tại hoặc thông tin không hợp lệ!';
+                        }
+                        
+                        showAlert(errorMessage, 'error');
+                    },
+                    complete: function() {
+                        $('#loadingSpinner').removeClass('active');
+                        $('#registerForm button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            });
+
+            // Helper function to show alerts
+            function showAlert(message, type) {
+                const alertClass = type === 'success' ? 'auth-alert-success' : 'auth-alert-error';
+                const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+                
+                const alertHtml = `
+                    <div class="auth-alert ${alertClass}">
+                        <i class="fas ${iconClass}"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                // Remove existing alerts
+                $('.auth-alert').remove();
+                
+                // Add new alert
+                $('.auth-logo').after(alertHtml);
+            }
+        });
+    </script>
+</body>
+</html>

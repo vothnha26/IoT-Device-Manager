@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Người dùng - IoT Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/theme.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #e9ecef;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #sidebar {
+            min-height: 100vh;
+            width: 240px;
+            min-width: 240px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            transition: width 0.3s;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-brand {
+            padding: 20px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-brand img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+        }
+
+        .sidebar-brand-text {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        #sidebar .nav-link {
+            padding: 15px 20px;
+            text-align: left;
+            color: rgba(255,255,255,0.6);
+            transition: all 0.3s;
+            position: relative;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        #sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.05);
+        }
+
+        #sidebar .nav-link.active {
+            color: white;
+            background: rgba(52, 152, 219, 0.2);
+            border-left-color: #3498db;
+        }
+
+        #sidebar .nav-link i {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        #sidebar .nav-link span {
+            font-size: 14px;
+        }
+
+        .main-content {
+            margin-left: 240px;
+            min-height: 100vh;
+            background-color: #e9ecef;
+        }
+
+        .top-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar-header {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #e74c3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .content-area {
+            padding: 25px 30px;
+        }
+
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .filter-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .users-table-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 25px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .user-table {
+            width: 100%;
+        }
+
+        .user-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .user-table td {
+            padding: 15px 12px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .user-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .badge-role {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-user {
+            background: #3498db;
+            color: white;
+        }
+
+        .badge-manager {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 3px;
+        }
+
+        .action-btn.view {
+            background: #3498db;
+            color: white;
+        }
+
+        .action-btn.view:hover {
+            background: #2980b9;
+        }
+
+        .action-btn.toggle {
+            background: #f39c12;
+            color: white;
+        }
+
+        .action-btn.toggle:hover {
+            background: #e67e22;
+        }
+
+        .action-btn.toggle.inactive {
+            background: #27ae60;
+        }
+
+        .action-btn.toggle.inactive:hover {
+            background: #229954;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .stat-icon.total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-icon.active {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .stat-icon.inactive {
+            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+        }
+
+        .stat-info h3 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .stat-info p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #bdc3c7;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h5 {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-brand">
+            <img src="https://ui-avatars.com/api/?name=IoT&background=3498db&color=fff&size=128" alt="Logo">
+            <span class="sidebar-brand-text">IoT Manager</span>
+        </div>
+        <ul class="nav flex-column flex-grow-1 mt-2">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>Bảng điều khiển</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/profile">
+                    <i class="fas fa-user"></i>
+                    <span>Thông tin cá nhân</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/khu-vuc">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>Quản lý khu vực</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/thiet-bi">
+                    <i class="fas fa-microchip"></i>
+                    <span>Quản lý thiết bị</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Dữ liệu cảm biến</span>
+                </a>
+            </li>
+            <li class="nav-item mt-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <a class="nav-link active" href="/admin/users">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Quản lý Người dùng</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/packages">
+                    <i class="fas fa-box"></i>
+                    <span>Quản lý Gói cước</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/device-types">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Quản lý Loại thiết bị</span>
+                </a>
+            </li>
+        </ul>
+        <div class="p-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <button class="btn btn-danger btn-sm w-100" onclick="logout()">
+                <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <div class="top-header">
+            <h5 class="mb-0" style="color: #2c3e50;">
+                <i class="fas fa-users-cog me-2"></i>
+                Quản lý Người dùng
+            </h5>
+            <div class="user-info">
+                <div class="user-avatar-header">
+                    <span th:text="${username != null ? #strings.substring(username, 0, 1).toUpperCase() : 'A'}">A</span>
+                </div>
+                <div>
+                    <div style="font-size: 14px; color: #2c3e50;">
+                        <strong th:text="${username}">Admin</strong>
+                    </div>
+                    <div style="font-size: 12px; color: #7f8c8d;">
+                        Quản trị viên
+                    </div>
+                </div>
+                <button class="btn btn-link" onclick="logout()" title="Đăng xuất">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">Quản lý Người dùng</h1>
+                <p class="page-subtitle">Quản lý tài khoản người dùng trong hệ thống IoT</p>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Tổng số người dùng</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon active">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activeUsers">0</h3>
+                        <p>Người dùng kích hoạt</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon inactive">
+                        <i class="fas fa-user-slash"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="inactiveUsers">0</h3>
+                        <p>Người dùng vô hiệu hóa</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Card -->
+            <div class="filter-card">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="searchInput" placeholder="🔍 Tìm kiếm theo tên, email...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="roleFilter">
+                            <option value="">Tất cả vai trò</option>
+                            <option value="ROLE_USER">Người dùng</option>
+                            <option value="ROLE_MANAGER">Quản trị viên</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="true">Đã kích hoạt</option>
+                            <option value="false">Vô hiệu hóa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" onclick="applyFilters()">
+                            <i class="fas fa-filter me-2"></i>Lọc
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="users-table-card">
+                <div class="table-header">
+                    <h2 class="table-title">
+                        <i class="fas fa-list me-2"></i>
+                        Danh sách Người dùng
+                    </h2>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadUsers()">
+                        <i class="fas fa-sync-alt me-2"></i>Làm mới
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">#</th>
+                                <th>Người dùng</th>
+                                <th>Email</th>
+                                <th>Vai trò</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                                <th style="width: 150px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Đang tải dữ liệu...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div class="modal fade" id="userDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-badge"></i> Chi tiết Người dùng
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3">Thông tin cơ bản</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="text-muted">Tên đăng nhập:</td>
+                                    <td><strong id="detailUsername">-</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Email:</td>
+                                    <td id="detailEmail">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Vai trò:</td>
+                                    <td id="detailRoles">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Trạng thái:</td>
+                                    <td id="detailStatus">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Ngày tạo:</td>
+                                    <td id="detailCreated">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3">Thống kê sử dụng</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="text-muted">Khu vực:</td>
+                                    <td><strong id="detailAreas">0</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Thiết bị:</td>
+                                    <td><strong id="detailDevices">0</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Thiết bị hoạt động:</td>
+                                    <td><strong id="detailActiveDevices">0</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="text-muted mb-3">Danh sách Khu vực</h6>
+                    <div id="detailAreasList" class="mb-3">
+                        <p class="text-muted">Đang tải...</p>
+                    </div>
+                    
+                    <h6 class="text-muted mb-3">Danh sách Thiết bị</h6>
+                    <div id="detailDevicesList">
+                        <p class="text-muted">Đang tải...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        let allUsers = [];
+        const userDetailModal = new bootstrap.Modal(document.getElementById('userDetailModal'));
+
+        // Logout function
+        function logout() {
+            document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            window.location.href = '/auth/login';
+        }
+
+        // Load users from API
+        function loadUsers() {
+            $.ajax({
+                url: '/api/admin/users',
+                method: 'GET',
+                success: function(users) {
+                    allUsers = users;
+                    updateStatistics();
+                    renderUsers(users);
+                },
+                error: function(xhr) {
+                    console.error('Error loading users:', xhr);
+                    showError('Không thể tải danh sách người dùng');
+                }
+            });
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const total = allUsers.length;
+            const active = allUsers.filter(u => u.kichHoat).length;
+            const inactive = total - active;
+            
+            document.getElementById('totalUsers').textContent = total;
+            document.getElementById('activeUsers').textContent = active;
+            document.getElementById('inactiveUsers').textContent = inactive;
+        }
+
+        // Render users table
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <h5>Không có người dùng nào</h5>
+                                <p>Danh sách người dùng trống hoặc không khớp với bộ lọc.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            users.forEach((user, index) => {
+                const roles = user.vaiTro || [];
+                const isManager = roles.some(r => r.tenVaiTro === 'ROLE_MANAGER');
+                const avatarBg = isManager ? '#e74c3c' : '#3498db';
+                const initial = user.tenDangNhap ? user.tenDangNhap.charAt(0).toUpperCase() : 'U';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="user-avatar" style="background: ${avatarBg}">
+                                ${initial}
+                            </div>
+                            <strong>${user.tenDangNhap || 'N/A'}</strong>
+                        </div>
+                    </td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td>
+                        ${roles.map(r => {
+                            const isManagerRole = r.tenVaiTro === 'ROLE_MANAGER';
+                            return `<span class="badge-role ${isManagerRole ? 'badge-manager' : 'badge-user'}">
+                                ${isManagerRole ? 'Quản trị viên' : 'Người dùng'}
+                            </span>`;
+                        }).join('')}
+                    </td>
+                    <td>
+                        <span class="status-badge ${user.kichHoat ? 'status-active' : 'status-inactive'}">
+                            <i class="fas ${user.kichHoat ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                            ${user.kichHoat ? 'Đã kích hoạt' : 'Vô hiệu hóa'}
+                        </span>
+                    </td>
+                    <td>${user.ngayTao ? new Date(user.ngayTao).toLocaleDateString('vi-VN') : 'N/A'}</td>
+                    <td>
+                        <button class="action-btn view" onclick="viewUserDetail(${user.maNguoiDung})" title="Xem chi tiết">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn toggle ${!user.kichHoat ? 'inactive' : ''}" 
+                                onclick="toggleUserStatus(${user.maNguoiDung})" 
+                                title="${user.kichHoat ? 'Vô hiệu hóa' : 'Kích hoạt'}">
+                            <i class="fas ${user.kichHoat ? 'fa-ban' : 'fa-check'}"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let filtered = allUsers;
+            
+            // Search filter
+            if (searchTerm) {
+                filtered = filtered.filter(u => 
+                    (u.tenDangNhap && u.tenDangNhap.toLowerCase().includes(searchTerm)) ||
+                    (u.email && u.email.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Role filter
+            if (roleFilter) {
+                filtered = filtered.filter(u => 
+                    u.vaiTro && u.vaiTro.some(r => r.tenVaiTro === roleFilter)
+                );
+            }
+            
+            // Status filter
+            if (statusFilter !== '') {
+                const isActive = statusFilter === 'true';
+                filtered = filtered.filter(u => u.kichHoat === isActive);
+            }
+            
+            renderUsers(filtered);
+        }
+
+        // Toggle user status
+        function toggleUserStatus(userId) {
+            if (!confirm('Bạn có chắc muốn thay đổi trạng thái của người dùng này?')) {
+                return;
+            }
+            
+            $.ajax({
+                url: `/api/admin/users/${userId}/toggle-active`,
+                method: 'PUT',
+                success: function(response) {
+                    showSuccess(response.message || 'Đã cập nhật trạng thái người dùng');
+                    loadUsers();
+                },
+                error: function(xhr) {
+                    showError('Lỗi khi cập nhật trạng thái: ' + (xhr.responseText || 'Unknown error'));
+                }
+            });
+        }
+
+        // View user detail
+        function viewUserDetail(userId) {
+            // Load user info
+            $.ajax({
+                url: `/api/admin/users/${userId}`,
+                method: 'GET',
+                success: function(user) {
+                    displayUserDetail(user);
+                },
+                error: function(xhr) {
+                    showError('Không thể tải thông tin người dùng');
+                }
+            });
+            
+            // Load statistics
+            $.ajax({
+                url: `/api/admin/users/${userId}/statistics`,
+                method: 'GET',
+                success: function(stats) {
+                    document.getElementById('detailAreas').textContent = stats.totalAreas || 0;
+                    document.getElementById('detailDevices').textContent = stats.totalDevices || 0;
+                    document.getElementById('detailActiveDevices').textContent = stats.activeDevices || 0;
+                }
+            });
+            
+            // Load areas
+            $.ajax({
+                url: `/api/admin/users/${userId}/areas`,
+                method: 'GET',
+                success: function(areas) {
+                    const container = document.getElementById('detailAreasList');
+                    if (areas.length === 0) {
+                        container.innerHTML = '<p class="text-muted">Chưa có khu vực nào</p>';
+                    } else {
+                        container.innerHTML = areas.map(a => 
+                            `<span class="badge bg-primary me-2">${a.tenKhuVuc}</span>`
+                        ).join('');
+                    }
+                }
+            });
+            
+            // Load devices
+            $.ajax({
+                url: `/api/admin/users/${userId}/devices`,
+                method: 'GET',
+                success: function(devices) {
+                    const container = document.getElementById('detailDevicesList');
+                    if (devices.length === 0) {
+                        container.innerHTML = '<p class="text-muted">Chưa có thiết bị nào</p>';
+                    } else {
+                        container.innerHTML = devices.map(d => 
+                            `<span class="badge bg-success me-2">${d.tenThietBi}</span>`
+                        ).join('');
+                    }
+                }
+            });
+            
+            userDetailModal.show();
+        }
+
+        // Display user detail in modal
+        function displayUserDetail(user) {
+            document.getElementById('detailUsername').textContent = user.tenDangNhap || 'N/A';
+            document.getElementById('detailEmail').textContent = user.email || 'N/A';
+            
+            const roles = user.vaiTro || [];
+            document.getElementById('detailRoles').innerHTML = roles.map(r => {
+                const isManager = r.tenVaiTro === 'ROLE_MANAGER';
+                return `<span class="badge-role ${isManager ? 'badge-manager' : 'badge-user'}">
+                    ${isManager ? 'Quản trị viên' : 'Người dùng'}
+                </span>`;
+            }).join('');
+            
+            document.getElementById('detailStatus').innerHTML = `
+                <span class="status-badge ${user.kichHoat ? 'status-active' : 'status-inactive'}">
+                    ${user.kichHoat ? 'Đã kích hoạt' : 'Vô hiệu hóa'}
+                </span>
+            `;
+            
+            document.getElementById('detailCreated').textContent = 
+                user.ngayTao ? new Date(user.ngayTao).toLocaleString('vi-VN') : 'N/A';
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            // Simple alert for now, can be replaced with toast
+            alert('✅ ' + message);
+        }
+
+        // Show error message
+        function showError(message) {
+            alert('❌ ' + message);
+        }
+
+        // Real-time search
+        document.getElementById('searchInput').addEventListener('input', function() {
+            applyFilters();
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers();
+        });
+    </script>
+</body>
+</html>
