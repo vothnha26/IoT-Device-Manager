@@ -25,4 +25,13 @@ public class EmailService {
         message.setText("Mã xác thực/OTP của bạn là: " + code + "\nMã có hiệu lực trong 15 phút.");
         mailSender.send(message);
     }
+
+    public void sendSimpleEmail(String toEmail, String subject, String text) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(toEmail);
+        message.setSubject(subject);
+        message.setText(text);
+        mailSender.send(message);
+    }
 }

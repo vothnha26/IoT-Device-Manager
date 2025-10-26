@@ -1,9 +1,8 @@
 package com.iot.management.security;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -15,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import jakarta.servlet.http.Cookie;
 
 @Configuration
 @EnableWebSecurity
@@ -42,6 +43,7 @@ public class SecurityConfig {
                 .ignoringRequestMatchers("/logout")   
                 .ignoringRequestMatchers("/api/schedules/**")
                 .ignoringRequestMatchers("/api/package-limit/**")   // Ignore CSRF for all API endpoints
+                .ignoringRequestMatchers("/payment/**")
             )
             .cors(cors -> cors.disable())
             .authorizeHttpRequests(auth -> auth
@@ -52,6 +54,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/package-limit/**").permitAll()
                 // Auth UI pages (login, register, verify, forgot-password, reset-password)
                 .requestMatchers("/auth/**").permitAll()
+                // Allow SePay webhook to be called without authentication
+                .requestMatchers("/api/payments/webhook").permitAll()
+                // Allow unauthenticated users to view the checkout page (GET)
+                .requestMatchers(HttpMethod.GET, "/payment/create-payment/**").permitAll()
+                // Allow unauthenticated redirect to SePay checkout
+                .requestMatchers(HttpMethod.GET, "/payment/redirect/**").permitAll()
                 // H2 console and error page
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thanh toán - Kết quả</title>
+  <link rel="stylesheet" th:href="@{/css/theme.css}" />
+</head>
+<body>
+  <div style="max-width:800px;margin:3rem auto;padding:1.5rem;border:1px solid #e6e6e6;border-radius:8px;">
+    <h2>Kết quả thanh toán</h2>
+    <p>Trạng thái: <strong th:text="${status}">unknown</strong></p>
+    <div th:if="${order != null}">
+      <p>Đơn hàng: <strong th:text="${order.maDangKyGoi}">#</strong></p>
+      <p>Gói: <strong th:text="${order.goiCuoc.tenGoi}">Gói</strong></p>
+      <p>Số tiền: <strong th:text="${order.goiCuoc.giaTien}">0</strong></p>
+    </div>
+    <p>Nếu bạn không được chuyển hướng tự động, <a th:href="@{/}">bấm vào đây</a> để quay về trang chính.</p>
+  </div>
+</body>
+</html>
