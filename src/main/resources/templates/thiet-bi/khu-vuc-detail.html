@@ -23,7 +23,7 @@
                     <!-- Room info -->
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center">
-                            <h3 class="mb-0 fw-bold" style="background: linear-gradient(45deg, #2048bb, #4e73df); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            <h3 class="mb-0 fw-bold" style="background: linear-gradient(45deg, #2048bb, #4e73df); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                                 [[${khuVuc.tenKhuVuc}]]
                             </h3>
                             <span class="badge bg-info bg-opacity-10 text-info ms-2 px-2 py-1 rounded-pill">
@@ -37,7 +37,7 @@
                         <div class="d-flex align-items-center">
                             <div class="me-3">
                                 <div class="d-flex align-items-baseline">
-                                    <h3 class="mb-0 fw-light display-6 text-info">32.7</h3>
+                                    <h3 id="current-temp-value" class="mb-0 fw-light display-6 text-info">--</h3>
                                     <span class="fs-5 text-info">°C</span>
                                 </div>
                                 <small class="text-muted d-block">Nhiệt độ hiện tại</small>
@@ -45,6 +45,11 @@
                             <div class="temperature-icon rounded-circle p-2" style="background: linear-gradient(135deg, rgba(23,162,184,0.1) 0%, rgba(23,162,184,0.2) 100%);">
                                 <i class="bi bi-thermometer-half fs-3 text-info"></i>
                             </div>
+                        </div>
+                        <div class="mt-2 text-end">
+                            <a th:href="@{'/thiet-bi/khu-vuc/' + ${khuVuc.maKhuVuc} + '/thong-ke'}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-graph-up-arrow me-1"></i> Xem thống kê
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -437,7 +442,7 @@
         }
 
         function addDevice() {
-            const maxDevicesAllowed = /*[[${session.user.goi.soLuongDuAnToiDa}]]*/ 5;
+            const maxDevicesAllowed = /*[[${userPackage != null ? userPackage.slThietBiToiDa : 10}]]*/ 10;
             const currentDevicesCount = /*[[${#lists.size(khuVuc.thietBis)}]]*/ 0;
             
             if (currentDevicesCount >= maxDevicesAllowed) {
@@ -449,7 +454,7 @@
             const formData = new FormData(form);
             const data = {
                 loaiThietBi: { maLoaiThietBi: formData.get('loaiThietBi') },
-                khuVuc: { maKhuVuc: [[${khuVuc.maKhuVuc}]] },
+                khuVuc: { maKhuVuc: /*[[${khuVuc.maKhuVuc}]]*/ 1 },
                 tenThietBi: formData.get('tenThietBi'),
                 moTa: formData.get('moTa')
             };
@@ -590,6 +595,112 @@
                 }
             });
         }
+
+        // Real-time state sync from ESP32 via STOMP
+        (function initDeviceStateSync() {
+            try {
+                if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                    console.warn('SockJS/STOMP not available; skipping device state sync');
+                    return;
+                }
+                const socket = new SockJS('/stomp');
+                const stompClient = Stomp.over(socket);
+                // Optional: silence debug logs
+                if (stompClient && stompClient.debug) stompClient.debug = null;
+                stompClient.connect({}, function() {
+                    // Subscribe device 2
+                    stompClient.subscribe('/topic/devices/2/state', function(msg) {
+                        try {
+                            const data = JSON.parse(msg.body);
+                            const state = data.state || '';
+                            const isOn = state.toLowerCase() === 'hoat_dong';
+                            
+                            // Update main switch
+                            const mainSwitch = document.getElementById('switch-2');
+                            if (mainSwitch) {
+                                mainSwitch.checked = isOn;
+                                updateDeviceUI(2, isOn);
+                            }
+                            
+                        } catch (e) {
+                            console.warn('Failed to parse device 2 state:', msg.body);
+                        }
+                    });
+                    
+                    // Subscribe device 3
+                    stompClient.subscribe('/topic/devices/3/state', function(msg) {
+                        try {
+                            const data = JSON.parse(msg.body);
+                            const state = data.state || '';
+                            const isOn = state.toLowerCase() === 'hoat_dong';
+                            
+                            // Update main switch
+                            const mainSwitch = document.getElementById('switch-3');
+                            if (mainSwitch) {
+                                mainSwitch.checked = isOn;
+                                updateDeviceUI(3, isOn);
+                            }
+                        } catch (e) {
+                            console.warn('Failed to parse device 3 state:', msg.body);
+                        }
+                    });
+                }, function(err) {
+                    console.warn('STOMP connect failed:', err && err.body ? err.body : err);
+                });
+            } catch (e) {
+                console.warn('Device state sync init error:', e);
+            }
+        })();
+
+        // Real-time sensor data (temperature) subscription
+        (function initSensorRealtime() {
+            try {
+                const tempEl = document.getElementById('current-temp-value');
+                if (!tempEl) return;
+
+                // Hardcoded sensor deviceId for now; adjust if dynamic mapping is available
+                const SENSOR_DEVICE_ID = 4;
+
+                // Initialize with latest value (optional)
+                fetch(`/api/data-logs/device/${SENSOR_DEVICE_ID}`)
+                    .then(r => r.ok ? r.json() : [])
+                    .then(list => {
+                        if (Array.isArray(list)) {
+                            const latestTemp = list.find(it => (it.tenTruong || '').toLowerCase() === 'nhiet_do');
+                            if (latestTemp && typeof latestTemp.giaTriSo === 'number') {
+                                tempEl.textContent = latestTemp.giaTriSo.toFixed(1);
+                            }
+                        }
+                    })
+                    .catch(() => {});
+
+                if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                    console.warn('SockJS/STOMP not available; skipping sensor realtime');
+                    return;
+                }
+                const socket = new SockJS('/stomp');
+                const stompClient = Stomp.over(socket);
+                if (stompClient && stompClient.debug) stompClient.debug = null;
+                stompClient.connect({}, function () {
+                    // Subscribe to this sensor's topic
+                    stompClient.subscribe(`/topic/sensor/${SENSOR_DEVICE_ID}`, function (msg) {
+                        try {
+                            const data = JSON.parse(msg.body);
+                            // Expect payload: { deviceId, fieldName, value, type, timestamp }
+                            if ((data.fieldName || '').toLowerCase() === 'nhiet_do' && typeof data.value === 'number') {
+                                tempEl.textContent = Number(data.value).toFixed(1);
+                            }
+                        } catch (e) {
+                            // ignore parse errors
+                        }
+                    });
+                }, function (err) {
+                    console.warn('STOMP sensor connect failed:', err && err.body ? err.body : err);
+                });
+            } catch (e) {
+                console.warn('Sensor realtime init error:', e);
+            }
+        })();
             // Helper function to update device status display
             function updateDeviceStatus(container, isActive) {
                 const statusIndicator = container.find('.status-indicator');
@@ -893,14 +1004,177 @@
         }
 
         // Schedule Management
-        function showScheduleModal(deviceId) {
+        function showScheduleModal(deviceId, scheduleId = null) {
             const modal = $('#scheduleModal');
-            modal.find('form')[0].reset();
-            modal.find('[name="deviceId"]').val(deviceId);
+            const form = $('#scheduleForm');
+            
+            // Reset form
+            form[0].reset();
+            form.find('[name="deviceId"]').val(deviceId);
+            
+            // Update modal title and mode
+            if (scheduleId) {
+                modal.find('.modal-title').text('Chỉnh sửa lịch trình');
+                modal.data('editMode', scheduleId);
+                $('#formTabLabel').text('Chỉnh sửa');
+                $('#saveScheduleBtn').text('Cập nhật');
+                
+                // Show form tab
+                $('#form-tab').tab('show');
+                
+                // Load schedule data for editing
+                $.ajax({
+                    url: '/api/schedules/' + scheduleId,
+                    method: 'GET',
+                    success: function(schedule) {
+                        form.find('[name="tenLichTrinh"]').val(schedule.tenLichTrinh);
+                        form.find('[name="thoiGianBatDau"]').val(schedule.thoiGianBatDau);
+                        form.find('[name="thoiGianKetThuc"]').val(schedule.thoiGianKetThuc);
+                        form.find('[name="lenhKhiBatDau"]').val(schedule.lenhKhiBatDau);
+                        form.find('[name="lenhKhiKetThuc"]').val(schedule.lenhKhiKetThuc);
+                        form.find('[name="kichHoat"]').prop('checked', schedule.kichHoat);
+                        
+                        // Set selected days
+                        if (schedule.ngayTrongTuan !== '*') {
+                            const days = schedule.ngayTrongTuan.split(',');
+                            days.forEach(function(day) {
+                                form.find('[name="days"][value="' + day + '"]').prop('checked', true);
+                            });
+                        } else {
+                            // Select all days for '*'
+                            form.find('[name="days"]').prop('checked', true);
+                        }
+                    },
+                    error: function() {
+                        showToast('Không thể tải thông tin lịch trình', 'error');
+                    }
+                });
+            } else {
+                modal.find('.modal-title').text('Quản lý lịch trình');
+                modal.removeData('editMode');
+                $('#formTabLabel').text('Thêm mới');
+                $('#saveScheduleBtn').text('Lưu lịch trình');
+                
+                // Show list tab by default when adding new
+                $('#list-tab').tab('show');
+            }
+            
             modal.modal('show');
             
-            // Load existing schedules
-            loadDeviceSchedules(deviceId);
+            // Load and show schedules list in modal
+            loadModalSchedulesList(deviceId);
+        }
+
+        // Handle tab switching to reset edit mode when switching to form tab for new schedule
+        $('#form-tab').on('shown.bs.tab', function() {
+            const modal = $('#scheduleModal');
+            if (!modal.data('editMode')) {
+                $('#formTabLabel').text('Thêm mới');
+                $('#saveScheduleBtn').text('Lưu lịch trình');
+            }
+        });
+
+        // Handle save button visibility based on active tab
+        $('#scheduleTabs button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+            const target = $(e.target).attr('data-bs-target');
+            if (target === '#list-panel') {
+                $('#saveScheduleBtn').hide();
+            } else {
+                $('#saveScheduleBtn').show();
+            }
+        });
+
+        function loadModalSchedulesList(deviceId) {
+            const container = $('#modalSchedulesList');
+            
+            $.ajax({
+                url: '/api/schedules/device/' + deviceId,
+                method: 'GET',
+                success: function(schedules) {
+                    if (schedules && schedules.length > 0) {
+                        container.empty();
+                        schedules.forEach(function(schedule) {
+                            container.append(createModalScheduleItem(schedule));
+                        });
+                    } else {
+                        container.html(`
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-clock-history fs-1"></i>
+                                <p class="mb-0 mt-2">Chưa có lịch trình nào</p>
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    container.html(`
+                        <div class="text-center text-danger py-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <p class="mb-0">Không thể tải danh sách lịch trình</p>
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function createModalScheduleItem(schedule) {
+            const days = schedule.ngayTrongTuan === '*' ? 'Mỗi ngày' : 
+                        schedule.ngayTrongTuan.split(',').map(d => 'CN,T2,T3,T4,T5,T6,T7'.split(',')[d]).join(', ');
+            
+            const statusBadge = schedule.kichHoat 
+                ? '<span class="badge bg-success-subtle text-success">Đang hoạt động</span>'
+                : '<span class="badge bg-secondary-subtle text-secondary">Đã tắt</span>';
+            
+            const startAction = schedule.lenhKhiBatDau === 'hoat_dong' ? 'Bật' : 'Tắt';
+            const endAction = schedule.lenhKhiKetThuc === 'hoat_dong' ? 'Bật' : 'Tắt';
+            
+            return $(`
+                <div class="schedule-list-item p-3 mb-3 border rounded-3 bg-white">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <h6 class="mb-0 fw-bold">${schedule.tenLichTrinh}</h6>
+                                ${statusBadge}
+                            </div>
+                            
+                            <div class="row g-2 text-muted small">
+                                <div class="col-12">
+                                    <i class="bi bi-clock text-primary"></i>
+                                    <span class="fw-semibold">${schedule.thoiGianBatDau}</span>
+                                    <i class="bi bi-arrow-right mx-1"></i>
+                                    <span class="fw-semibold">${schedule.thoiGianKetThuc}</span>
+                                </div>
+                                <div class="col-12">
+                                    <i class="bi bi-calendar3 text-primary"></i>
+                                    <span>${days}</span>
+                                </div>
+                                <div class="col-12">
+                                    <i class="bi bi-lightning-charge text-primary"></i>
+                                    <span>Bắt đầu: <strong>${startAction}</strong> | Kết thúc: <strong>${endAction}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex flex-column gap-1 ms-3">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="editSchedule(${schedule.maLichTrinh}, ${schedule.thietBi.maThietBi})"
+                                    title="Chỉnh sửa">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       ${schedule.kichHoat ? 'checked' : ''}
+                                       onchange="toggleSchedule(${schedule.maLichTrinh}, this.checked, ${schedule.thietBi.maThietBi})"
+                                       title="Bật/Tắt">
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="deleteSchedule(${schedule.maLichTrinh}, ${schedule.thietBi.maThietBi})"
+                                    title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `);
         }
 
         function loadDeviceSchedules(deviceId) {
@@ -937,7 +1211,8 @@
             return $(`
                 <div class="schedule-item p-2 rounded-3 mb-2" style="background: rgba(248,249,250,0.5);">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div>
+                        <div class="flex-grow-1" style="cursor: pointer;" 
+                             onclick="showScheduleModal(${schedule.thietBi.maThietBi}, ${schedule.maLichTrinh})">
                             <div class="fw-semibold small">${schedule.tenLichTrinh}</div>
                             <div class="text-muted small">
                                 <i class="bi bi-clock me-1"></i>
@@ -948,14 +1223,20 @@
                                 ${days}
                             </div>
                         </div>
-                        <div class="d-flex align-items-center">
-                            <div class="form-check form-switch me-2">
+                        <div class="d-flex align-items-center gap-1">
+                            <button class="btn btn-sm btn-link text-primary p-1" 
+                                    onclick="event.stopPropagation(); showScheduleModal(${schedule.thietBi.maThietBi}, ${schedule.maLichTrinh})"
+                                    title="Chỉnh sửa">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <div class="form-check form-switch me-1">
                                 <input class="form-check-input" type="checkbox" role="switch"
                                        ${schedule.kichHoat ? 'checked' : ''}
-                                       onchange="toggleSchedule(${schedule.maLichTrinh}, this.checked)">
+                                       onchange="event.stopPropagation(); toggleSchedule(${schedule.maLichTrinh}, this.checked, ${schedule.thietBi.maThietBi})">
                             </div>
-                            <button class="btn btn-sm btn-link text-danger p-0" 
-                                    onclick="deleteSchedule(${schedule.maLichTrinh}, ${schedule.thietBi.maThietBi})">
+                            <button class="btn btn-sm btn-link text-danger p-1" 
+                                    onclick="event.stopPropagation(); deleteSchedule(${schedule.maLichTrinh}, ${schedule.thietBi.maThietBi})"
+                                    title="Xóa">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -964,15 +1245,23 @@
             `);
         }
 
+        function editSchedule(scheduleId, deviceId) {
+            showScheduleModal(deviceId, scheduleId);
+        }
+
         function saveSchedule() {
+            const modal = $('#scheduleModal');
             const form = $('#scheduleForm');
             const selectedDays = [];
             form.find('input[name="days"]:checked').each(function() {
                 selectedDays.push($(this).val());
             });
 
+            const deviceId = form.find('[name="deviceId"]').val();
+            const editMode = modal.data('editMode');
+
             const data = {
-                maThietBi: form.find('[name="deviceId"]').val(),
+                maThietBi: deviceId,
                 tenLichTrinh: form.find('[name="tenLichTrinh"]').val(),
                 thoiGianBatDau: form.find('[name="thoiGianBatDau"]').val(),
                 thoiGianKetThuc: form.find('[name="thoiGianKetThuc"]').val(),
@@ -982,23 +1271,30 @@
                 kichHoat: form.find('[name="kichHoat"]').prop('checked')
             };
 
+            // Check if in edit mode or create mode
+            const url = editMode ? '/api/schedules/' + editMode : '/api/schedules';
+            const method = editMode ? 'PUT' : 'POST';
+            const successMessage = editMode ? 'Đã cập nhật lịch trình thành công' : 'Đã tạo lịch trình thành công';
+
             $.ajax({
-                url: '/api/schedules',
-                method: 'POST',
+                url: url,
+                method: method,
                 contentType: 'application/json',
                 data: JSON.stringify(data),
                 success: function(response) {
-                    $('#scheduleModal').modal('hide');
-                    showToast('Đã tạo lịch trình thành công');
-                    loadDeviceSchedules(data.maThietBi);
+                    modal.modal('hide');
+                    showToast(successMessage);
+                    loadDeviceSchedules(deviceId);
+                    loadModalSchedulesList(deviceId);
                 },
-                error: function() {
-                    showToast('Không thể tạo lịch trình', 'error');
+                error: function(xhr) {
+                    const errorMsg = editMode ? 'Không thể cập nhật lịch trình' : 'Không thể tạo lịch trình';
+                    showToast(errorMsg, 'error');
                 }
             });
         }
 
-        function toggleSchedule(scheduleId, enabled) {
+        function toggleSchedule(scheduleId, enabled, deviceId) {
             $.ajax({
                 url: '/api/schedules/' + scheduleId,
                 method: 'PUT',
@@ -1006,6 +1302,10 @@
                 data: JSON.stringify({ kichHoat: enabled }),
                 success: function() {
                     showToast(enabled ? 'Đã kích hoạt lịch trình' : 'Đã vô hiệu hóa lịch trình');
+                    if (deviceId) {
+                        loadDeviceSchedules(deviceId);
+                        loadModalSchedulesList(deviceId);
+                    }
                 },
                 error: function() {
                     showToast('Không thể thay đổi trạng thái lịch trình', 'error');
@@ -1021,6 +1321,10 @@
                     success: function() {
                         showToast('Đã xóa lịch trình');
                         loadDeviceSchedules(deviceId);
+                        // Refresh modal list if modal is open
+                        if ($('#scheduleModal').hasClass('show')) {
+                            loadModalSchedulesList(deviceId);
+                        }
                     },
                     error: function() {
                         showToast('Không thể xóa lịch trình', 'error');
@@ -1053,96 +1357,96 @@
             }
         }
 
-        // Kiểm tra và thực thi lịch trình
+        // So sánh HH:mm (định dạng 0-padded) theo từ điển tương đương theo thời gian
+        function isWithinInterval(startHHmm, endHHmm, nowHHmm) {
+            // Lịch trong ngày (không qua đêm)
+            if (startHHmm <= endHHmm) {
+                return nowHHmm >= startHHmm && nowHHmm < endHHmm;
+            }
+            // Lịch qua đêm (ví dụ 22:00 -> 06:00)
+            return nowHHmm >= startHHmm || nowHHmm < endHHmm;
+        }
+
+        // Kiểm tra và thực thi lịch trình (idempotent theo trạng thái mong muốn)
         function checkAndExecuteSchedules() {
+            // Tránh gọi khi offline hoặc server đang restart (devtools)
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                console.warn('Skip schedule check: offline');
+                return;
+            }
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
                               now.getMinutes().toString().padStart(2, '0');
             const currentDay = now.getDay().toString(); // 0 = CN, 1-6 = T2-T7
             
-            console.log('Checking schedules at:', currentTime, 'Day:', currentDay);
-
             $('.device-card').each(function() {
                 const card = $(this);
                 const deviceId = card.find('.form-check-input[type="checkbox"]').attr('id').split('-')[1];
                 const deviceSwitch = card.find('.form-check-input[type="checkbox"]');
-                
-                console.log('Checking device:', deviceId);
 
                 $.ajax({
                     url: '/api/schedules/device/' + deviceId,
                     method: 'GET',
                     success: function(schedules) {
-                        console.log('Found schedules:', schedules);
                         
                         schedules.forEach(function(schedule) {
                             if (!schedule.kichHoat) {
-                                console.log('Schedule disabled:', schedule.tenLichTrinh);
                                 return;
                             }
 
                             const days = schedule.ngayTrongTuan === '*' ? 
                                        [...Array(7).keys()].map(i => i.toString()) : 
                                        schedule.ngayTrongTuan.split(',');
-                            
-                            console.log('Schedule:', schedule.tenLichTrinh);
-                            console.log('Current time:', currentTime, 'Start time:', schedule.thoiGianBatDau, 'End time:', schedule.thoiGianKetThuc);
-
-                            if (days.includes(currentDay)) {
-                                console.log('Day matches:', currentDay, 'is in', days);
-                                
-                                // Remove seconds from time strings
-                                const scheduledStartTime = schedule.thoiGianBatDau.substring(0, 5);
-                                const scheduledEndTime = schedule.thoiGianKetThuc.substring(0, 5);
-
-                                if (currentTime === scheduledStartTime) {
-                                    console.log('Start time matches!');
-                                    if (schedule.lenhKhiBatDau === 'hoat_dong') {
-                                        console.log('Executing ON command...');
-                                        deviceSwitch.prop('checked', true);
-                                        toggleDevice(deviceSwitch[0], true); // Skip AJAX call
-                                        $.ajax({
-                                            url: '/thiet-bi/' + deviceId + '/state',
-                                            type: 'PUT',
-                                            contentType: 'application/json',
-                                            data: JSON.stringify({ trangThai: 'hoat_dong' }),
-                                            success: function() {
-                                                console.log('Device state updated successfully');
-                                            },
-                                            error: function(err) {
-                                                console.error('Failed to update device state:', err);
-                                            }
-                                        });
-                                        showToast(`Tự động bật thiết bị theo lịch trình "${schedule.tenLichTrinh}"`);
-                                    }
-                                }
-                                else if (currentTime === scheduledEndTime) {
-                                    console.log('End time matches!');
-                                    if (schedule.lenhKhiKetThuc === 'tat') {
-                                        console.log('Executing OFF command...');
-                                        deviceSwitch.prop('checked', false);
-                                        toggleDevice(deviceSwitch[0], true); // Skip AJAX call
-                                        $.ajax({
-                                            url: '/thiet-bi/' + deviceId + '/state',
-                                            type: 'PUT',
-                                            contentType: 'application/json',
-                                            data: JSON.stringify({ trangThai: 'tat' }),
-                                            success: function() {
-                                                console.log('Device state updated successfully');
-                                            },
-                                            error: function(err) {
-                                                console.error('Failed to update device state:', err);
-                                            }
-                                        });
-                                        showToast(`Tự động tắt thiết bị theo lịch trình "${schedule.tenLichTrinh}"`);
-                                    }
-                                } else {
-                                    console.log('Time does not match any schedule');
-                                }
-                            } else {
-                                console.log('Day does not match:', currentDay, 'is not in', days);
+                            if (!days.includes(currentDay)) {
+                                return;
                             }
+
+                            // Chuẩn hóa về HH:mm (bỏ giây nếu có)
+                            const scheduledStartTime = (schedule.thoiGianBatDau || '00:00').substring(0, 5);
+                            const scheduledEndTime = (schedule.thoiGianKetThuc || '23:59').substring(0, 5);
+
+                            // Tính trạng thái mong muốn dựa trên khoảng thời gian
+                            const activeNow = isWithinInterval(scheduledStartTime, scheduledEndTime, currentTime);
+                            // Mặc định: đang trong khoảng -> mong muốn bật nếu lenhKhiBatDau='hoat_dong'; ngoài khoảng -> tắt
+                            const desiredOn = activeNow ? (schedule.lenhKhiBatDau === 'hoat_dong') : false;
+
+                            const currentOn = deviceSwitch.prop('checked');
+                            if (currentOn === desiredOn) {
+                                return;
+                            }
+
+                            // Gọi backend để áp dụng thay đổi trạng thái (idempotent)
+                            const prevOn = currentOn;
+                            const newState = desiredOn ? 'hoat_dong' : 'tat';
+                            // Cập nhật UI lạc quan để mượt mà, sẽ rollback nếu lỗi
+                            deviceSwitch.prop('checked', desiredOn);
+                            toggleDevice(deviceSwitch[0], true); // cập nhật UI, bỏ qua AJAX bên trong nếu có
+                            $.ajax({
+                                url: '/thiet-bi/' + deviceId + '/state',
+                                type: 'PUT',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ trangThai: newState }),
+                                success: function() {
+                                    showToast(`${desiredOn ? 'Tự động bật' : 'Tự động tắt'} thiết bị theo lịch trình "${schedule.tenLichTrinh}"`);
+                                },
+                                error: function(err) {
+                                    console.error('Failed to update device state:', err);
+                                    // Rollback UI nếu backend thất bại
+                                    deviceSwitch.prop('checked', prevOn);
+                                    toggleDevice(deviceSwitch[0], true);
+                                    showToast(`Không thể ${desiredOn ? 'bật' : 'tắt'} thiết bị theo lịch trình "${schedule.tenLichTrinh}"`, 'danger');
+                                }
+                            });
                         });
+                    }
+                ,
+                    error: function(xhr, status, err) {
+                        // Network/server unavailable -> bỏ qua, tránh spam lỗi console
+                        if (!xhr || xhr.status === 0) {
+                            console.warn('Schedule poll skipped (server unreachable) for device', deviceId);
+                            return;
+                        }
+                        console.warn('Schedule poll error for device', deviceId, 'status:', xhr.status, status || '', err || '');
                     }
                 });
             });
@@ -1156,100 +1460,131 @@
                 loadDeviceSchedules(deviceId);
             });
 
-            // Kiểm tra lịch trình mỗi phút
+            // Kiểm tra lịch trình mỗi 15 giây
             checkAndExecuteSchedules();
-            setInterval(checkAndExecuteSchedules, 60000);
+            setInterval(checkAndExecuteSchedules, 15000);
         });
     </script>
 
     <!-- Toast Container -->
     <!-- Schedule Modal -->
     <div class="modal fade" id="scheduleModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Quản lý lịch trình</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="scheduleForm" class="needs-validation" novalidate>
-                        <input type="hidden" name="deviceId">
-                        
-                        <!-- Tên lịch trình -->
-                        <div class="mb-3">
-                            <label class="form-label">Tên lịch trình</label>
-                            <input type="text" class="form-control" name="tenLichTrinh" required>
-                        </div>
-                        
-                        <!-- Thời gian -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Thời gian bắt đầu</label>
-                                <input type="time" class="form-control" name="thoiGianBatDau" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Thời gian kết thúc</label>
-                                <input type="time" class="form-control" name="thoiGianKetThuc" required>
-                            </div>
-                        </div>
-                        
-                        <!-- Ngày trong tuần -->
-                        <div class="mb-3">
-                            <label class="form-label d-block">Chọn ngày</label>
-                            <div class="btn-group" role="group">
-                                <input type="checkbox" class="btn-check" name="days" value="0" id="day0">
-                                <label class="btn btn-outline-primary" for="day0">CN</label>
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="scheduleTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="form-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#form-panel" type="button" role="tab">
+                                <i class="bi bi-pencil-square me-1"></i>
+                                <span id="formTabLabel">Thêm mới</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="list-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#list-panel" type="button" role="tab">
+                                <i class="bi bi-list-ul me-1"></i>
+                                Danh sách lịch trình
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="scheduleTabContent">
+                        <!-- Form Panel -->
+                        <div class="tab-pane fade show active" id="form-panel" role="tabpanel">
+                            <form id="scheduleForm" class="needs-validation" novalidate>
+                                <input type="hidden" name="deviceId">
                                 
-                                <input type="checkbox" class="btn-check" name="days" value="1" id="day1">
-                                <label class="btn btn-outline-primary" for="day1">T2</label>
+                                <!-- Tên lịch trình -->
+                                <div class="mb-3">
+                                    <label class="form-label">Tên lịch trình</label>
+                                    <input type="text" class="form-control" name="tenLichTrinh" required>
+                                </div>
                                 
-                                <input type="checkbox" class="btn-check" name="days" value="2" id="day2">
-                                <label class="btn btn-outline-primary" for="day2">T3</label>
+                                <!-- Thời gian -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Thời gian bắt đầu</label>
+                                        <input type="time" class="form-control" name="thoiGianBatDau" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Thời gian kết thúc</label>
+                                        <input type="time" class="form-control" name="thoiGianKetThuc" required>
+                                    </div>
+                                </div>
                                 
-                                <input type="checkbox" class="btn-check" name="days" value="3" id="day3">
-                                <label class="btn btn-outline-primary" for="day3">T4</label>
-                                
-                                <input type="checkbox" class="btn-check" name="days" value="4" id="day4">
-                                <label class="btn btn-outline-primary" for="day4">T5</label>
-                                
-                                <input type="checkbox" class="btn-check" name="days" value="5" id="day5">
-                                <label class="btn btn-outline-primary" for="day5">T6</label>
-                                
-                                <input type="checkbox" class="btn-check" name="days" value="6" id="day6">
-                                <label class="btn btn-outline-primary" for="day6">T7</label>
-                            </div>
+                                <!-- Ngày trong tuần -->
+                                <div class="mb-3">
+                                    <label class="form-label d-block">Chọn ngày</label>
+                                    <div class="btn-group" role="group">
+                                        <input type="checkbox" class="btn-check" name="days" value="0" id="day0">
+                                        <label class="btn btn-outline-primary" for="day0">CN</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="1" id="day1">
+                                        <label class="btn btn-outline-primary" for="day1">T2</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="2" id="day2">
+                                        <label class="btn btn-outline-primary" for="day2">T3</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="3" id="day3">
+                                        <label class="btn btn-outline-primary" for="day3">T4</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="4" id="day4">
+                                        <label class="btn btn-outline-primary" for="day4">T5</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="5" id="day5">
+                                        <label class="btn btn-outline-primary" for="day5">T6</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="6" id="day6">
+                                        <label class="btn btn-outline-primary" for="day6">T7</label>
+                                    </div>
+                                </div>
+
+                                <!-- Lệnh điều khiển -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Lệnh khi bắt đầu</label>
+                                        <select class="form-select" name="lenhKhiBatDau" required>
+                                            <option value="hoat_dong">Bật thiết bị</option>
+                                            <option value="tat">Tắt thiết bị</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Lệnh khi kết thúc</label>
+                                        <select class="form-select" name="lenhKhiKetThuc" required>
+                                            <option value="tat">Tắt thiết bị</option>
+                                            <option value="hoat_dong">Bật thiết bị</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Kích hoạt -->
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="kichHoat" checked>
+                                        <label class="form-check-label">Kích hoạt lịch trình</label>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
 
-                        <!-- Lệnh điều khiển -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Lệnh khi bắt đầu</label>
-                                <select class="form-select" name="lenhKhiBatDau" required>
-                                    <option value="hoat_dong">Bật thiết bị</option>
-                                    <option value="tat">Tắt thiết bị</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Lệnh khi kết thúc</label>
-                                <select class="form-select" name="lenhKhiKetThuc" required>
-                                    <option value="tat">Tắt thiết bị</option>
-                                    <option value="hoat_dong">Bật thiết bị</option>
-                                </select>
+                        <!-- List Panel -->
+                        <div class="tab-pane fade" id="list-panel" role="tabpanel">
+                            <div id="modalSchedulesList" class="schedules-list">
+                                <!-- Schedules will be loaded here -->
                             </div>
                         </div>
-
-                        <!-- Kích hoạt -->
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="kichHoat" checked>
-                                <label class="form-check-label">Kích hoạt lịch trình</label>
-                            </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-primary" onclick="saveSchedule()">Lưu lịch trình</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSchedule()" id="saveScheduleBtn">Lưu lịch trình</button>
                 </div>
             </div>
         </div>

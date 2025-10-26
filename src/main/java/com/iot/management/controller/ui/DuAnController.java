@@ -31,13 +31,28 @@ public class DuAnController {
 
     @GetMapping
     public String showDuAnList(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        NguoiDung nguoiDung = nguoiDungService.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        try {
+            if (userDetails == null) {
+                System.out.println("⚠️ User not authenticated, redirecting to login");
+                return "redirect:/auth/login";
+            }
+            
+            System.out.println("✅ User authenticated: " + userDetails.getUsername());
+            NguoiDung nguoiDung = nguoiDungService.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-        List<DuAn> duAns = duAnService.findAllByNguoiDung(nguoiDung);
-        
-        model.addAttribute("duAns", duAns);
-        return "du-an/index";
+            List<DuAn> duAns = duAnService.findAllByNguoiDung(nguoiDung);
+            System.out.println("📊 Found " + duAns.size() + " projects for user: " + nguoiDung.getEmail());
+            
+            model.addAttribute("duAns", duAns);
+            return "du-an/index";
+        } catch (Exception e) {
+            System.err.println("❌ Error loading projects: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("duAns", List.of());
+            return "du-an/index";
+        }
     }
 
     @PostMapping("/them-moi")

@@ -8,7 +8,7 @@ let pieSwitchObj = null;
 let currentSimId = null;
 
 function connect() {
-    const socket = new SockJS('/ws');
+    const socket = new SockJS('/stomp');
     const StompLib = window.Stomp || window.StompJs || window.StompJS;
 
     if (StompLib && StompLib.Client) {

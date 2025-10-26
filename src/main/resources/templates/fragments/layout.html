@@ -28,6 +28,8 @@
     <link th:href="@{/css/khu-vuc-detail.css}" rel="stylesheet">
     <link th:href="@{/css/footer.css}" rel="stylesheet">
     <link th:href="@{/css/layout-fix.css}" rel="stylesheet">
+    <!-- Notification styles -->
+    <link th:href="@{/css/notifications.css}" rel="stylesheet">
     
     <style>
         body {
@@ -115,7 +117,7 @@
     </style>
 </head>
 
-<body>
+<body sec:authorize="isAuthenticated()" th:attr="data-user-id=${#authentication.principal.maNguoiDung}">
     <nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-light fixed-top">
         <div class="container">
             <a class="navbar-brand" href="/">IoT Manager</a>
@@ -134,6 +136,10 @@
                 <ul class="navbar-nav">
                     <li class="nav-item" sec:authorize="!isAuthenticated()">
                         <a class="btn btn-primary ms-3" href="/auth/login">Đăng nhập</a>
+                    </li>
+                    <!-- Notification Bell -->
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <div th:replace="~{fragments/notification-bell :: notification-bell}"></div>
                     </li>
                     <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
@@ -182,6 +188,13 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- STOMP/SockJS for realtime updates -->
+    <script th:src="@{/js/sockjs.min.js}"></script>
+    <script th:src="@{/js/stomp.min.js}"></script>
+    
+    <!-- Notification WebSocket -->
+    <script th:src="@{/js/notifications.js}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 

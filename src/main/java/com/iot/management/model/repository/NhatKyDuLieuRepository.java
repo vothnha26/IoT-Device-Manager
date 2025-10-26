@@ -19,4 +19,12 @@ public interface NhatKyDuLieuRepository extends JpaRepository<NhatKyDuLieu, Long
     
     // Lấy 1 bản ghi mới nhất
     List<NhatKyDuLieu> findTop1ByThietBi_MaThietBiOrderByThoiGianDesc(Long maThietBi);
+
+    // Lấy theo thiết bị + tên trường (không phân biệt hoa thường) trong khoảng thời gian, tăng dần theo thời gian
+    List<NhatKyDuLieu> findByThietBi_MaThietBiAndTenTruongIgnoreCaseAndThoiGianBetweenOrderByThoiGianAsc(
+            Long maThietBi,
+            String tenTruong,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 }

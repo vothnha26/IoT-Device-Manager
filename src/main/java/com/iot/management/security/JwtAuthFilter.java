@@ -35,13 +35,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         String path = request.getRequestURI();
-         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
+        
+        // Skip filter cho static resources và public paths
+        if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
             || path.startsWith("/webjars/") || path.equals("/favicon.ico")
             || path.startsWith("/auth/") || path.startsWith("/api/auth/") || path.startsWith("/api/public/")
-            || path.startsWith("/h2-console/") || path.equals("/error")) {
-        filterChain.doFilter(request, response);
-        return;
-    }
+            || path.startsWith("/h2-console/") || path.equals("/error")
+            || path.equals("/") || path.equals("/dashboard")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         try {
             String token = null;
 
@@ -97,6 +101,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             System.err.println("Authentication error: " + e.getMessage());
+            // Nếu là expired token và path không yêu cầu auth, chỉ cần bỏ qua
+            if (e.getMessage().contains("expired") || e.getMessage().contains("JWT expired")) {
+                System.out.println("Token expired, continuing without authentication");
+                filterChain.doFilter(request, response);
+                return;
+            }
             e.printStackTrace();
             handleAuthError(response, e.getMessage());
         }

@@ -13,4 +13,7 @@ public interface NhatKyDuLieuService {
 
     // Lấy dữ liệu mới nhất của một thiết bị
     List<NhatKyDuLieu> getLatestData(Long deviceId);
+    
+    // Lưu nhật ký điều khiển thủ công (không cần token)
+    NhatKyDuLieu saveManualControlLog(Long deviceId, String fieldName, Boolean value);
 }

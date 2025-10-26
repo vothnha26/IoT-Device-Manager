@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
+<head>
+  <title th:fragment="title">Thống kê khu vực</title>
+</head>
+<body>
+<main th:fragment="main" class="bg-light py-4">
+  <div class="container-fluid px-4 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h3 class="mb-0 fw-bold" th:text="${khuVuc.tenKhuVuc} + ' - Thống kê'">Thống kê</h3>
+        <small class="text-muted">Khoảng thời gian: 2 giờ gần nhất, lấy mẫu mỗi 2 phút</small>
+      </div>
+      <a th:href="@{'/thiet-bi/khu-vuc/' + ${khuVuc.maKhuVuc}}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Quay lại khu vực
+      </a>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-xl-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="card-title mb-0">Nhiệt độ</h5>
+              <div class="text-success fw-bold"><span id="latest-temp">--</span> °C</div>
+            </div>
+            <div id="tempChart" style="height: 320px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="card-title mb-0">Độ ẩm</h5>
+              <div class="text-success fw-bold"><span id="latest-hum">--</span> %RH</div>
+            </div>
+            <div id="humChart" style="height: 320px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+      <div class="col-xl-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="card-title mb-0">Tổng thời gian thiết bị hoạt động</h5>
+              <div class="text-success fw-bold"><span id="total-on-hours">--</span> (Giờ)</div>
+            </div>
+            <div id="switchDonut" style="height: 340px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<th:block th:fragment="scripts">
+<script th:inline="javascript">
+(function(){
+  // Config
+  const SENSOR_DEVICE_ID = /*[[${sensorDeviceId}]]*/ 4;
+  const SWITCH_DEVICE_IDS = /*[[${switchDeviceIds}]]*/ [2,3];
+  const STEP_MINUTES = 2; // sample every 2 minutes
+  const now = new Date();
+  const endISO = new Date(now.getTime()).toISOString();
+  const startISO = new Date(now.getTime() - 2*60*60*1000).toISOString(); // last 2 hours
+
+  // Utils
+  function bucket2min(ts){
+    const d = new Date(ts);
+    d.setSeconds(0,0);
+    const m = d.getMinutes();
+    d.setMinutes(m - (m % STEP_MINUTES));
+    return d; // Date
+  }
+  function fmtTime(d){
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  }
+
+  // Fetch sensor time-series (2-minute buckets) using backend aggregation
+  fetch(`/api/data-logs/device/${SENSOR_DEVICE_ID}/timeseries?startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}&bucketMinutes=2&fields=nhiet_do,do_am`)
+   .then(r=>r.ok?r.json():null)
+   .then(res=>{
+      if(!res || !res.series){
+        renderTimeChart('tempChart','Nhiệt độ (°C)', [], '#1e90ff');
+        renderTimeChart('humChart','Độ ẩm (%RH)', [], '#00b894');
+        return;
+      }
+      let tempSeries = [];
+      let humSeries = [];
+      res.series.forEach(s=>{
+        if((s.field||'').toLowerCase()==='nhiet_do') tempSeries = s.data || [];
+        if((s.field||'').toLowerCase()==='do_am') humSeries = s.data || [];
+      });
+      // Latest values
+      const lastTemp = [...tempSeries].reverse().find(p=>p[1]!==null);
+      const lastHum  = [...humSeries].reverse().find(p=>p[1]!==null);
+      if(lastTemp) document.getElementById('latest-temp').textContent = Number(lastTemp[1]).toFixed(1);
+      if(lastHum) document.getElementById('latest-hum').textContent = Number(lastHum[1]).toFixed(1);
+      renderTimeChart('tempChart','Nhiệt độ (°C)', tempSeries, '#1e90ff');
+      renderTimeChart('humChart','Độ ẩm (%RH)', humSeries, '#00b894');
+   })
+   .catch(()=>{
+      renderTimeChart('tempChart','Nhiệt độ (°C)', [], '#1e90ff');
+      renderTimeChart('humChart','Độ ẩm (%RH)', [], '#00b894');
+   });
+
+  // Fetch operating time for switches using new API
+  const deviceIdsParam = SWITCH_DEVICE_IDS.join(',');
+  fetch(`/api/data-logs/devices/operating-time?deviceIds=${deviceIdsParam}&startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}`)
+    .then(r=>r.ok?r.json():[])
+    .then(results=>{
+      const labels = results.map(d=>d.deviceName||`Thiết bị ${d.deviceId}`);
+      const series = results.map(d=>d.totalOnHours||0);
+      const total = series.reduce((a,b)=>a+b,0);
+      document.getElementById('total-on-hours').textContent = total.toFixed(2);
+      renderDonut('switchDonut', labels, series);
+    })
+    .catch(()=>{
+      renderDonut('switchDonut', [], []);
+    });
+
+  // Charts
+  function renderTimeChart(elId, name, seriesData, color){
+    const options = {
+      chart: { type: 'line', height: 320, toolbar: {show:false}},
+      stroke: { curve: 'straight', width: 2 },
+      series: [{ name, data: seriesData }],
+      xaxis: { type: 'datetime', labels: { datetimeUTC: false } },
+      yaxis: { decimalsInFloat: 1 },
+      colors: [color],
+      noData: { text: 'Không có dữ liệu' }
+    };
+    const chart = new ApexCharts(document.querySelector('#'+elId), options);
+    chart.render();
+  }
+  function renderDonut(elId, labels, data){
+    const options = {
+      chart: { type: 'donut', height: 340 },
+      labels: labels,
+      series: data,
+      legend: { position: 'bottom' },
+      dataLabels: { formatter: (val, opts)=> data[opts.seriesIndex].toFixed(2) + 'h' }
+    };
+    const chart = new ApexCharts(document.querySelector('#'+elId), options);
+    chart.render();
+  }
+})();
+</script>
+</th:block>
+</body>
+</html>

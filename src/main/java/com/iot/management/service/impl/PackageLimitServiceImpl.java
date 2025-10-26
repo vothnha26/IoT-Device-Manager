@@ -22,21 +22,28 @@ public class PackageLimitServiceImpl implements PackageLimitService {
 
     @Override
     public void validateDeviceLimit(DuAn duAn) {
-        DangKyGoi dangKyGoi = validatePackageStatus(duAn); // ✅ Đổi chỗ và nhận luôn đối tượng
+        DangKyGoi dangKyGoi = validatePackageStatus(duAn);
         GoiCuoc goiCuoc = dangKyGoi.getGoiCuoc();
 
         if (goiCuoc == null) {
             throw new PackageExpiredException("Gói cước không hợp lệ");
         }
 
+        // Đếm số thiết bị hiện tại trong tất cả khu vực của dự án
         int currentDevices = duAn.getKhuVucs().stream()
-                .mapToInt(khuVuc -> khuVuc.getThietBis().size())
+                .mapToInt(khuVuc -> khuVuc.getThietBis() != null ? khuVuc.getThietBis().size() : 0)
                 .sum();
+        
+        int maxDevices = goiCuoc.getSlThietBiToiDa();
+        
+        System.out.println("🔍 Checking device limit for project: " + duAn.getMaDuAn());
+        System.out.println("   Current devices: " + currentDevices + " / Max: " + maxDevices);
+        System.out.println("   Package: " + goiCuoc.getTenGoi());
                 
-        if (currentDevices >= goiCuoc.getSlThietBiToiDa()) {
+        if (currentDevices >= maxDevices) {
             throw new PackageLimitExceededException(
                 "Số lượng thiết bị đã đạt giới hạn của gói cước (" + 
-                goiCuoc.getSlThietBiToiDa() + " thiết bị)"
+                maxDevices + " thiết bị). Hiện tại: " + currentDevices + " thiết bị"
             );
         }
     }

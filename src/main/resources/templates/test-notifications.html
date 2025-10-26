@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Notification Bell</title>
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Notification CSS -->
+    <link href="/css/notifications.css" rel="stylesheet">
+    
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .test-btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .test-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <!-- Store fake user ID for testing -->
+    <meta name="user-id" content="1">
+    
+    <div class="test-container">
+        <h1>Test Notification Bell</h1>
+        
+        <div class="test-header">
+            <div>
+                <h3>Notification Bell Test Page</h3>
+                <p>Click vào chuông để xem dropdown thông báo</p>
+            </div>
+            
+            <!-- Notification Bell -->
+            <div class="notification-bell-container">
+                <div class="notification-bell" onclick="toggleNotificationDropdown()">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-badge" id="notificationBadge">5</span>
+                </div>
+                
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <h3><i class="bi bi-bell"></i> Thông báo</h3>
+                        <button id="markAllAsRead"><i class="bi bi-check-all"></i></button>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <!-- Notification items will be loaded here -->
+                        <div class="notification-empty">
+                            <i class="bi bi-bell-slash"></i>
+                            <p>Đang tải thông báo...</p>
+                        </div>
+                    </div>
+                    <div class="notification-footer">
+                        <a href="/notifications" class="view-all-btn">
+                            <i class="bi bi-list-ul"></i> Xem tất cả thông báo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-actions">
+            <button class="test-btn" onclick="testCreateNotification()">Tạo thông báo test</button>
+            <button class="test-btn" onclick="testLoadNotifications()">Load thông báo</button>
+            <button class="test-btn" onclick="testUpdateBadge()">Update badge</button>
+            <button class="test-btn" onclick="showTestToast()">Show toast</button>
+        </div>
+        
+        <div class="test-info">
+            <h4>Console Output</h4>
+            <div id="consoleOutput" style="background: #f5f5f5; padding: 10px; border-radius: 4px; min-height: 200px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                Chờ test...
+            </div>
+        </div>
+    </div>
+    
+    <!-- STOMP/SockJS for WebSocket -->
+    <script src="/js/sockjs.min.js"></script>
+    <script src="/js/stomp.min.js"></script>
+    
+    <!-- Notification JS -->
+    <script src="/js/notifications.js"></script>
+    
+    <script>
+        // Override console.log to display in page
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        function appendToConsole(message, type = 'log') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'black';
+            consoleOutput.innerHTML += `<div style="color: ${color}; margin-bottom: 5px;">[${time}] ${message}</div>`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendToConsole('ERROR: ' + args.join(' '), 'error');
+        };
+        
+        // Test functions
+        function testCreateNotification() {
+            console.log('Creating test notification...');
+            fetch('/api/notifications/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    tieuDe: 'Thông báo test',
+                    noiDung: 'Đây là thông báo test được tạo lúc ' + new Date().toLocaleTimeString(),
+                    loai: 'THONG_TIN'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Test notification created:', data);
+                loadNotifications();
+                updateNotificationBadge();
+            })
+            .catch(error => console.error('Error creating test notification:', error));
+        }
+        
+        function testLoadNotifications() {
+            console.log('Manually loading notifications...');
+            loadNotifications();
+        }
+        
+        function testUpdateBadge() {
+            console.log('Manually updating badge...');
+            updateNotificationBadge();
+        }
+        
+        function showTestToast() {
+            console.log('Showing test toast...');
+            showNotificationToast({
+                tieuDe: 'Test Toast',
+                noiDung: 'Đây là test toast notification',
+                loaiThongBao: 'THONG_TIN'
+            });
+        }
+        
+        console.log('Test page loaded!');
+    </script>
+</body>
+</html>

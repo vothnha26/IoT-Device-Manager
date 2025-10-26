@@ -137,7 +137,6 @@
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-hibernate5-jakarta</artifactId>
 		</dependency>
-		
 	</dependencies>
 
 	<build>

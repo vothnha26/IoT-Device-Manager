@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -48,8 +49,14 @@ public class SecurityConfig {
                 // public API for authentication and public resources
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                // Allow preflight CORS requests if any
+                .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                 .requestMatchers("/api/schedules/**").permitAll()
                 .requestMatchers("/api/package-limit/**").permitAll()
+                // Allow unauthenticated device ingestion via token path; controller guards numeric IDs
+                .requestMatchers(HttpMethod.POST, "/api/data-logs/**").permitAll()
+                // Allow public read of data logs for charts (stats page)
+                .requestMatchers(HttpMethod.GET, "/api/data-logs/**").permitAll()
                 // Auth UI pages (login, register, verify, forgot-password, reset-password)
                 .requestMatchers("/auth/**").permitAll()
                 // H2 console and error page
@@ -59,13 +66,15 @@ public class SecurityConfig {
                 .requestMatchers("/", "/dashboard").permitAll()
                 .requestMatchers("/static/**", "/js/**", "/css/**", "/images/**", "/webjars/**").permitAll()
                 .requestMatchers("/favicon.ico").permitAll()
+                // WebSocket STOMP handshake (SockJS) endpoints for browser clients
+                .requestMatchers("/stomp", "/stomp/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/test/**").permitAll()
                 .requestMatchers("/videos/**").permitAll()
                 // Admin routes require ADMIN role
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                // API endpoints require authentication
+                // API endpoints require authentication (except those explicitly permitted above)
                 .requestMatchers("/api/**").authenticated()
                 .requestMatchers("/du-an/**").authenticated()
                 .requestMatchers("/thiet-bi/**").permitAll()
