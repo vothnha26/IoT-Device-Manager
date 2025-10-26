@@ -24,3 +24,17 @@ body { background:#f5f7fb; }
 @media (max-width: 768px) {
   #sidebar { display:none; }
 }
+
+/* src/main/resources/static/css/style.css hoặc devices.css */
+
+/* Glow animation cho icon */
+.glow {
+    animation: glow 1.5s infinite alternate;
+    animation-fill-mode: both;
+}
+
+@keyframes glow {
+    0%   { text-shadow: 0 0 5px #ffc107; }
+    50%  { text-shadow: 0 0 15px #ffc107; }
+    100% { text-shadow: 0 0 5px #ffc107; }
+}

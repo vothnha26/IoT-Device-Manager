@@ -1,5 +1,7 @@
 package com.iot.management.security;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -30,30 +32,64 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/test/**")
+                .ignoringRequestMatchers("/api/auth/**")
+                .ignoringRequestMatchers("/du-an/**")  // Ignore CSRF for khu vuc endpoints
+                .ignoringRequestMatchers("/api/du-an/**")         // Ignore CSRF for du an endpoints
+                .ignoringRequestMatchers("/api/**")     
+                .ignoringRequestMatchers("/thiet-bi/**")  
+                .ignoringRequestMatchers("/logout")   
+                .ignoringRequestMatchers("/api/schedules/**")
+                .ignoringRequestMatchers("/api/package-limit/**")   // Ignore CSRF for all API endpoints
+            )
             .cors(cors -> cors.disable())
             .authorizeHttpRequests(auth -> auth
                 // public API for authentication and public resources
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/schedules/**").permitAll()
+                .requestMatchers("/api/package-limit/**").permitAll()
                 // Auth UI pages (login, register, verify, forgot-password, reset-password)
                 .requestMatchers("/auth/**").permitAll()
                 // H2 console and error page
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()
-                // Allow demo UI, root and static assets so dashboard can be used without JWT
+                // Allow demo UI, root and static assets
                 .requestMatchers("/", "/dashboard").permitAll()
                 .requestMatchers("/static/**", "/js/**", "/css/**", "/images/**", "/webjars/**").permitAll()
-                // Favicon
                 .requestMatchers("/favicon.ico").permitAll()
-                // WebSocket handshake endpoint and test endpoints (fake telemetry)
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/test/**").permitAll()
+                .requestMatchers("/videos/**").permitAll()
+                // Admin routes require ADMIN role
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // API endpoints require authentication
+                .requestMatchers("/api/**").authenticated()
+                .requestMatchers("/du-an/**").authenticated()
+                .requestMatchers("/thiet-bi/**").permitAll()
                 // everything else requires authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            // cấu hình logout cho JWT
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    // Xóa cookie chứa token
+                    Cookie cookie = new Cookie("authToken", null);
+                    cookie.setHttpOnly(true);
+                    cookie.setMaxAge(0);
+                    cookie.setPath("/");
+                    response.addCookie(cookie);
+
+                    // Redirect về homepage
+                    response.sendRedirect("/");
+                })
+                .permitAll()
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
@@ -70,11 +106,8 @@ public class SecurityConfig {
     @SuppressWarnings("deprecation")
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        // setUserDetailsService is deprecated in some Spring Security versions; keep for compatibility
         authenticationProvider.setUserDetailsService(userDetailsService);
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
-    
-    
 }

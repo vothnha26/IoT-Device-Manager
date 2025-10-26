@@ -7,6 +7,11 @@ public class DashboardStatsDTO {
     private Long totalKhuVuc;        // Tổng số khu vực
     private Long totalThietBi;       // Tổng số thiết bị
     
+    private Long khuVucGrowth;
+    private Long controllerGrowth;
+    private Long sensorGrowth;
+    private Long thietBiGrowth;
+
     // Phân loại theo nhóm
     private Long totalControllers;   // Thiết bị điều khiển (LED, công tắc)
     private Long totalSensors;       // Cảm biến (nhiệt độ, độ ẩm)
@@ -85,5 +90,36 @@ public class DashboardStatsDTO {
 
     public void setDevicesOffline(Long devicesOffline) {
         this.devicesOffline = devicesOffline;
+    }
+
+    public Long getKhuVucGrowth() {
+        return khuVucGrowth;
+    }
+    public void setKhuVucGrowth(Long khuVucGrowth) {
+        this.khuVucGrowth = khuVucGrowth;
+    }
+
+    public Long getControllerGrowth() {
+        return controllerGrowth;
+    }
+
+    public void setControllerGrowth(Long controllerGrowth) {
+        this.controllerGrowth = controllerGrowth;
+    }
+
+    public Long getSensorGrowth() {
+        return sensorGrowth;
+    }
+
+    public void setSensorGrowth(Long sensorGrowth) {
+        this.sensorGrowth = sensorGrowth;
+    }
+
+    public Long getThietBiGrowth() {
+        return thietBiGrowth;
+    }
+
+    public void setThietBiGrowth(Long thietBiGrowth) {
+        this.thietBiGrowth = thietBiGrowth;
     }
 }

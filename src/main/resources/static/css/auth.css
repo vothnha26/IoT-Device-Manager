@@ -357,3 +357,21 @@
     font-size: 14px;
     font-weight: normal;
 }
+
+.input-icon-wrapper {
+    position: relative;
+}
+
+.input-left-icon {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem; /* khoảng cách từ trái */
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+}
+
+.password-toggle {
+    cursor: pointer;
+    color: #6c757d;
+}

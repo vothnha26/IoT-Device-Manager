@@ -4,22 +4,14 @@ import com.iot.management.model.entity.KhuVuc;
 import java.util.List;
 
 public interface KhuVucService {
-    // Tạo một khu vực mới (có thể là con của một khu vực khác)
-    KhuVuc createLocation(Long ownerId, Long parentLocationId, KhuVuc khuVuc);
-
-    // Lấy tất cả các khu vực gốc (cấp cao nhất) của một người dùng
-    List<KhuVuc> findRootLocationsByOwner(Long ownerId);
-
-    // Lấy tất cả các khu vực con của một khu vực cha
-    List<KhuVuc> findChildLocations(Long parentLocationId);
+    // Tạo một khu vực mới trong dự án
+    KhuVuc createLocation(Long ownerId, Long duAnId, KhuVuc khuVuc, String moTa);
+    
+    // Lấy danh sách khu vực theo dự án
+    List<KhuVuc> findByDuAn(Long duAnId);
     
     // Cập nhật thông tin khu vực
     KhuVuc updateLocation(Long ownerId, KhuVuc khuVuc);
-    
-    /**
-     * Lấy danh sách khu vực gốc (không có cha) của user
-     */
-    List<KhuVuc> getRootKhuVucsByUser(Long userId);
     
     /**
      * Lấy tất cả khu vực của user

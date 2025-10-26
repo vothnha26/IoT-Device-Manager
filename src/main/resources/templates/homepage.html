@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title}">Trang chủ - IoT Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap, Icons & AOS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <style>
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        background: linear-gradient(120deg, #f6f9fc 0%, #ecf4f7 100%);
+        color: #2c3e50;
+        scroll-behavior: smooth;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inter', sans-serif;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: #1e293b;
+    }
+
+    p {
+        color: #475569;
+        font-size: 1.125rem;
+        line-height: 1.75;
+    }
+
+    /* Navbar */
+    .navbar {
+        background: rgba(255, 255, 255, 0.9) !important;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.4s ease;
+    }
+
+    .navbar.scrolled {
+        background: rgba(255, 255, 255, 0.98) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .navbar-brand {
+        background: linear-gradient(45deg, #2196f3, #00bcd4);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent !important;
+        font-weight: 700;
+    }
+
+    .nav-link {
+        color: #37474f !important;
+        transition: all 0.3s;
+        position: relative;
+        padding: 0.5rem 1rem;
+    }
+
+    .nav-link:hover {
+        color: #2196f3 !important;
+    }
+
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(45deg, #2196f3, #00bcd4);
+        transition: all 0.3s;
+        transform: translateX(-50%);
+    }
+
+    .nav-link:hover::after {
+        width: 100%;
+    }
+
+    /* Package Section */
+    .package-section {
+        background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+        padding: 80px 0;
+    }
+
+    .package-card {
+        background: white;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .package-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .package-name {
+        color: #1e293b;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .package-price {
+        color: #2196f3;
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .package-price .currency {
+        font-size: 1.5rem;
+        font-weight: 600;
+        vertical-align: super;
+    }
+
+    .package-price .period {
+        color: #64748b;
+        font-size: 1rem;
+        font-weight: 400;
+    }
+
+    .package-features {
+        color: #475569;
+    }
+
+    .package-features p {
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .package-btn {
+        width: 100%;
+        padding: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+
+    .package-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+    }
+
+    /* Mega Dropdown Menu */
+    .services-dropdown {
+        position: static !important;
+    }
+
+    .services-menu {
+        width: 100%;
+        padding: 2rem;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        margin-top: 0.5rem;
+    }
+
+    .services-menu::before {
+        content: '';
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-bottom: 8px solid white;
+    }
+
+    .service-item {
+        display: flex;
+        align-items: start;
+        padding: 1rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: #1e293b;
+    }
+
+    .service-item:hover {
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(0, 188, 212, 0.1));
+        transform: translateY(-2px);
+    }
+
+    .service-icon {
+        width: 48px;
+        height: 48px;
+        padding: 12px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #2196f3, #00bcd4);
+        margin-right: 1rem;
+    }
+
+    .service-icon i {
+        font-size: 24px;
+        color: white;
+    }
+
+    .service-info h6 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .service-info p {
+        margin: 0.25rem 0 0;
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+
+    /* ===== Hero Section ===== */
+    .hero-section {
+        position: relative;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: #fff;
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(0, 188, 212, 0.1));
+    }
+
+    .hero-section video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: brightness(75%) contrast(110%) saturate(110%);
+        z-index: -1;
+    }
+
+    .hero-content {
+        z-index: 2;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 3rem;
+        border-radius: 24px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .hero-section h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        background: linear-gradient(45deg, #2196f3, #00bcd4);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.03em;
+        line-height: 1.2;
+    }
+
+    .hero-section p {
+        font-size: clamp(1.125rem, 2vw, 1.25rem);
+        color: #1e293b;
+        margin: 1.5rem 0;
+        font-weight: 500;
+        max-width: 42rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    section h2 {
+        font-size: clamp(2rem, 4vw, 2.5rem);
+        margin-bottom: 2rem;
+        color: #1e293b;
+        position: relative;
+        line-height: 1.3;
+    }
+
+    .hero-section a {
+        background: linear-gradient(45deg, #2196f3, #00bcd4);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-section a:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        background: linear-gradient(45deg, #1e88e5, #00acc1);
+    }
+
+    .hero-section a:hover {
+        background-color: #039be5;
+        transform: scale(1.05);
+    }
+
+    /* ===== Features ===== */
+    .feature-section {
+        padding: 80px 0;
+        background-color: #ffffff;
+        text-align: center;
+    }
+
+    .feature-section h2 {
+        color: #0288d1;
+        font-weight: 700;
+        margin-bottom: 40px;
+    }
+
+    .feature-pair {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin-bottom: 60px;
+        flex-wrap: wrap;
+    }
+
+    .feature-content {
+        max-width: 45%;
+        text-align: left;
+    }
+
+    .feature-content h3 {
+        color: #039be5;
+        font-size: 1.3rem;
+    }
+
+    .feature-content h4 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .feature-content p {
+        color: #546e7a;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .feature-image {
+        max-width: 40%;
+        text-align: center;
+    }
+
+    .feature-image img {
+        max-width: 180px;
+        height: auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+    }
+
+    .feature-image img:hover {
+        transform: scale(1.05);
+    }
+
+    footer {
+        background: #0288d1;
+        color: white;
+        text-align: center;
+        padding: 20px 0;
+        font-size: 0.95rem;
+    }
+
+    @media (max-width: 992px) {
+        .feature-pair {
+            flex-direction: column;
+        }
+        .feature-content, .feature-image {
+            max-width: 90%;
+            text-align: center;
+        }
+        .feature-content {
+            margin-bottom: 25px;
+        }
+        .hero-section h1 {
+            font-size: 2rem;
+        }
+        .hero-section p {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">IoT Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav align-items-center">
+                <li class="nav-item"><a class="nav-link" href="#intro">Giới thiệu</a></li>
+                
+                <!-- Dự án link -->
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/du-an}" href="/khu-vuc">Dự án</a>
+                </li>
+
+                <li class="nav-item"><a class="nav-link" href="#features">Tính năng</a></li>
+                <li class="nav-item"><a class="nav-link" href="#pricing">Gói cước</a></li>
+                <li class="nav-item"><a class="nav-link" href="#contact">Liên hệ</a></li>
+
+                <!-- Nếu chưa đăng nhập -->
+                <li class="nav-item" th:if="${#authentication == null or !#authorization.expression('isAuthenticated()')}">
+                    <a class="btn btn-outline-light ms-3" href="/auth/login">Đăng nhập</a>
+                </li>
+
+                <!-- Nếu đã đăng nhập -->
+                <li class="nav-item dropdown" th:if="${#authorization.expression('isAuthenticated()')}">
+                    <a class="nav-link dropdown-toggle text-white ms-3" href="#" id="userMenu" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span th:text="${#authentication.name}">User</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/thiet-bi/index">Trang quản lý</a></li>
+                        <li>
+                            <form id="logoutForm" th:action="@{/logout}" method="post">
+                                <button type="submit" class="dropdown-item text-danger">Đăng xuất</button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero-section" id="hero" style="padding-top: 56px;">
+    <video autoplay muted loop playsinline>
+        <source src="/videos/iot-bg.mp4" type="video/mp4">
+        Trình duyệt của bạn không hỗ trợ video.
+    </video>
+    <div class="container" data-aos="fade-up">
+        <h1 class="display-4 fw-bold">Quản lý thiết bị IoT thông minh</h1>
+        <p class="lead mt-3">Giám sát, điều khiển và tự động hóa ngôi nhà của bạn — mọi lúc, mọi nơi.</p>
+        <a href="#intro" class="btn btn-lg btn-primary mt-4">Khám phá ngay</a>
+    </div>
+</header>
+
+<!-- Giới thiệu -->
+<section id="intro" class="py-5 bg-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6" data-aos="fade-right">
+                <h2 class="fw-bold mb-3 text-primary">Vì sao nên chọn IoT Manager?</h2>
+                <p class="text-secondary">
+                    <strong>IoT Manager</strong> giúp bạn kết nối và kiểm soát toàn bộ thiết bị trong hệ thống nhà thông minh hoặc doanh nghiệp chỉ qua vài cú nhấp chuột.
+                </p>
+                <ul class="list-unstyled mt-3">
+                    <li>✔ Quản lý từ xa qua Internet</li>
+                    <li>✔ Giao diện thân thiện, dễ dùng</li>
+                    <li>✔ Cảm biến mưa, khói, nhiệt độ, độ ẩm</li>
+                    <li>✔ Tự động hóa linh hoạt, tiết kiệm điện năng</li>
+                </ul>
+                <a href="#features" class="btn btn-outline-primary mt-3">Xem thêm</a>
+            </div>
+            <div class="col-md-6 text-center" data-aos="fade-left">
+                <img src="https://images.unsplash.com/photo-1596436889106-be35e843f974?auto=format&fit=crop&w=900&q=80"
+                     alt="IoT Smart Home" class="img-fluid rounded shadow-lg">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tính năng -->
+<section id="features" class="feature-section">
+    <div class="container">
+        <h2 class="fw-bold mb-5" data-aos="fade-down">Tính năng nổi bật</h2>
+
+        <!-- Cặp 1: Kết nối thiết bị & Tự động hóa -->
+        <div class="feature-pair" data-aos="fade-up">
+            <div class="feature-content">
+                <h3 class="text-success">Kết nối sử dụng API MQTT/HTTP/WebSocket</h3>
+                <h4>Đưa thiết bị của bạn lên mạng</h4>
+                <p>Tự động cấu hình và kết nối an toàn thiết bị của bạn với nền tảng ngay khi khởi động tại địa điểm khách hàng. Một biểu diễn số sẽ được tạo và hiển thị trạng thái trực tiếp. Triển khai bản cập nhật firmware để giữ thiết bị an toàn.</p>
+            </div>
+            <div class="feature-image">
+                <img src="https://cdn-icons-png.flaticon.com/512/1040/1040241.png" alt="Kết nối thiết bị">
+            </div>
+        </div>
+        <div class="feature-pair" data-aos="fade-up">
+            <div class="feature-image">
+                <img src="https://cdn-icons-png.flaticon.com/512/921/921591.png" alt="Tự động hóa">
+            </div>
+            <div class="feature-content">
+                <h3 class="text-success">Động cơ quy tắc và thông báo mở rộng</h3>
+                <h4>Thêm tự động hóa</h4>
+                <p>Tạo hành vi tự động cho hệ thống sử dụng quy tắc. Tạo cảnh báo và điều khiển trực tiếp thiết bị của bạn dựa trên dữ liệu trực tiếp. Tạo quy tắc với giao diện kéo thả dễ dàng, hoặc nếu cần, với công cụ kịch bản nâng cao.</p>
+            </div>
+        </div>
+
+        <!-- Cặp 2: Trực quan hóa dữ liệu & Phân quyền người dùng -->
+        <div class="feature-pair" data-aos="fade-up">
+            <div class="feature-content">
+                <h3 class="text-success">Trực quan hóa dữ liệu</h3>
+                <h4>Phân tích và hiển thị</h4>
+                <p>Tập hợp, xử lý và trực quan hóa dữ liệu để có cái nhìn mới cho bạn và khách hàng qua bảng điều khiển chuyên dụng.</p>
+            </div>
+            <div class="feature-image">
+                <img src="https://cdn-icons-png.flaticon.com/512/3198/3198183.png" alt="Trực quan hóa dữ liệu">
+            </div>
+        </div>
+        <div class="feature-pair" data-aos="fade-up">
+            <div class="feature-image">
+                <img src="https://cdn-icons-png.flaticon.com/512/1040/1040241.png" alt="Phân quyền người dùng">
+            </div>
+            <div class="feature-content">
+                <h3 class="text-success">Phân quyền người dùng</h3>
+                <h4>Quản lý phân phối</h4>
+                <p>Cung cấp môi trường quản lý cho nhà phân phối, cho phép họ tự quản lý thiết bị mà không cần hỗ trợ.</p>
+            </div>
+        </div>
+
+        <!-- Cặp 3: Ứng dụng tùy chỉnh & Tích hợp dịch vụ -->
+        <div class="feature-pair" data-aos="fade-up">
+            <div class="feature-content">
+                <h3 class="text-success">Ứng dụng tùy chỉnh</h3>
+                <h4>Phát triển ứng dụng</h4>
+                <p>Tạo ứng dụng tùy chỉnh cho khách hàng và nhà lắp đặt sử dụng web components.</p>
+            </div>
+            <div class="feature-image">
+                <img src="https://cdn-icons-png.flaticon.com/512/921/921591.png" alt="Ứng dụng tùy chỉnh">
+            </div>
+        </div>
+        <div class="feature-pair" data-aos="fade-up">
+            <div class="feature-image">
+                <img src="https://cdn-icons-png.flaticon.com/512/3198/3198183.png" alt="Tích hợp dịch vụ">
+            </div>
+            <div class="feature-content">
+                <h3 class="text-success">TÍCH HỢP CÁC CÔNG CỤ ĐỂ TẠO RA QUY TRÌNH LÀM VIỆC HOÀN CHỈNH</h3>
+                <h4>Kết nối hệ thống</h4>
+                <p>Xây dựng bảng điều khiển riêng cho các tổ chức dịch vụ hoặc liên kết với quy trình làm việc hiện có của họ. Chúng tôi tích hợp liền mạch vào ứng dụng kinh doanh của bạn như ERP, CRM hoặc dịch vụ nhận dạng.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Gói cước -->
+<section id="pricing" class="package-section">
+    <div class="container">
+        <h2 class="text-center fw-bold mb-5" data-aos="fade-down">Chọn gói cước phù hợp</h2>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4" th:each="goi : ${goiCuocs}" data-aos="fade-up">
+                <div class="package-card p-4 h-100">
+                    <div class="package-name mb-3" th:text="${goi.tenGoi}">Gói cơ bản</div>
+                    <div class="package-price mb-4">
+                        <span class="currency">₫</span>
+                        <span th:text="${#numbers.formatDecimal(goi.giaTien, 0, 'COMMA', 0, 'POINT')}">100,000</span>
+                        <span class="period">/tháng</span>
+                    </div>
+                    <div class="package-features mb-4">
+                        <p>
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span th:text="${goi.slThietBiToiDa + ' thiết bị tối đa'}">10 thiết bị tối đa</span>
+                        </p>
+                        <p>
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span th:text="${goi.slLuatToiDa + ' luật tự động hóa'}">5 luật tự động hóa</span>
+                        </p>
+                        <p>
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span th:text="${goi.soNgayLuuDuLieu + ' ngày lưu dữ liệu'}">30 ngày lưu dữ liệu</span>
+                        </p>
+                        <p>
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span th:text="${goi.slKhuVucToiDa + ' khu vực tối đa'}">3 khu vực tối đa</span>
+                        </p>
+                        <p>
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span th:text="${goi.slTokenToiDa + ' token API tối đa'}">2 token API tối đa</span>
+                        </p>
+                    </div>
+                    <form th:if="${#authentication == null or !#authorization.expression('isAuthenticated()')}"
+                          action="/auth/register" method="get">
+                        <button type="submit" class="btn btn-primary package-btn">Đăng ký ngay</button>
+                    </form>
+                    <form th:if="${#authorization.expression('isAuthenticated()')}"
+                          th:action="@{/payment/create-payment/{maGoiCuoc}(maGoiCuoc=${goi.maGoiCuoc})}" 
+                          method="post">
+                        <button type="submit" class="btn btn-primary package-btn">Thanh toán ngay</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Liên hệ -->
+<footer id="contact" class="bg-dark text-light text-center py-4">
+    <div class="container" data-aos="fade-up">
+        <p class="mb-1">© 2025 IoT Management. All rights reserved.</p>
+        <p>Liên hệ: support@iotmanager.vn</p>
+    </div>
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+    AOS.init({
+        duration: 1000,
+        once: false,
+        mirror: true
+    });
+
+    // Navbar background khi scroll
+    window.addEventListener("scroll", () => {
+        const navbar = document.querySelector(".navbar");
+        navbar.classList.toggle("scrolled", window.scrollY > 50);
+    });
+
+    // Xử lý logout theo chuẩn Spring Security
+    document.getElementById("logoutForm")?.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        try {
+            const response = await fetch("/logout", { method: "POST" });
+            if (response.ok) {
+                document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+                localStorage.removeItem("token");
+                sessionStorage.removeItem("token");
+                window.location.href = "/";
+            } else {
+                alert("Đăng xuất thất bại!");
+            }
+        } catch (error) {
+            console.error("Logout error:", error);
+            alert("Lỗi khi đăng xuất!");
+        }
+    });
+</script>

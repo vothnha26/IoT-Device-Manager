@@ -3,9 +3,9 @@ package com.iot.management.model.entity;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Set;
-import jakarta.persistence.OneToMany;
-
+import java.util.List;
 @Entity
 @Table(name = "NguoiDung")
 public class NguoiDung {
@@ -46,6 +46,9 @@ public class NguoiDung {
 	@JsonManagedReference("owner-regions")
 	@OneToMany(mappedBy = "chuSoHuu")
 	private Set<KhuVuc> khuVucs;
+
+	@OneToMany(mappedBy = "nguoiDung", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private List<DangKyGoi> dangKyGois = new ArrayList<>();
 
 	// Getters and Setters
 	public Long getMaNguoiDung() {
@@ -126,5 +129,13 @@ public class NguoiDung {
 
 	public void setVerificationCodeExpiry(LocalDateTime verificationCodeExpiry) {
 		this.verificationCodeExpiry = verificationCodeExpiry;
+	}
+
+	public List<DangKyGoi> getDangKyGois() {
+		return dangKyGois;
+	}
+
+	public void setDangKyGois(List<DangKyGoi> dangKyGois) {
+		this.dangKyGois = dangKyGois;
 	}
 }

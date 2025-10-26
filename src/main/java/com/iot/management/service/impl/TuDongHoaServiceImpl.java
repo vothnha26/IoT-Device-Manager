@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 import java.util.List;
 
@@ -93,6 +94,45 @@ public class TuDongHoaServiceImpl implements TuDongHoaService {
             logger.error("Lỗi khi xử lý luật tự động cho dữ liệu ID {}: {}", 
                 dataLog.getMaNhatKy(), e.getMessage());
             throw new RuntimeException("Không thể xử lý luật tự động", e);
+        }
+    }
+
+    @Override
+    public List<LichTrinh> getLichTrinhByThietBi(Long maThietBi) {
+        try {
+            return lichTrinhRepository.findByThietBi_MaThietBi(maThietBi);
+        } catch (Exception e) {
+            logger.error("Lỗi khi lấy danh sách lịch trình của thiết bị ID {}: {}", 
+                maThietBi, e.getMessage());
+            throw new RuntimeException("Không thể lấy danh sách lịch trình", e);
+        }
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        try {
+            return lichTrinhRepository.existsById(id);
+        } catch (Exception e) {
+            logger.error("Lỗi khi kiểm tra tồn tại lịch trình ID {}: {}", 
+                id, e.getMessage());
+            throw new RuntimeException("Không thể kiểm tra tồn tại lịch trình", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public LichTrinh toggleSchedule(Long id, boolean kichHoat) {
+        try {
+            return lichTrinhRepository.findById(id)
+                .map(lichTrinh -> {
+                    lichTrinh.setKichHoat(kichHoat);
+                    return lichTrinhRepository.save(lichTrinh);
+                })
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lịch trình ID: " + id));
+        } catch (Exception e) {
+            logger.error("Lỗi khi thay đổi trạng thái kích hoạt lịch trình ID {}: {}", 
+                id, e.getMessage());
+            throw new RuntimeException("Không thể thay đổi trạng thái kích hoạt lịch trình", e);
         }
     }
 

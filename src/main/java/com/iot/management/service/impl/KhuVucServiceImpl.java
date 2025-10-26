@@ -1,7 +1,9 @@
 package com.iot.management.service.impl;
 
+import com.iot.management.model.entity.DuAn;
 import com.iot.management.model.entity.KhuVuc;
 import com.iot.management.model.entity.NguoiDung;
+import com.iot.management.model.repository.DuAnRepository;
 import com.iot.management.model.repository.KhuVucRepository;
 import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.service.KhuVucService;
@@ -14,35 +16,35 @@ public class KhuVucServiceImpl implements KhuVucService {
 
     private final KhuVucRepository khuVucRepository;
     private final NguoiDungRepository nguoiDungRepository;
+    private final DuAnRepository duAnRepository;
 
-    public KhuVucServiceImpl(KhuVucRepository khuVucRepository, NguoiDungRepository nguoiDungRepository) {
+    public KhuVucServiceImpl(KhuVucRepository khuVucRepository, 
+                            NguoiDungRepository nguoiDungRepository,
+                            DuAnRepository duAnRepository) {
         this.khuVucRepository = khuVucRepository;
         this.nguoiDungRepository = nguoiDungRepository;
+        this.duAnRepository = duAnRepository;
     }
 
     @Override
-    public KhuVuc createLocation(Long ownerId, Long parentLocationId, KhuVuc khuVuc) {
+    public KhuVuc createLocation(Long ownerId, Long duAnId, KhuVuc khuVuc, String moTa) {
         NguoiDung owner = nguoiDungRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + ownerId));
         khuVuc.setChuSoHuu(owner);
+        khuVuc.setMoTa(moTa);
 
-        if (parentLocationId != null) {
-            KhuVuc parent = khuVucRepository.findById(parentLocationId)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khu vực cha với ID: " + parentLocationId));
-            khuVuc.setKhuVucCha(parent);
+        if (duAnId != null) {
+            DuAn duAn = duAnRepository.findById(duAnId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy dự án với ID: " + duAnId));
+            khuVuc.setDuAn(duAn);
         }
 
         return khuVucRepository.save(khuVuc);
     }
 
     @Override
-    public List<KhuVuc> findRootLocationsByOwner(Long ownerId) {
-        return khuVucRepository.findByChuSoHuu_MaNguoiDungAndKhuVucChaIsNull(ownerId);
-    }
-
-    @Override
-    public List<KhuVuc> findChildLocations(Long parentLocationId) {
-        return khuVucRepository.findByKhuVucCha_MaKhuVuc(parentLocationId);
+    public List<KhuVuc> findByDuAn(Long duAnId) {
+        return khuVucRepository.findByDuAn_MaDuAn(duAnId);
     }
 
     @Override
@@ -58,14 +60,8 @@ public class KhuVucServiceImpl implements KhuVucService {
 
         // Giữ nguyên thông tin chủ sở hữu và khu vực cha
         khuVuc.setChuSoHuu(existingLocation.getChuSoHuu());
-        khuVuc.setKhuVucCha(existingLocation.getKhuVucCha());
         
         return khuVucRepository.save(khuVuc);
-    }
-
-    @Override
-    public List<KhuVuc> getRootKhuVucsByUser(Long userId) {
-        return khuVucRepository.findByChuSoHuu_MaNguoiDungAndKhuVucChaIsNull(userId);
     }
 
     @Override
@@ -82,13 +78,6 @@ public class KhuVucServiceImpl implements KhuVucService {
     @Override
     public void deleteKhuVuc(Long id) {
         KhuVuc khuVuc = getKhuVucById(id);
-        
-        // Kiểm tra xem có khu vực con không
-        List<KhuVuc> children = khuVucRepository.findByKhuVucCha_MaKhuVuc(id);
-        if (!children.isEmpty()) {
-            throw new RuntimeException("Không thể xóa khu vực có khu vực con. Vui lòng xóa các khu vực con trước.");
-        }
-        
         khuVucRepository.delete(khuVuc);
     }
 }

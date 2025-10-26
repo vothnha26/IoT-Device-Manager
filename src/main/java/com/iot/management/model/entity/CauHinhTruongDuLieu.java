@@ -41,7 +41,7 @@ public class CauHinhTruongDuLieu {
 
     @Column(name = "ghi_chu", length = 255)
     private String ghiChu;
-
+    
     public CauHinhTruongDuLieu() {
     }
 

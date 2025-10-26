@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/device-types")
-@PreAuthorize("hasRole('MANAGER')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminDeviceTypeController {
 
     @Autowired

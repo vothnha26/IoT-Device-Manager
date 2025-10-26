@@ -2,6 +2,7 @@ package com.iot.management.model.repository;
 
 import com.iot.management.model.entity.KhuVuc;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,9 +16,7 @@ public interface KhuVucRepository extends JpaRepository<KhuVuc, Long> {
     // Đếm số khu vực của một người dùng
     Long countByChuSoHuu_MaNguoiDung(Long maNguoiDung);
     
-    // Tìm tất cả khu vực gốc (không có cha) của một người dùng
-    List<KhuVuc> findByChuSoHuu_MaNguoiDungAndKhuVucChaIsNull(Long maNguoiDung);
-    
-    // Tìm tất cả các khu vực con của một khu vực cha
-    List<KhuVuc> findByKhuVucCha_MaKhuVuc(Long maKhuVucCha);
+    // Tìm tất cả khu vực của một dự án
+    @Query("SELECT k FROM KhuVuc k WHERE k.duAn.maDuAn = :maDuAn")
+    List<KhuVuc> findByDuAn_MaDuAn(Long maDuAn);
 }

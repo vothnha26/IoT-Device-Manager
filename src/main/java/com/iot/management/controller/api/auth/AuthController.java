@@ -13,12 +13,14 @@ import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.security.JwtUtil;
 import com.iot.management.service.EmailService;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import java.io.IOException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -108,73 +110,73 @@ public class AuthController {
     }
     
     // Đăng nhập
+    // Đăng nhập (hỗ trợ JSON hoặc form)
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest, HttpServletResponse response) {
+    public ResponseEntity<AuthResponse> login(
+            @RequestBody(required = false) AuthRequest jsonRequest, // nhận JSON
+            @ModelAttribute AuthRequest formRequest,               // nhận form
+            HttpServletResponse response) {
+
+        // Chọn request nào không null
+        AuthRequest authRequest = (jsonRequest != null) ? jsonRequest : formRequest;
+
+        if (authRequest == null || authRequest.getEmail() == null || authRequest.getPassword() == null) {
+            return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, "Email and password are required",null));
+        }
+
         try {
-            System.out.println("=== LOGIN REQUEST ===");
-            System.out.println("Email: " + authRequest.getEmail());
-            System.out.println("Password received: " + (authRequest.getPassword() != null ? "Yes" : "No"));
-            
-            if (authRequest.getEmail() == null || authRequest.getPassword() == null) {
-                return ResponseEntity.badRequest()
-                    .body(new AuthResponse(null, "Email and password are required"));
-            }
+            UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
 
-            UserDetails userDetails;
-            try {
-                userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
-                System.out.println("User found: " + userDetails.getUsername());
-                System.out.println("User enabled: " + userDetails.isEnabled());
-            } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
-                System.out.println("User not found: " + authRequest.getEmail());
+            if (!userDetails.isEnabled()) {
                 return ResponseEntity.status(401)
-                    .body(new AuthResponse(null, "Invalid credentials"));
-            }
-
-            // Check if account is enabled (handle null as false)
-            if (userDetails.isEnabled() == false) {
-                System.out.println("Account not active");
-                return ResponseEntity.status(401)
-                    .body(new AuthResponse(null, "Account is not active. Please verify your email."));
+                        .body(new AuthResponse(null, "Account is not active. Please verify your email.",null));
             }
 
             boolean passwordMatches = passwordEncoder.matches(authRequest.getPassword(), userDetails.getPassword());
-            System.out.println("Password matches: " + passwordMatches);
-            
-            if (passwordMatches) {
-                String token = jwtUtil.generateToken(userDetails);
-                System.out.println("Token generated successfully");
-                
-                // Tạo cookie chứa JWT token với SameSite=Lax
-                Cookie jwtCookie = new Cookie("authToken", token);
-                jwtCookie.setHttpOnly(true);
-                jwtCookie.setSecure(false);
-                jwtCookie.setPath("/");
-                jwtCookie.setMaxAge(24 * 60 * 60);
-                jwtCookie.setDomain(null); // Let browser determine domain
-                
-                // Add SameSite attribute manually via Set-Cookie header
-                response.setHeader("Set-Cookie", String.format(
-                    "authToken=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax",
-                    token,
-                    24 * 60 * 60
-                ));
-                
-                System.out.println("Cookie set: authToken with SameSite=Lax");
-                
-                return ResponseEntity.ok(new AuthResponse(token, "Login successful"));
-            } else {
-                System.out.println("Password does not match");
+
+            if (!passwordMatches) {
                 return ResponseEntity.status(401)
-                    .body(new AuthResponse(null, "Invalid credentials"));
+                        .body(new AuthResponse(null, "Invalid credentials",null));
             }
+
+            // Tạo token JWT
+            String token = jwtUtil.generateToken(userDetails);
+
+            // Set cookie JWT
+            Cookie jwtCookie = new Cookie("authToken", token);
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setSecure(false);
+            jwtCookie.setPath("/");
+            jwtCookie.setMaxAge(24 * 60 * 60);
+            response.addCookie(jwtCookie);
+
+            // Thêm SameSite=Lax header (nếu muốn)
+            response.setHeader("Set-Cookie", String.format(
+                    "authToken=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax",
+                    token, 24 * 60 * 60));
+
+            // Get user role and strip the "ROLE_" prefix if present
+            String role = userDetails.getAuthorities().stream()
+                    .findFirst()
+                    .map(auth -> {
+                        String authString = auth.getAuthority();
+                        return authString.startsWith("ROLE_") ? authString.substring(5) : authString;
+                    })
+                    .orElse("USER");
+
+            return ResponseEntity.ok(new AuthResponse(token, "Login successful", role));
+
+        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+            return ResponseEntity.status(401)
+                    .body(new AuthResponse(null, "Invalid credentials",null));
         } catch (Exception e) {
-            System.out.println("Exception during login: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500)
-                .body(new AuthResponse(null, "An error occurred during authentication: " + e.getMessage()));
+                    .body(new AuthResponse(null, "An error occurred during authentication: " + e.getMessage(),null));
         }
     }
+
     
     // Xử lý yêu cầu quên mật khẩu (gửi OTP)
     @PostMapping("/forgot-password")
@@ -221,5 +223,15 @@ public class AuthController {
         userRepository.save(user);
 
         return ResponseEntity.ok("Password has been reset successfully.");
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("token", null);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0); // Xoá ngay lập tức
+        response.addCookie(cookie);
+        return ResponseEntity.ok("Đã đăng xuất thành công");
     }
 }

@@ -29,28 +29,37 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
-        throws ServletException, IOException {
+    protected void doFilterInternal(
+        @NonNull HttpServletRequest request,
+        @NonNull HttpServletResponse response,
+        @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        String path = request.getRequestURI();
+         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
+            || path.startsWith("/webjars/") || path.equals("/favicon.ico")
+            || path.startsWith("/auth/") || path.startsWith("/api/auth/") || path.startsWith("/api/public/")
+            || path.startsWith("/h2-console/") || path.equals("/error")) {
+        filterChain.doFilter(request, response);
+        return;
+    }
         try {
             String token = null;
-            
+
             System.out.println("=== JWT FILTER ===");
             System.out.println("Request URI: " + request.getRequestURI());
-            
-            // 1. Try to get token from Authorization header (for API calls)
+
+            // 1️⃣ Lấy token từ Authorization header
             final String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7).trim();
                 System.out.println("Token from Authorization header");
             }
-            
-            // 2. If no header token, try to get from Cookie (for browser requests)
+
+            // 2️⃣ Nếu không có token trong header, thử lấy trong cookie
             if (token == null || token.isEmpty()) {
                 Cookie[] cookies = request.getCookies();
-                System.out.println("Cookies: " + (cookies != null ? cookies.length : 0));
                 if (cookies != null) {
                     for (Cookie cookie : cookies) {
-                        System.out.println("Cookie: " + cookie.getName() + " = " + cookie.getValue().substring(0, Math.min(20, cookie.getValue().length())) + "...");
                         if ("authToken".equals(cookie.getName())) {
                             token = cookie.getValue();
                             System.out.println("Token found in cookie!");
@@ -60,37 +69,54 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
             }
 
-            // No token found - continue without authentication
+            // 3️⃣ Không có token -> tiếp tục chuỗi filter mà không xác thực
             if (token == null || token.isEmpty()) {
-                System.out.println("No token found - continuing without auth");
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            // Extract and validate token
+            // 4️⃣ Giải mã email từ token
             String email = jwtUtil.extractUsername(token);
-            System.out.println("Email from token: " + email);
-            
+
+            // 5️⃣ Nếu hợp lệ, thiết lập Authentication
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 if (jwtUtil.validateToken(token, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                    UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("Authentication set in SecurityContext for: " + email);
+                    System.out.println("Authentication set for user: " + email);
                 } else {
                     System.out.println("Token validation failed");
                 }
             }
-            
+
+            // 6️⃣ Cho phép request tiếp tục
             filterChain.doFilter(request, response);
-            
+
         } catch (Exception e) {
-            // Log full stacktrace for debugging
-            System.out.println("Authentication error: " + e.getMessage());
+            System.err.println("Authentication error: " + e.getMessage());
             e.printStackTrace();
-            filterChain.doFilter(request, response);
+            handleAuthError(response, e.getMessage());
         }
+    }
+
+    private boolean isAuthenticationRequired(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return !(
+            path.startsWith("/api/auth/") ||
+            path.startsWith("/api/public/") ||
+            path.startsWith("/h2-console/") ||
+            path.equals("/error")
+        );
+    }
+
+    private void handleAuthError(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json;charset=UTF-8");
+        String safeMessage = message == null ? "Authentication failed" : message.replace("\"", "\\\"");
+        String json = String.format("{\"error\": \"Authentication failed\", \"message\": \"%s\"}", safeMessage);
+        response.getWriter().write(json);
     }
 }

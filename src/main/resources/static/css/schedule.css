@@ -1,0 +1,47 @@
+/* Schedule styles */
+.schedule-item {
+    transition: all 0.2s ease-in-out;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.schedule-item:hover {
+    background: rgba(248,249,250,0.8) !important;
+    transform: translateX(2px);
+}
+
+.schedule-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.schedule-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.schedule-list::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 2px;
+}
+
+.schedule-list::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+}
+
+.schedule-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.3);
+}
+
+.schedule-item .form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.schedule-item .btn-link {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.schedule-item:hover .btn-link {
+    opacity: 1;
+}

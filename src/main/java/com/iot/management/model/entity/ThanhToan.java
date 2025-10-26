@@ -1,9 +1,17 @@
 package com.iot.management.model.entity;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "ThanhToan")
@@ -14,15 +22,15 @@ public class ThanhToan {
     @Column(name = "ma_thanh_toan")
     private Long maThanhToan;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // HOÀN TÁC: Liên kết với DangKyGoi thay vì NguoiDung/GoiCuoc
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_dang_ky", nullable = false)
     private DangKyGoi dangKyGoi;
 
     @Column(name = "so_tien", nullable = false)
     private BigDecimal soTien;
 
-    @CreationTimestamp
-    @Column(name = "ngay_thanh_toan", nullable = false, updatable = false)
+    @Column(name = "ngay_thanh_toan")
     private LocalDateTime ngayThanhToan;
 
     @Column(name = "phuong_thuc", length = 50)
@@ -34,9 +42,7 @@ public class ThanhToan {
     @Column(name = "trang_thai", nullable = false, length = 20)
     private String trangThai;
 
-    public ThanhToan() {
-    }
-
+    // Getters and Setters
     public Long getMaThanhToan() {
         return maThanhToan;
     }

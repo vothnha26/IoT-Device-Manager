@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{admin/layout :: admin-head('Quản lý Quyền Thiết Bị - IoT Manager')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-device-permissions.css}">
+    <style>
+        .user-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .user-item {
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .user-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .user-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .user-email {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+
+<body class="admin-device-permissions">
+    <!-- Sidebar -->
+    <aside th:replace="~{admin/layout :: admin-sidebar}"></aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="top-header">
+            <h2 class="page-title">Quản lý Quyền Truy Cập Thiết Bị</h2>
+            <div th:replace="~{admin/layout :: admin-user-info}"></div>
+        </div>
+
+        <div class="content-wrapper p-4">
+            <!-- Danh sách người dùng -->
+            <div class="user-list">
+                <h3 class="section-title">Danh sách người dùng</h3>
+                
+                <!-- Search and Filter Section -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchUser" 
+                                   placeholder="Tìm kiếm người dùng...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User List -->
+                <div th:each="user : ${users}" class="user-item">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <div class="user-name" th:text="${user.tenDangNhap}">Nguyen Van A</div>
+                            <div class="user-email" th:text="${user.email}">example@email.com</div>
+                        </div>
+                    </div>
+                    <div>
+                        <a th:href="@{/admin/device-permissions/{id}(id=${user.maNguoiDung})}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-key me-1"></i>Quản lý quyền
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div th:if="${#lists.isEmpty(users)}" class="text-center text-muted py-5">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <p>Chưa có người dùng nào trong hệ thống</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchUser');
+            const userItems = document.querySelectorAll('.user-item');
+
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+
+                userItems.forEach(item => {
+                    const userName = item.querySelector('.user-name').textContent.toLowerCase();
+                    const userEmail = item.querySelector('.user-email').textContent.toLowerCase();
+
+                    if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

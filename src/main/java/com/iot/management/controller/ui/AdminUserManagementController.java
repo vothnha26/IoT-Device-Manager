@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/admin/users")
-@PreAuthorize("hasRole('MANAGER')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminUserManagementController {
 
     @GetMapping

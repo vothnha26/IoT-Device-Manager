@@ -7,6 +7,10 @@ import java.time.LocalDateTime;
 @Table(name = "DangKyGoi")
 public class DangKyGoi {
 
+    public static final String TRANG_THAI_ACTIVE = "ACTIVE";
+    public static final String TRANG_THAI_EXPIRED = "EXPIRED";
+    public static final String TRANG_THAI_CANCELLED = "CANCELLED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ma_dang_ky")

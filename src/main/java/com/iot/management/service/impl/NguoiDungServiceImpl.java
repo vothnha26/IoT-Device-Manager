@@ -1,19 +1,20 @@
 package com.iot.management.service.impl;
 
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.entity.VaiTro;
 import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.model.repository.VaiTroRepository;
 import com.iot.management.service.NguoiDungService;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
 @Service
 public class NguoiDungServiceImpl implements NguoiDungService {
 
@@ -64,7 +65,19 @@ public class NguoiDungServiceImpl implements NguoiDungService {
     public Optional<NguoiDung> findById(Long id) {
         return nguoiDungRepository.findById(id);
     }
-
+    @Override
+    public NguoiDung getById(Long id) {
+        // Tìm kiếm trong Repository
+        return nguoiDungRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại với ID: " + id));
+    }
+    @Override
+    public NguoiDung getByUsername(String username) {
+        // Giả định NguoiDungRepository có phương thức findByTenDangNhap
+        return nguoiDungRepository.findByTenDangNhap(username) 
+            .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại với Tên đăng nhập: " + username));
+    }
+    
     @Override
     public NguoiDung save(NguoiDung nguoiDung) {
         // Ensure password field is already encoded if present - caller responsibility for raw password

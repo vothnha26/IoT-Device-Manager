@@ -29,7 +29,7 @@ public class ThietBiUiController {
     @Autowired
     private KhuVucService khuVucService;
 
-    @GetMapping
+    @GetMapping({"", "/", "/index"})
     public String thietBiManagement(Model model, @AuthenticationPrincipal SecurityUser currentUser) {
         // Kiểm tra đăng nhập
         if (currentUser == null) {

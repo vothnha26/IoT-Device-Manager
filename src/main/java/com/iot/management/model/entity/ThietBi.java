@@ -31,6 +31,9 @@ public class ThietBi {
     @Column(name = "ngay_lap_dat")
     private LocalDate ngayLapDat;
 
+    @Column(name = "mo_ta", length = 500)
+    private String moTa;
+
     @JsonBackReference("owner-devices")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_chu_so_huu", nullable = false)
@@ -142,5 +145,13 @@ public class ThietBi {
 
     public void setLichTrinhs(Set<LichTrinh> lichTrinhs) {
         this.lichTrinhs = lichTrinhs;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
     }
 }

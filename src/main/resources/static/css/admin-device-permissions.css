@@ -1,0 +1,71 @@
+/* Admin Device Permissions Styles */
+.admin-device-permissions .content-wrapper {
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 60px);
+}
+
+.admin-device-permissions .page-title {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.admin-device-permissions .device-list {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-device-permissions .device-item {
+    transition: all 0.3s ease;
+}
+
+.admin-device-permissions .device-item:hover {
+    background-color: #f8f9fa;
+}
+
+.admin-device-permissions .device-name {
+    color: #2c3e50;
+}
+
+.admin-device-permissions .btn-danger {
+    background-color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.admin-device-permissions .btn-danger:hover {
+    background-color: #c0392b;
+    border-color: #c0392b;
+}
+
+.admin-device-permissions .btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.admin-device-permissions .btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+.admin-device-permissions .form-select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-device-permissions .device-item {
+        flex-direction: column;
+        align-items: start;
+    }
+    
+    .admin-device-permissions .permission-buttons {
+        margin-top: 10px;
+    }
+    
+    .admin-device-permissions .btn {
+        width: 100%;
+        margin-top: 10px;
+    }
+}

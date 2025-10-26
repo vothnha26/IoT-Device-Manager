@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi" 
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:replace="~{admin/layout :: admin-head('Admin Dashboard')}"></head>
+
+<body>
+    <!-- Navbar -->
+    <nav th:replace="~{admin/layout :: admin-navbar}"></nav>
+    
+    <!-- Sidebar -->
+    <aside th:replace="~{admin/layout :: admin-sidebar}"></aside>
+
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="admin-card-title mb-1">Dashboard</h1>
+                    <p class="text-muted">Tổng quan hệ thống IoT Manager</p>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="admin-stats-grid">
+                <!-- Users Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: var(--admin-accent)">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 th:text="${totalUsers}">0</h4>
+                        <p>Người dùng</p>
+                    </div>
+                </div>
+                
+                <!-- Devices Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: var(--admin-success)">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 th:text="${totalDevices}">0</h4>
+                        <p>Thiết bị</p>
+                    </div>
+                </div>
+                
+                <!-- Device Types Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: var(--admin-warning)">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 th:text="${totalDeviceTypes}">0</h4>
+                        <p>Loại thiết bị</p>
+                    </div>
+                </div>
+                
+                <!-- Areas Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: var(--admin-danger)">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 th:text="${totalAreas}">0</h4>
+                        <p>Khu vực</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="row mt-4">
+                <!-- Recent Users -->
+                <div class="col-md-6 mb-4">
+                    <div class="admin-card h-100">
+                        <div class="admin-card-header">
+                            <h5 class="admin-card-title">Người dùng mới</h5>
+                            <a href="/admin/users" class="btn btn-sm btn-link">Xem tất cả</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Người dùng</th>
+                                        <th>Ngày đăng ký</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="user : ${recentUsers}">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="user-avatar">
+                                                    <img th:if="${user.avatar}" th:src="${user.avatar}" 
+                                                         alt="Avatar" width="32" height="32" class="rounded-circle">
+                                                    <div th:unless="${user.avatar}" class="avatar-placeholder">
+                                                        <span th:text="${#strings.substring(user.fullName,0,1)}">U</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-medium" th:text="${user.fullName}">User Name</div>
+                                                    <small class="text-muted" th:text="${user.email}">user@example.com</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}">01/01/2025</td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${user.status == 'ACTIVE' ? 'bg-success' : 'bg-warning'}"
+                                                  th:text="${user.status}">STATUS</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Devices -->
+                <div class="col-md-6 mb-4">
+                    <div class="admin-card h-100">
+                        <div class="admin-card-header">
+                            <h5 class="admin-card-title">Thiết bị mới</h5>
+                            <a href="/admin/device-types" class="btn btn-sm btn-link">Xem tất cả</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Thiết bị</th>
+                                        <th>Ngày thêm</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="device : ${recentDevices}">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="device-avatar" 
+                                                     th:classappend="${device.loaiThietBi.nhomThietBi?.name() == 'SENSOR' ? 'sensor' : 'actuator'}">
+                                                    <i class="fas" 
+                                                       th:classappend="${device.loaiThietBi.nhomThietBi?.name() == 'SENSOR' ? 'fa-temperature-high' : 'fa-cog'}"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-medium" th:text="${device.tenThietBi}">Device Name</div>
+                                                    <small class="text-muted" th:text="${device.loaiThietBi.tenLoai}">Device Type</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td th:text="${#temporals.format(device.ngayTao, 'dd/MM/yyyy')}">01/01/2025</td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${device.trangThai == 'hoat dong' ? 'bg-success' : 'bg-danger'}"
+                                                  th:text="${device.trangThai}">STATUS</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{admin/layout :: admin-footer}"></footer>
+</body>
+</html>

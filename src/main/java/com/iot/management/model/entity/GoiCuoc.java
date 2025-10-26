@@ -17,6 +17,7 @@ public class GoiCuoc {
 
     @Column(name = "gia_tien", precision = 10, scale = 2)
     private BigDecimal giaTien;
+    
 
     @Column(name = "sl_thiet_bi_toi_da")
     private Integer slThietBiToiDa;

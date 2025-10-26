@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/admin/packages")
-@PreAuthorize("hasRole('MANAGER')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminPackageManagementController {
 
     @GetMapping

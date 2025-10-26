@@ -36,7 +36,7 @@
                 </div>
 
                 <!-- Login Form -->
-                <form id="loginForm" class="auth-form">
+                <form id="loginForm" class="auth-form" action="/auth/login" method="post">
                     <!-- Email -->
                     <div class="mb-3">
                         <label for="email" class="form-label">
@@ -54,20 +54,15 @@
                     </div>
 
                     <!-- Password -->
-                    <div class="mb-3">
-                        <label for="password" class="form-label">
-                            <i class="fas fa-lock me-1"></i> Mật khẩu
-                        </label>
-                        <div class="input-icon-wrapper">
-                            <i class="fas fa-key"></i>
-                            <input type="password" 
-                                   class="form-control" 
-                                   id="password" 
-                                   name="password"
-                                   placeholder="Nhập mật khẩu" 
-                                   required>
-                            <i class="fas fa-eye password-toggle" id="togglePassword"></i>
-                        </div>
+                    <div class="input-icon-wrapper position-relative">
+                        <i class="fas fa-key input-left-icon"></i>
+                        <input type="password" 
+                            class="form-control ps-5" 
+                            id="password" 
+                            name="password"
+                            placeholder="Nhập mật khẩu" 
+                            required>
+                        <i class="fas fa-eye password-toggle position-absolute top-50 end-0 translate-middle-y pe-3" id="togglePassword"></i>
                     </div>
 
                     <!-- Remember Me & Forgot Password -->
@@ -174,8 +169,14 @@
                         
                         // Cookie is already set by server
                         // Redirect to dashboard after short delay
+                        // Check user role from response
                         setTimeout(function() {
-                            window.location.href = '/dashboard';
+                            // Redirect based on role
+                            if (response.role === 'ADMIN') {
+                                window.location.href = '/admin/dashboard';
+                            } else {
+                                window.location.href = '/';
+                            }
                         }, 500);
                     },
                     error: function(xhr) {

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/admin/device-types")
-@PreAuthorize("hasRole('MANAGER')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminDeviceTypeManagementController {
 
     @GetMapping

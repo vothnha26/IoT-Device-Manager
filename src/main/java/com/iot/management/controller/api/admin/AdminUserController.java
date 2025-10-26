@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin/users")
-@PreAuthorize("hasRole('MANAGER')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
 
     @Autowired

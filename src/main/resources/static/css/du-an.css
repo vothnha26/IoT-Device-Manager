@@ -1,0 +1,45 @@
+.project-card {
+    transition: all 0.3s ease;
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.project-card .card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #6c757d;
+    margin-bottom: 2rem;
+}
+
+/* Custom styles for form */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.invalid-feedback {
+    font-size: 80%;
+}

@@ -1,0 +1,83 @@
+/* Colorful theme for Khu Vuc (areas) page */
+:root{
+  --primary-500: #6c5ce7;
+  --primary-400: #7b6ff0;
+  --accent-500: #00b894;
+  --muted-600: #6c7a89;
+  --bg-soft: linear-gradient(135deg, #f6f8ff 0%, #f0f7f4 100%);
+}
+
+/* Sidebar */
+.project-sidebar{
+  background: linear-gradient(180deg, rgba(108,92,231,0.06), rgba(0,184,148,0.03));
+}
+.project-sidebar .p-3{
+  background: transparent;
+}
+.project-sidebar h5{
+  color: var(--primary-500);
+}
+
+/* Area list items */
+.hover-bg-light{
+  transition: all .18s ease;
+  border-radius: 8px;
+}
+.hover-bg-light:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(108,92,231,0.08);
+}
+
+/* Area card */
+.area-card .card{
+  border-radius: 12px;
+  overflow: hidden;
+}
+.area-card .card-body{
+  background: white;
+}
+
+/* Badges and buttons */
+.badge.bg-primary{
+  background: linear-gradient(90deg, var(--primary-400), var(--primary-500));
+  color: #fff;
+}
+.btn-primary{
+  background: linear-gradient(90deg, var(--primary-400), var(--primary-500));
+  border: none;
+}
+.btn-primary:hover{
+  filter: brightness(0.96);
+}
+
+/* Details panel */
+#selectedAreaContent{
+  min-height: 320px;
+}
+#areaDetails .card{
+  border-radius: 10px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px){
+  .project-sidebar{ display:none; }
+  .flex-grow-1{ padding: 1rem !important; }
+}
+
+/* Small helper styles */
+.text-muted{ color: var(--muted-600) !important; }
+
+/* Accent icons */
+.bi-diagram-3, .bi-cpu{
+  color: var(--primary-500);
+}
+
+/* Dropdown menu custom */
+.dropdown-menu{
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(15,15,25,0.06);
+}
+
+/* Toast styles (if not present) */
+.toast.bg-success{ background: linear-gradient(90deg, #00b894, #6c5ce7); }
+.toast.bg-danger{ background: linear-gradient(90deg, #ff6b6b, #f06595); }

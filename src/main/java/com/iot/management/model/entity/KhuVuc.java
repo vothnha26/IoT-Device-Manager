@@ -13,6 +13,11 @@ public class KhuVuc {
     @Column(name = "ma_khu_vuc")
     private Long maKhuVuc;
 
+    @JsonBackReference("project-regions")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_du_an", nullable = false)
+    private DuAn duAn;
+
     @JsonBackReference("owner-regions")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_chu_so_huu", nullable = false)
@@ -24,18 +29,12 @@ public class KhuVuc {
     @Column(name = "loai_khu_vuc", length = 20)
     private String loaiKhuVuc;
 
-    @JsonBackReference("parent-child")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ma_khu_vuc_cha")
-    private KhuVuc khuVucCha;
-
-    @JsonManagedReference("parent-child")
-    @OneToMany(mappedBy = "khuVucCha")
-    private Set<KhuVuc> khuVucCons;
-
     @JsonManagedReference("region-devices")
     @OneToMany(mappedBy = "khuVuc")
     private Set<ThietBi> thietBis;
+
+    @Column(name = "mo_ta", length = 500)
+    private String moTa;
     
     
     // Constructors
@@ -54,6 +53,7 @@ public class KhuVuc {
     public NguoiDung getChuSoHuu() {
         return chuSoHuu;
     }
+
 
     public void setChuSoHuu(NguoiDung chuSoHuu) {
         this.chuSoHuu = chuSoHuu;
@@ -75,27 +75,27 @@ public class KhuVuc {
         this.loaiKhuVuc = loaiKhuVuc;
     }
 
-    public KhuVuc getKhuVucCha() {
-        return khuVucCha;
-    }
-
-    public void setKhuVucCha(KhuVuc khuVucCha) {
-        this.khuVucCha = khuVucCha;
-    }
-
-    public Set<KhuVuc> getKhuVucCons() {
-        return khuVucCons;
-    }
-
-    public void setKhuVucCons(Set<KhuVuc> khuVucCons) {
-        this.khuVucCons = khuVucCons;
-    }
-
     public Set<ThietBi> getThietBis() {
         return thietBis;
     }
 
     public void setThietBis(Set<ThietBi> thietBis) {
         this.thietBis = thietBis;
+    }
+
+    public DuAn getDuAn() {
+        return duAn;
+    }
+
+    public void setDuAn(DuAn duAn) {
+        this.duAn = duAn;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
     }
 }
