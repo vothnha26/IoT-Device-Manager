@@ -15,8 +15,15 @@ public class HomeController {
 
     @GetMapping("/")
     public String showHomePage(Model model) {
-        model.addAttribute("title", "Trang chủ - IoT Management");
-        model.addAttribute("goiCuocs", goiCuocService.findAll());
-        return "homepage";
+        System.out.println("=== HomeController / accessed ===");
+        try {
+            model.addAttribute("title", "Trang chủ - IoT Management");
+            model.addAttribute("goiCuocs", goiCuocService.findAll());
+            return "homepage";
+        } catch (Exception e) {
+            System.err.println("Error in showHomePage: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 }

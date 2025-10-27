@@ -6,7 +6,5 @@ import java.util.Optional;
 
 public interface GoiCuocRepository extends JpaRepository<GoiCuoc, Integer> {
     // Phương thức này giúp tìm gói cước theo tên để tránh tạo trùng lặp
-    Optional<GoiCuoc> findByTenGoi(String tenGoi);
-    
-    
+    Optional<GoiCuoc> findByTenGoi(String tenGoi);    
 }

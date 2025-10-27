@@ -168,13 +168,19 @@
                         showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
                         
                         // Cookie is already set by server
-                        // Redirect to dashboard after short delay
-                        // Check user role from response
+                        // Check for redirect parameter in URL
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const redirectUrl = urlParams.get('redirect');
+                        
                         setTimeout(function() {
-                            // Redirect based on role
-                            if (response.role === 'ADMIN') {
+                            if (redirectUrl) {
+                                // Redirect to the requested page
+                                window.location.href = redirectUrl;
+                            } else if (response.role === 'ADMIN') {
+                                // Admin goes to admin dashboard
                                 window.location.href = '/admin/dashboard';
                             } else {
+                                // Regular user goes to homepage
                                 window.location.href = '/';
                             }
                         }, 500);

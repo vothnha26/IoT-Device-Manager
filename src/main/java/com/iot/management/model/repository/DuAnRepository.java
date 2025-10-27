@@ -11,6 +11,7 @@ import java.util.List;
 public interface DuAnRepository extends JpaRepository<DuAn, Long> {
     List<DuAn> findByNguoiDungAndTrangThai(NguoiDung nguoiDung, String trangThai);
     List<DuAn> findByNguoiDung(NguoiDung nguoiDung);
+    long countByNguoiDung(NguoiDung nguoiDung);
     boolean existsByTenDuAnAndNguoiDung(String tenDuAn, NguoiDung nguoiDung);
     Optional<DuAn> findByMaDuAnAndNguoiDungAndTrangThai(Long maDuAn, NguoiDung nguoiDung, String trangThai);
 }

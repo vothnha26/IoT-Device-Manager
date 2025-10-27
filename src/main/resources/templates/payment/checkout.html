@@ -1,0 +1,30 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Thanh toán - Checkout</title>
+    <link rel="stylesheet" th:href="@{/static/css/home.css}" />
+    <style>
+        .container { max-width: 680px; margin: 40px auto; font-family: Arial, Helvetica, sans-serif; }
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 6px; }
+        .price { font-size: 24px; color: #2b6cb0; font-weight: bold; }
+        .btn-pay { background: #2b6cb0; color: white; padding: 12px 18px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h2>Thanh toán cho gói: <span th:text="${goiCuoc.tenGoi}">Gói A</span></h2>
+        <p>Giá: <span th:text="${goiCuoc.giaTien}">0</span> VND</p>
+
+        <form th:action="@{'/payment/create-payment/' + ${goiCuoc.maGoiCuoc}}" method="post">
+            <div>
+                <button type="submit" class="btn-pay">Thanh toán ngay</button>
+            </div>
+        </form>
+
+        <p th:if="${username}">Bạn đang đăng nhập là: <strong th:text="${username}"></strong></p>
+    </div>
+</div>
+</body>
+</html>

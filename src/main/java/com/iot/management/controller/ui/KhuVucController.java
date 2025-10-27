@@ -51,6 +51,19 @@ public class KhuVucController {
             DuAn duAn = duAnOpt.get();
             List<KhuVuc> khuVucs = khuVucService.findByDuAn(maDuAn);
             
+            // Force load thietBis để tránh lazy loading exception
+            khuVucs.forEach(kv -> {
+                if (kv.getThietBis() != null) {
+                    kv.getThietBis().size(); // Force initialize
+                    // Ensure loaiThietBi is loaded
+                    kv.getThietBis().forEach(tb -> {
+                        if (tb.getLoaiThietBi() != null) {
+                            tb.getLoaiThietBi().getNhomThietBi(); // Force load
+                        }
+                    });
+                }
+            });
+            
             model.addAttribute("duAn", duAn);
             model.addAttribute("khuVucs", khuVucs);
             model.addAttribute("maDuAn", maDuAn);

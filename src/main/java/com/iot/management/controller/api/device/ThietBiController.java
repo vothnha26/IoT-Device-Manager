@@ -11,6 +11,8 @@ import com.iot.management.service.LoaiThietBiService;
 import com.iot.management.service.NhatKyDuLieuService;
 import com.iot.management.service.PackageLimitService;
 import com.iot.management.service.ThietBiService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -28,6 +30,7 @@ import com.iot.management.websocket.DeviceMessagingService;
 @Controller
 @RequestMapping("/thiet-bi")
 public class ThietBiController {
+    private static final Logger logger = LoggerFactory.getLogger(ThietBiController.class);
 
     @Autowired
     private ThietBiService thietBiService;
@@ -49,6 +52,9 @@ public class ThietBiController {
     
     @Autowired
     private NhatKyDuLieuService nhatKyDuLieuService;
+
+    @Autowired
+    private com.iot.management.service.TuDongHoaService tuDongHoaService;
 
     private final KhuVucRepository khuVucRepository;
     private final NguoiDungRepository nguoiDungRepository;
@@ -110,6 +116,36 @@ public class ThietBiController {
         model.addAttribute("switchDeviceIds", java.util.List.of(2L, 3L));
 
         return "thiet-bi/khu-vuc-stats";
+    }
+
+    @GetMapping("/{maThietBi}/rules")
+    public String getDeviceRules(@PathVariable Long maThietBi, Model model, Authentication authentication) {
+        if (authentication == null) {
+            return "redirect:/auth/login";
+        }
+
+        String email = authentication.getName();
+        NguoiDung user = nguoiDungRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Get device
+        ThietBi thietBi = thietBiService.findDeviceById(maThietBi)
+                .orElseThrow(() -> new RuntimeException("Thiết bị không tồn tại"));
+
+        // Verify ownership
+        if (thietBi.getChuSoHuu() != null && 
+            !thietBi.getChuSoHuu().getMaNguoiDung().equals(user.getMaNguoiDung())) {
+            throw new RuntimeException("Bạn không có quyền truy cập thiết bị này");
+        }
+
+        // Get rules for this device
+        List<LuatNguong> rules = tuDongHoaService.findRulesByDevice(maThietBi);
+
+        model.addAttribute("user", user);
+        model.addAttribute("thietBi", thietBi);
+        model.addAttribute("rules", rules);
+
+        return "thiet-bi/rules";
     }
 
     // API endpoints
@@ -216,41 +252,33 @@ public class ThietBiController {
             @PathVariable Long id,
             @RequestBody Map<String, String> payload) {
         try {
-            String trangThai = payload.get("trangThai"); // "HOAT_DONG" hoặc "TAT"
+            String trangThai = payload.get("trangThai"); // "hoat_dong" hoặc "tat"
+            logger.info("🎯 [API] PUT /thiet-bi/{}/state - Request: {}", id, trangThai);
+            
+            // capNhatTrangThaiThietBi đã tự động gửi lệnh xuống ESP32 qua WebSocket
             thietBiService.capNhatTrangThaiThietBi(id, trangThai);
 
-            // Xác định trạng thái boolean và field name
+            // Xác định trạng thái boolean để lưu log
             boolean isOn = false;
-            String command = "tat";
             String fieldName = "trang_thai";
             
             if (trangThai != null) {
                 String normalized = trangThai.trim().toLowerCase();
-                if (normalized.equals("hoat_dong") || normalized.equals("on") || normalized.equals("bat")) {
-                    command = "hoat_dong";
-                    isOn = true;
-                } else {
-                    command = "tat";
-                    isOn = false;
-                }
+                isOn = normalized.equals("hoat_dong") || normalized.equals("on") || normalized.equals("bat");
                 
                 // Thiết lập field name cho LED1 và LED2
                 if (id == 1) {
                     fieldName = "led1";
                 } else if (id == 2) {
                     fieldName = "led2";
-                }
-                
-                // Gửi lệnh qua WebSocket tới ESP32 (hoat_dong hoặc tat)
-                if (deviceMessagingService != null) {
-                    boolean sent = deviceMessagingService.sendCommandToDevice(id, command);
-                    System.out.println("📡 Sent '" + command + "' to device " + id + ": " + (sent ? "✅ Success" : "❌ Failed"));
+                } else if (id == 3) {
+                    fieldName = "led_device_3";
                 }
                 
                 // Lưu nhật ký điều khiển thủ công vào bảng NhatKyDuLieu
                 try {
                     nhatKyDuLieuService.saveManualControlLog(id, fieldName, isOn);
-                    System.out.println("📝 Saved manual control log for device " + id + " (field: " + fieldName + "): " + trangThai + " (isOn=" + isOn + ")");
+                    System.out.println("📝 Saved manual control log for device " + id + " (field: " + fieldName + "): " + trangThai);
                 } catch (Exception e) {
                     System.err.println("⚠️ Failed to save control log: " + e.getMessage());
                     // Không throw exception để không ảnh hưởng đến điều khiển thiết bị

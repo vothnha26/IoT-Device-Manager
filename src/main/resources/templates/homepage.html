@@ -593,10 +593,10 @@
                             <span th:text="${goi.slTokenToiDa + ' token API tối đa'}">2 token API tối đa</span>
                         </p>
                     </div>
-                    <form th:if="${#authentication == null or !#authorization.expression('isAuthenticated()')}"
-                          action="/auth/register" method="get">
-                        <button type="submit" class="btn btn-primary package-btn">Đăng ký ngay</button>
-                    </form>
+                                        <form th:if="${#authentication == null or !#authorization.expression('isAuthenticated()')}"
+                                                    th:action="@{/payment/create-payment/{maGoiCuoc}(maGoiCuoc=${goi.maGoiCuoc})}" method="get">
+                                                <button type="submit" class="btn btn-primary package-btn">Đăng ký ngay</button>
+                                        </form>
                     <form th:if="${#authorization.expression('isAuthenticated()')}"
                           th:action="@{/payment/create-payment/{maGoiCuoc}(maGoiCuoc=${goi.maGoiCuoc})}" 
                           method="post">

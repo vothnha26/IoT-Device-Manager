@@ -27,4 +27,7 @@ public interface NhatKyDuLieuRepository extends JpaRepository<NhatKyDuLieu, Long
             LocalDateTime start,
             LocalDateTime end
     );
+
+    // Lấy bản ghi mới nhất theo thiết bị và trường
+    NhatKyDuLieu findTop1ByThietBi_MaThietBiAndTenTruongIgnoreCaseOrderByThoiGianDesc(Long maThietBi, String tenTruong);
 }

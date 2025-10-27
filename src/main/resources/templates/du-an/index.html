@@ -95,7 +95,7 @@
         </div>
     </div>
 
-    <!-- Modal Thêm Dự Án -->
+    <!-- Modal Thêm Dự Án Mới -->
     <div class="modal fade" id="themDuAnModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -153,6 +153,7 @@
     </div>
 </main>
 
+
 <th:block th:fragment="scripts">
     <script th:inline="javascript">
         // CSS styles
@@ -179,9 +180,20 @@
         `;
         document.head.appendChild(styleSheet);
 
-        // Initialize modals
-        const themDuAnModal = new bootstrap.Modal(document.getElementById('themDuAnModal'));
-        const chinhSuaDuAnModal = new bootstrap.Modal(document.getElementById('chinhSuaDuAnModal'));
+        // Di chuyển modals ra body để tránh z-index conflicts với main container
+        const themModalEl = document.getElementById('themDuAnModal');
+        const suaModalEl = document.getElementById('chinhSuaDuAnModal');
+        
+        if (themModalEl && themModalEl.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(themModalEl);
+        }
+        if (suaModalEl && suaModalEl.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(suaModalEl);
+        }
+
+        // Initialize modals after moving to body
+        const themDuAnModal = new bootstrap.Modal(themModalEl);
+        const chinhSuaDuAnModal = new bootstrap.Modal(suaModalEl);
 
         // Form handling for create
         document.getElementById('themDuAnForm').addEventListener('submit', async function(e) {

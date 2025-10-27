@@ -4,7 +4,7 @@
       th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
 
 <head>
-    <title th:fragment="title" th:text="${khuVuc.tenKhuVuc} + ' - Quản lý thiết bị'">Quản lý thiết bị</title>
+    <title th:text="${khuVuc.tenKhuVuc} + ' - Quản lý thiết bị'">Quản lý thiết bị</title>
 </head>
 
 <body>
@@ -112,6 +112,14 @@
                                                            th:data-desc="${thietBi.moTa}">
                                                             <i class="bi bi-pencil me-2 text-primary"></i>
                                                             Chỉnh sửa
+                                                        </a>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item d-flex align-items-center" 
+                                                           th:href="@{'/thiet-bi/' + ${thietBi.maThietBi} + '/rules'}">
+                                                            <i class="bi bi-gear me-2 text-success"></i>
+                                                            <span>Quản lý luật</span>
                                                         </a>
                                                     </li>
                                                     <li><hr class="dropdown-divider"></li>
@@ -531,6 +539,8 @@
         // Toggle device state
         function updateDeviceUI(deviceId, isActive) {
             const card = $(`#switch-${deviceId}`).closest('.card');
+            if (!card.length) return;
+            
             const icon = card.find('.bi-lightbulb-fill');
             const header = card.find('.card-header');
             const statusDot = card.find('.status-dot');
@@ -538,29 +548,15 @@
             const timeText = card.find('.device-activity small.text-muted:last span');
 
             if (isActive) {
-                // Update header gradient
                 header.css('background', 'linear-gradient(135deg, rgba(255,193,7,0.1), rgba(255,193,7,0.2))');
-
-                // Reset & start icon glow animation
                 icon.removeClass('glow text-warning text-secondary');
                 icon.addClass('text-warning glow');
-
-                // Status dot
                 statusDot.removeClass('bg-danger').addClass('bg-success');
-
-                // Status text
                 statusText.text('Đang chạy');
             } else {
-                // Update header gradient
                 header.css('background', 'linear-gradient(135deg, rgba(108,117,125,0.1), rgba(108,117,125,0.2))');
-
-                // Stop icon animation
                 icon.removeClass('glow text-warning').addClass('text-secondary');
-
-                // Status dot
                 statusDot.removeClass('bg-success').addClass('bg-danger');
-
-                // Status text
                 statusText.text('Đã tắt');
             }
 
@@ -571,6 +567,10 @@
             timeText.text(currentTime);
         }
 
+        // Debounce map để tránh spam toggle
+        const toggleDebounce = {};
+        const TOGGLE_DELAY = 1500; // 1.5 giây delay
+
         function toggleDevice(element, skipAjax = false) {
             const deviceId = element.id.split('-')[1];
             const state = element.checked ? 'hoat_dong' : 'tat';
@@ -580,77 +580,76 @@
                 return;
             }
 
+            // Kiểm tra debounce - nếu đang trong thời gian chờ, chặn request
+            const now = Date.now();
+            if (toggleDebounce[deviceId] && (now - toggleDebounce[deviceId] < TOGGLE_DELAY)) {
+                const remainingTime = Math.ceil((TOGGLE_DELAY - (now - toggleDebounce[deviceId])) / 1000);
+                showToast(`Vui lòng đợi ${remainingTime}s trước khi thao tác lại`, 'warning');
+                element.checked = !element.checked; // Rollback
+                return;
+            }
+
+            // Disable nút và lưu timestamp
+            toggleDebounce[deviceId] = now;
+            element.disabled = true;
+
             $.ajax({
                 url: '/thiet-bi/' + deviceId + '/state',
                 type: 'PUT',
                 contentType: 'application/json',
                 data: JSON.stringify({ trangThai: state }),
-                success: function() {
+                success: function(response) {
                     updateDeviceUI(deviceId, state === 'hoat_dong');
                     showToast(`Thiết bị đã ${state === 'hoat_dong' ? 'bật' : 'tắt'}`, 'success');
+                    
+                    // Re-enable sau delay
+                    setTimeout(() => {
+                        element.disabled = false;
+                    }, TOGGLE_DELAY);
                 },
-                error: function() {
-                    alert('Có lỗi xảy ra khi thay đổi trạng thái thiết bị');
-                    element.checked = !element.checked; // rollback toggle
+                error: function(xhr, status, error) {
+                    console.error('❌ Error:', error);
+                    showToast('Có lỗi xảy ra khi thay đổi trạng thái thiết bị', 'error');
+                    element.checked = !element.checked;
+                    element.disabled = false;
+                    delete toggleDebounce[deviceId]; // Xóa debounce khi lỗi
                 }
             });
         }
 
-        // Real-time state sync from ESP32 via STOMP
-        (function initDeviceStateSync() {
-            try {
-                if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
-                    console.warn('SockJS/STOMP not available; skipping device state sync');
-                    return;
-                }
-                const socket = new SockJS('/stomp');
-                const stompClient = Stomp.over(socket);
-                // Optional: silence debug logs
-                if (stompClient && stompClient.debug) stompClient.debug = null;
-                stompClient.connect({}, function() {
-                    // Subscribe device 2
-                    stompClient.subscribe('/topic/devices/2/state', function(msg) {
-                        try {
-                            const data = JSON.parse(msg.body);
-                            const state = data.state || '';
-                            const isOn = state.toLowerCase() === 'hoat_dong';
-                            
-                            // Update main switch
-                            const mainSwitch = document.getElementById('switch-2');
-                            if (mainSwitch) {
-                                mainSwitch.checked = isOn;
-                                updateDeviceUI(2, isOn);
-                            }
-                            
-                        } catch (e) {
-                            console.warn('Failed to parse device 2 state:', msg.body);
+        // Real-time state sync - Poll backend mỗi 2 giây
+        function pollDeviceStates() {
+            $('.device-card').each(function() {
+                const card = $(this);
+                const switchElement = card.find('.form-check-input[type="checkbox"]');
+                if (!switchElement.length) return;
+                
+                const deviceId = switchElement.attr('id').split('-')[1];
+                
+                // Lấy trạng thái hiện tại từ backend
+                $.ajax({
+                    url: '/thiet-bi/' + deviceId,
+                    type: 'GET',
+                    success: function(device) {
+                        const isOn = device.trangThai === 'hoat_dong';
+                        const currentChecked = switchElement.prop('checked');
+                        
+                        // Chỉ update nếu khác
+                        if (currentChecked !== isOn) {
+                            console.log('� [Poll] Device', deviceId, 'state changed:', device.trangThai);
+                            switchElement.prop('checked', isOn);
+                            updateDeviceUI(deviceId, isOn);
                         }
-                    });
-                    
-                    // Subscribe device 3
-                    stompClient.subscribe('/topic/devices/3/state', function(msg) {
-                        try {
-                            const data = JSON.parse(msg.body);
-                            const state = data.state || '';
-                            const isOn = state.toLowerCase() === 'hoat_dong';
-                            
-                            // Update main switch
-                            const mainSwitch = document.getElementById('switch-3');
-                            if (mainSwitch) {
-                                mainSwitch.checked = isOn;
-                                updateDeviceUI(3, isOn);
-                            }
-                        } catch (e) {
-                            console.warn('Failed to parse device 3 state:', msg.body);
-                        }
-                    });
-                }, function(err) {
-                    console.warn('STOMP connect failed:', err && err.body ? err.body : err);
+                    },
+                    error: function() {
+                        // Bỏ qua lỗi polling
+                    }
                 });
-            } catch (e) {
-                console.warn('Device state sync init error:', e);
-            }
-        })();
+            });
+        }
+        
+        // Poll mỗi 2 giây
+        setInterval(pollDeviceStates, 2000);
 
         // Real-time sensor data (temperature) subscription
         (function initSensorRealtime() {

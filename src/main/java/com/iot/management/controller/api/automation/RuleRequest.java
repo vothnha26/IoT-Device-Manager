@@ -3,9 +3,10 @@ package com.iot.management.controller.api.automation;
 public class RuleRequest {
     private Long maThietBi;
     private String tenTruong;
-    private String phepToan;
-    private String giaTriNguong;
     private String lenhHanhDong;
+    // Expression-based rule (optional)
+    private String bieuThucLogic;
+    private Integer thoiGianDuyTriDieuKien; // seconds
     // alternative fields accepted from clients
     private String loaiLuat; // e.g. GREATER_THAN
     private Double giaTri; // numeric threshold
@@ -18,14 +19,14 @@ public class RuleRequest {
     public String getTenTruong() { return tenTruong; }
     public void setTenTruong(String tenTruong) { this.tenTruong = tenTruong; }
 
-    public String getPhepToan() { return phepToan; }
-    public void setPhepToan(String phepToan) { this.phepToan = phepToan; }
-
-    public String getGiaTriNguong() { return giaTriNguong; }
-    public void setGiaTriNguong(String giaTriNguong) { this.giaTriNguong = giaTriNguong; }
-
     public String getLenhHanhDong() { return lenhHanhDong; }
     public void setLenhHanhDong(String lenhHanhDong) { this.lenhHanhDong = lenhHanhDong; }
+
+    public String getBieuThucLogic() { return bieuThucLogic; }
+    public void setBieuThucLogic(String bieuThucLogic) { this.bieuThucLogic = bieuThucLogic; }
+
+    public Integer getThoiGianDuyTriDieuKien() { return thoiGianDuyTriDieuKien; }
+    public void setThoiGianDuyTriDieuKien(Integer thoiGianDuyTriDieuKien) { this.thoiGianDuyTriDieuKien = thoiGianDuyTriDieuKien; }
 
     public String getLoaiLuat() { return loaiLuat; }
     public void setLoaiLuat(String loaiLuat) { this.loaiLuat = loaiLuat; }

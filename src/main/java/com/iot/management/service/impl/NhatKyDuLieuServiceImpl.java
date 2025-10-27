@@ -51,7 +51,8 @@ public class NhatKyDuLieuServiceImpl implements NhatKyDuLieuService {
             dataLog.setThoiGian(LocalDateTime.now());
         }
         
-        thietBi.setTrangThai("dang_ket_noi");
+    // Khi thiết bị gửi dữ liệu, coi như đang hoạt động
+    thietBi.setTrangThai("hoat_dong");
         thietBi.setLanHoatDongCuoi(LocalDateTime.now());
         thietBiRepository.save(thietBi);
 

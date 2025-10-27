@@ -9,6 +9,9 @@ import com.iot.management.model.repository.LoaiThietBiRepository;
 import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.model.repository.ThietBiRepository;
 import com.iot.management.service.ThietBiService;
+import com.iot.management.websocket.DeviceSessionRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -19,20 +22,24 @@ import java.util.UUID;
 
 @Service
 public class ThietBiServiceImpl implements ThietBiService {
+    private static final Logger logger = LoggerFactory.getLogger(ThietBiServiceImpl.class);
 
     private final ThietBiRepository thietBiRepository;
     private final NguoiDungRepository nguoiDungRepository;
     private final LoaiThietBiRepository loaiThietBiRepository;
     private final KhuVucRepository khuVucRepository;
+    private final DeviceSessionRegistry deviceSessionRegistry;
 
     public ThietBiServiceImpl(ThietBiRepository thietBiRepository,
                               NguoiDungRepository nguoiDungRepository,
                               LoaiThietBiRepository loaiThietBiRepository,
-                              KhuVucRepository khuVucRepository) {
+                              KhuVucRepository khuVucRepository,
+                              DeviceSessionRegistry deviceSessionRegistry) {
         this.thietBiRepository = thietBiRepository;
         this.nguoiDungRepository = nguoiDungRepository;
         this.loaiThietBiRepository = loaiThietBiRepository;
         this.khuVucRepository = khuVucRepository;
+        this.deviceSessionRegistry = deviceSessionRegistry;
     }
 
     @Override
@@ -64,9 +71,9 @@ public class ThietBiServiceImpl implements ThietBiService {
         // 4. Các logic khác
         thietBi.setTokenThietBi(UUID.randomUUID().toString());
         
-        // Nếu không có trạng thái được set từ client, mặc định là "hoat dong"
+        // Nếu không có trạng thái được set từ client, mặc định là "hoat_dong"
         if (thietBi.getTrangThai() == null || thietBi.getTrangThai().trim().isEmpty()) {
-            thietBi.setTrangThai("hoat dong");
+            thietBi.setTrangThai("hoat_dong");
         }
         
         // Nếu không có ngày lắp đặt, set ngày hiện tại
@@ -101,10 +108,41 @@ public class ThietBiServiceImpl implements ThietBiService {
     public void capNhatTrangThaiThietBi(Long deviceId, String trangThai) {
         ThietBi thietBi = thietBiRepository.findById(deviceId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thiết bị với ID: " + deviceId));
-                
-        thietBi.setTrangThai(trangThai);
+
+        // Chuẩn hóa trạng thái về 2 giá trị: hoat_dong | tat
+        String normalized = (trangThai == null ? "" : trangThai.trim().toLowerCase());
+        String finalState;
+        switch (normalized) {
+            case "hoat_dong":
+            case "on":
+            case "bat":
+                finalState = "hoat_dong";
+                break;
+            case "tat":
+            case "off":
+                finalState = "tat";
+                break;
+            default:
+                // Nếu gửi linh tinh thì mặc định tắt
+                finalState = "tat";
+                break;
+        }
+        
+        thietBi.setTrangThai(finalState);
         thietBi.setLanHoatDongCuoi(LocalDateTime.now());
         thietBiRepository.save(thietBi);
+        
+        // GỬI LỆNH ĐIỀU KHIỂN ĐẾN THIẾT BỊ THẬT QUA RAW WEBSOCKET
+        try {
+            boolean sent = deviceSessionRegistry.sendCommand(deviceId, finalState);
+            if (sent) {
+                logger.info("✅ Control command sent to device {}: {}", deviceId, finalState);
+            } else {
+                logger.warn("⚠️  Device {} is offline, command not sent", deviceId);
+            }
+        } catch (Exception e) {
+            logger.error("❌ Error sending command to device {}: {}", deviceId, e.getMessage(), e);
+        }
     }
 
     @Override

@@ -78,22 +78,22 @@
                                 </div>
                                 
                                 <div class="d-flex align-items-baseline gap-2 mb-3">
-                                    <div class="stat-value text-white display-5 fw-bold" 
-                                         th:with="totalActive=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi == 'CONG_TAC' and trangThai == 'HOAT_DONG'])])}"
-                                         th:text="${totalActive}">8</div>
+                             <div class="stat-value text-white display-5 fw-bold" 
+                                 th:with="totalActive=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER' and #strings.equalsIgnoreCase(trangThai, 'hoat_dong')])])}"
+                                 th:text="${totalActive}">8</div>
                                     <div class="stat-change">
                                         <span class="badge rounded-pill bg-white bg-opacity-25 text-white px-3"
-                                              th:text="'/' + ${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi == 'CONG_TAC'])])} + ' thiết bị'">
+                                              th:text="'/' + ${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER'])])} + ' thiết bị'">
                                             /10 thiết bị
                                         </span>
                                     </div>
                                 </div>
                                 
-                                <div class="progress bg-white bg-opacity-25" style="height: 6px; border-radius: 3px;">
-                                    <div class="progress-bar bg-white" role="progressbar" 
-                                         th:with="total=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi == 'CONG_TAC'])])}"
-                                         th:style="${total > 0} ? ('width: ' + ${(totalActive?:0) * 100 / total} + '%') : 'width: 0%'"
-                                         style="width: 80%"></div>
+                             <div class="progress bg-white bg-opacity-25" style="height: 6px; border-radius: 3px;">
+                             <div class="progress-bar bg-white" role="progressbar" 
+                                 th:with="total=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER'])])}"
+                                 th:style="${total > 0} ? ('width: ' + ${(totalActive?:0) * 100 / total} + '%') : 'width: 0%'"
+                                 style="width: 80%"></div>
                                 </div>
                             </div>
                         </div>
@@ -119,22 +119,22 @@
                                 </div>
                                 
                                 <div class="d-flex align-items-baseline gap-2 mb-3">
-                                    <div class="stat-value text-white display-5 fw-bold" 
-                                         th:with="totalActive=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi == 'CAM_BIEN' and trangThai == 'HOAT_DONG'])])}"
-                                         th:text="${totalActive}">5</div>
+                             <div class="stat-value text-white display-5 fw-bold" 
+                                 th:with="totalActive=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR' and #strings.equalsIgnoreCase(trangThai, 'hoat_dong')])])}"
+                                 th:text="${totalActive}">5</div>
                                     <div class="stat-change">
                                         <span class="badge rounded-pill bg-white bg-opacity-25 text-white px-3"
-                                              th:text="'/' + ${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi == 'CAM_BIEN'])])} + ' thiết bị'">
+                                              th:text="'/' + ${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR'])])} + ' thiết bị'">
                                             /8 thiết bị
                                         </span>
                                     </div>
                                 </div>
                                 
-                                <div class="progress bg-white bg-opacity-25" style="height: 6px; border-radius: 3px;">
-                                    <div class="progress-bar bg-white" role="progressbar" 
-                                         th:with="total=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi == 'CAM_BIEN'])])}"
-                                         th:style="${total > 0} ? ('width: ' + ${(totalActive?:0) * 100 / total} + '%') : 'width: 0%'"
-                                         style="width: 62.5%"></div>
+                             <div class="progress bg-white bg-opacity-25" style="height: 6px; border-radius: 3px;">
+                             <div class="progress-bar bg-white" role="progressbar" 
+                                 th:with="total=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR'])])}"
+                                 th:style="${total > 0} ? ('width: ' + ${(totalActive?:0) * 100 / total} + '%') : 'width: 0%'"
+                                 style="width: 62.5%"></div>
                                 </div>
                             </div>
                         </div>
@@ -210,10 +210,10 @@
                                                 <div>
                                                     <div class="stat-label text-muted small">Cảm biến</div>
                                                     <div class="d-flex align-items-baseline">
-                                                        <span class="stat-value h4 mb-0" th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi == 'CAM_BIEN'])}">3</span>
+                                                        <span class="stat-value h4 mb-0" th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR'])}">3</span>
                                                         <span class="stat-status ms-2 small">
                                                             (<span class="text-success" 
-                                                                th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi == 'CAM_BIEN' and trangThai == 'HOAT_DONG'])}">2</span> hoạt động)
+                                                                th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR' and #strings.equalsIgnoreCase(trangThai, 'hoat_dong')])}">2</span> hoạt động)
                                                         </span>
                                                     </div>
                                                 </div>
@@ -229,10 +229,10 @@
                                                 <div>
                                                     <div class="stat-label text-muted small">Công tắc</div>
                                                     <div class="d-flex align-items-baseline">
-                                                        <span class="stat-value h4 mb-0" th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi == 'CONG_TAC'])}">8</span>
+                                                        <span class="stat-value h4 mb-0" th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER'])}">8</span>
                                                         <span class="stat-status ms-2 small">
                                                             (<span class="text-success" 
-                                                                th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi == 'CONG_TAC' and trangThai == 'HOAT_DONG'])}">6</span> hoạt động)
+                                                                th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER' and #strings.equalsIgnoreCase(trangThai, 'hoat_dong')])}">6</span> hoạt động)
                                                         </span>
                                                     </div>
                                                 </div>
@@ -413,6 +413,28 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         const maDuAn = /*[[${duAn.maDuAn}]]*/ null;
+        
+        // Tạo cấu trúc dữ liệu đơn giản cho charts
+        const khuVucs = [];
+        /*[# th:each="kv : ${khuVucs}"]*/
+        khuVucs.push({
+            maKhuVuc: /*[[${kv.maKhuVuc}]]*/ 0,
+            tenKhuVuc: /*[[${kv.tenKhuVuc}]]*/ '',
+            thietBis: [
+                /*[# th:each="tb : ${kv.thietBis}"]*/
+                {
+                    maThietBi: /*[[${tb.maThietBi}]]*/ 0,
+                    tenThietBi: /*[[${tb.tenThietBi}]]*/ '',
+                    trangThai: /*[[${tb.trangThai}]]*/ '',
+                    loaiThietBi: {
+                        nhomThietBi: /*[[${tb.loaiThietBi?.nhomThietBi?.name()}]]*/ ''
+                    }
+                },
+                /*[/]*/
+            ].filter(t => t.maThietBi !== 0)
+        });
+        /*[/]*/
+        
         let themModal, suaModal;
 
         // Utility function to show/hide loading state
@@ -429,6 +451,12 @@
         // Khởi tạo các modal và form validation
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM Content Loaded');
+            console.log('Khu vucs data:', khuVucs);
+            
+            // Đảm bảo ApexCharts đã được load rồi mới khởi tạo biểu đồ
+            ensureApexChartsLoaded(() => {
+                initializeCharts();
+            });
             
             // Khởi tạo các modal
             themModal = new bootstrap.Modal(document.getElementById('themKhuVucModal'));
@@ -473,8 +501,21 @@
         
 
         
+        // Nạp ApexCharts từ CDN nếu chưa có
+        function ensureApexChartsLoaded(callback) {
+            if (window.ApexCharts) {
+                callback && callback();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
+            script.onload = () => callback && callback();
+            script.onerror = () => console.error('Không thể tải ApexCharts từ CDN');
+            document.head.appendChild(script);
+        }
+
         // CSS styles
-                // Khởi tạo biểu đồ cho từng khu vực
+        // Khởi tạo biểu đồ cho từng khu vực
         function initializeCharts() {
             document.querySelectorAll('[id^="chart-"]').forEach(chartElement => {
                 const khuVucId = chartElement.id.split('-')[1];
@@ -482,27 +523,51 @@
                 
                 if (!khuVuc) return;
 
+                // Đảm bảo vùng hiển thị đủ cao cho biểu đồ
+                chartElement.style.minHeight = '220px';
+
+                const totalSensors = khuVuc.thietBis.filter(t => t.loaiThietBi && t.loaiThietBi.nhomThietBi === 'SENSOR').length || 0;
+                const totalControllers = khuVuc.thietBis.filter(t => t.loaiThietBi && t.loaiThietBi.nhomThietBi === 'CONTROLLER').length || 0;
+                const totalForChart = totalSensors + totalControllers;
+
+                if (totalForChart === 0) {
+                    chartElement.innerHTML = '<div class="text-muted small text-center py-5">Chưa có thiết bị hoạt động</div>';
+                    return;
+                }
+
                 const options = {
-                    series: [
-                        khuVuc.thietBis.filter(t => t.loaiThietBi === 'CAM_BIEN' && t.trangThai === 'HOAT_DONG').length || 0,
-                        khuVuc.thietBis.filter(t => t.loaiThietBi === 'CONG_TAC' && t.trangThai === 'HOAT_DONG').length || 0
-                    ],
+                    series: [totalSensors, totalControllers],
                     chart: {
                         type: 'donut',
                         height: 200
                     },
-                    labels: ['Cảm biến đang hoạt động', 'Công tắc đang hoạt động'],
+                    labels: ['Cảm biến', 'Công tắc'],
                     colors: ['#f6c23e', '#36b9cc'],
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        fontSize: '12px'
                     },
                     dataLabels: {
-                        enabled: false
+                        enabled: true,
+                        formatter: function (val, opts) {
+                            return opts.w.config.series[opts.seriesIndex]
+                        }
                     },
                     plotOptions: {
                         pie: {
                             donut: {
-                                size: '70%'
+                                size: '65%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'Tổng thiết bị',
+                                        fontSize: '14px',
+                                        formatter: function (w) {
+                                            return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

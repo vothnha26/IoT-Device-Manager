@@ -1,14 +1,28 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thông tin cá nhân - IoT Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="/css/theme.css" rel="stylesheet">
-    <style>
+</head>
+<body>
+
+<main th:fragment="main">
+    <div class="container-fluid py-4">
+        <!-- Profile Header -->
+        <div class="profile-header mb-4">
+            <div class="container">
+                <div class="profile-avatar">
+                    <span th:text="${user.tenDangNhap != null ? #strings.substring(user.tenDangNhap, 0, 1).toUpperCase() : 'U'}">U</span>
+                </div>
+                <h3 class="text-center mb-2" th:text="${user.tenDangNhap}">Tên người dùng</h3>
+                <p class="text-center mb-0 text-white">
+                    <i class="bi bi-envelope"></i>
+                    <span th:text="${user.email}">email@example.com</span>
+                </p>
+            </div>
+        </div>
         body {
             background-color: #e9ecef;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -280,13 +294,13 @@
                     <span>Quản lý Người dùng</span>
                 </a>
             </li>
-            <li class="nav-item" th:if="${#authorization.expression('hasRole('ROLE_MANAGER')')}">
+            <li class="nav-item" th:if="${#authorization.expression('hasRole(''ROLE_ADMIN'')')}">
                 <a class="nav-link" href="/admin/packages">
                     <i class="fas fa-box"></i>
                     <span>Quản lý Gói cước</span>
                 </a>
             </li>
-            <li class="nav-item" th:if="${#authorization.expression('hasRole('ROLE_MANAGER')')}">
+            <li class="nav-item" th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}">
                 <a class="nav-link" href="/admin/device-types">
                     <i class="fas fa-layer-group"></i>
                     <span>Quản lý Loại thiết bị</span>
@@ -339,8 +353,8 @@
 
         <div class="container pb-5">
         <div class="row">
-            <!-- Left Column: Personal Info -->
-            <div class="col-lg-12">
+            <!-- Left Column: Personal Info & Package -->
+            <div class="col-lg-8">
                 <!-- Basic Information -->
                 <div class="info-card">
                     <h5>
@@ -401,6 +415,93 @@
                     </div>
                 </div>
 
+                <!-- Package Information -->
+                <div class="info-card" th:if="${activePackage != null && goiCuoc != null}">
+                    <h5>
+                        <i class="bi bi-box-seam"></i> Gói cước hiện tại
+                    </h5>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-tag"></i> Tên gói
+                        </div>
+                        <div class="info-value">
+                            <strong th:text="${goiCuoc.tenGoi}">Gói cơ bản</strong>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-cash"></i> Giá tiền
+                        </div>
+                        <div class="info-value">
+                            <span th:text="${#numbers.formatDecimal(goiCuoc.giaTien, 0, 'COMMA', 0, 'POINT')}">100,000</span> VNĐ
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-cpu"></i> Số lượng thiết bị tối đa
+                        </div>
+                        <div class="info-value">
+                            <span th:text="${totalThietBi}">0</span> / <span th:text="${goiCuoc.slThietBiToiDa}">10</span>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     th:style="'width: ' + ${totalThietBi * 100 / goiCuoc.slThietBiToiDa} + '%'"
+                                     th:classappend="${totalThietBi >= goiCuoc.slThietBiToiDa} ? 'bg-danger' : 'bg-success'"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-diagram-3"></i> Số lượng khu vực tối đa
+                        </div>
+                        <div class="info-value">
+                            <span th:text="${totalKhuVuc}">0</span> / <span th:text="${goiCuoc.slKhuVucToiDa}">5</span>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     th:style="'width: ' + ${totalKhuVuc * 100 / goiCuoc.slKhuVucToiDa} + '%'"
+                                     th:classappend="${totalKhuVuc >= goiCuoc.slKhuVucToiDa} ? 'bg-danger' : 'bg-primary'"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-lightning"></i> Số lượng luật tối đa
+                        </div>
+                        <div class="info-value" th:text="${goiCuoc.slLuatToiDa}">20</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-database"></i> Số ngày lưu dữ liệu
+                        </div>
+                        <div class="info-value" th:text="${goiCuoc.soNgayLuuDuLieu} + ' ngày'">30 ngày</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-calendar-range"></i> Ngày hết hạn
+                        </div>
+                        <div class="info-value" 
+                             th:text="${activePackage.ngayKetThuc != null ? #temporals.format(activePackage.ngayKetThuc, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}">
+                            31/12/2024 23:59:59
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-hourglass-split"></i> Trạng thái
+                        </div>
+                        <div class="info-value">
+                            <span class="badge bg-success">Đang hoạt động</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No Package Warning -->
+                <div class="info-card" th:if="${activePackage == null}">
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Chưa có gói cước!</strong>
+                        <p class="mb-0 mt-2">Bạn chưa đăng ký gói cước nào. Vui lòng liên hệ quản trị viên để đăng ký gói phù hợp.</p>
+                    </div>
+                </div>
+
                 <!-- Security Settings -->
                 <div class="info-card">
                     <h5>
@@ -438,6 +539,51 @@
                         <button class="btn btn-outline-danger action-btn" onclick="confirmDeleteAccount()">
                             <i class="bi bi-trash"></i> Xóa tài khoản
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Statistics -->
+            <div class="col-lg-4">
+                <div class="info-card">
+                    <h5>
+                        <i class="bi bi-graph-up"></i> Thống kê tổng quan
+                    </h5>
+                    <div class="stat-box">
+                        <div class="number" th:text="${totalDuAn}">0</div>
+                        <div class="label">
+                            <i class="bi bi-folder"></i> Dự án
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="number" th:text="${totalKhuVuc}">0</div>
+                        <div class="label">
+                            <i class="bi bi-diagram-3"></i> Khu vực
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="number" th:text="${totalThietBi}">0</div>
+                        <div class="label">
+                            <i class="bi bi-cpu"></i> Thiết bị
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="info-card">
+                    <h5>
+                        <i class="bi bi-lightning-charge"></i> Thao tác nhanh
+                    </h5>
+                    <div class="d-grid gap-2">
+                        <a href="/du-an" class="btn btn-outline-primary">
+                            <i class="bi bi-folder-plus"></i> Quản lý dự án
+                        </a>
+                        <a href="/dashboard" class="btn btn-outline-info">
+                            <i class="bi bi-speedometer2"></i> Bảng điều khiển
+                        </a>
+                        <a href="/notifications" class="btn btn-outline-warning">
+                            <i class="bi bi-bell"></i> Xem thông báo
+                        </a>
                     </div>
                 </div>
             </div>

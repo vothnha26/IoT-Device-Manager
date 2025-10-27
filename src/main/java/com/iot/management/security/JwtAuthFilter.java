@@ -35,13 +35,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         String path = request.getRequestURI();
+        String method = request.getMethod();
         
         // Skip filter cho static resources và public paths
         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
             || path.startsWith("/webjars/") || path.equals("/favicon.ico")
             || path.startsWith("/auth/") || path.startsWith("/api/auth/") || path.startsWith("/api/public/")
             || path.startsWith("/h2-console/") || path.equals("/error")
-            || path.equals("/") || path.equals("/dashboard")) {
+            || (path.equals("/") && "GET".equals(method)) // Allow GET /
+            || (path.equals("/") && "POST".equals(method)) // Allow POST / for webhook
+            || path.equals("/dashboard")
+            // Do NOT skip authentication for /payment so logged-in users are recognized
+            || path.startsWith("/videos/")
+            || path.startsWith("/static/") || path.startsWith("/api/payments/")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -110,16 +116,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             e.printStackTrace();
             handleAuthError(response, e.getMessage());
         }
-    }
-
-    private boolean isAuthenticationRequired(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return !(
-            path.startsWith("/api/auth/") ||
-            path.startsWith("/api/public/") ||
-            path.startsWith("/h2-console/") ||
-            path.equals("/error")
-        );
     }
 
     private void handleAuthError(HttpServletResponse response, String message) throws IOException {

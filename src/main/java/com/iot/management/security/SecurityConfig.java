@@ -1,9 +1,8 @@
 package com.iot.management.security;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -16,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import jakarta.servlet.http.Cookie;
 
 @Configuration
 @EnableWebSecurity
@@ -43,6 +44,9 @@ public class SecurityConfig {
                 .ignoringRequestMatchers("/logout")   
                 .ignoringRequestMatchers("/api/schedules/**")
                 .ignoringRequestMatchers("/api/package-limit/**")   // Ignore CSRF for all API endpoints
+                .ignoringRequestMatchers("/payment/**")
+                .ignoringRequestMatchers("/api/payments/**")  // Allow SePay webhook without CSRF
+                .ignoringRequestMatchers("/")  // Allow POST to root (SePay fallback webhook)
             )
             .cors(cors -> cors.disable())
             .authorizeHttpRequests(auth -> auth
@@ -53,17 +57,29 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                 .requestMatchers("/api/schedules/**").permitAll()
                 .requestMatchers("/api/package-limit/**").permitAll()
+                // Public homepage and basic pages
+                .requestMatchers(HttpMethod.GET, "/").permitAll()
+                .requestMatchers(HttpMethod.POST, "/").permitAll() // Allow SePay webhook at root
                 // Allow unauthenticated device ingestion via token path; controller guards numeric IDs
                 .requestMatchers(HttpMethod.POST, "/api/data-logs/**").permitAll()
                 // Allow public read of data logs for charts (stats page)
                 .requestMatchers(HttpMethod.GET, "/api/data-logs/**").permitAll()
                 // Auth UI pages (login, register, verify, forgot-password, reset-password)
                 .requestMatchers("/auth/**").permitAll()
+                // Allow SePay webhook to be called without authentication
+                .requestMatchers("/api/payments/webhook").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
+                // Allow unauthenticated users to view the checkout page (GET)
+                .requestMatchers(HttpMethod.GET, "/payment/create-payment/**").permitAll()
+                // Allow unauthenticated redirect to SePay checkout
+                .requestMatchers(HttpMethod.GET, "/payment/redirect/**").permitAll()
+                // Allow SePay/VNPAY user return page after payment
+                .requestMatchers(HttpMethod.GET, "/payment/return").permitAll()
                 // H2 console and error page
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 // Allow demo UI, root and static assets
-                .requestMatchers("/", "/dashboard").permitAll()
+                .requestMatchers("/dashboard").permitAll()
                 .requestMatchers("/static/**", "/js/**", "/css/**", "/images/**", "/webjars/**").permitAll()
                 .requestMatchers("/favicon.ico").permitAll()
                 // WebSocket STOMP handshake (SockJS) endpoints for browser clients
@@ -77,12 +93,14 @@ public class SecurityConfig {
                 // API endpoints require authentication (except those explicitly permitted above)
                 .requestMatchers("/api/**").authenticated()
                 .requestMatchers("/du-an/**").authenticated()
-                .requestMatchers("/thiet-bi/**").permitAll()
+                .requestMatchers("/thiet-bi/**").authenticated()
                 // everything else requires authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                // IF_REQUIRED: Tạo session nếu cần (cho Thymeleaf templates)
+                // JWT filter sẽ bypass session cho API calls có Bearer token
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             )
             // cấu hình logout cho JWT
             .logout(logout -> logout
