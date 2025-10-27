@@ -1,0 +1,120 @@
+/* admin.fixed.css
+   Helper CSS to provide a single, consistent fixed layout:
+   - Reserves space for the fixed navbar via body padding-top
+   - Positions the sidebar under the navbar and keeps it fixed
+   - Provides responsive behavior: below 992px sidebar is hidden and can be toggled
+   - Adds an overlay when sidebar is open on small screens
+*/
+:root {
+    --admin-sidebar-width: 280px; /* keep in sync with main admin.css */
+    --admin-navbar-height: 70px;  /* keep in sync with main admin.css */
+    --admin-content-padding: 12px;
+}
+
+/* Reserve navbar area globally so pages don't double-offset */
+body {
+    box-sizing: border-box;
+    padding-top: var(--admin-navbar-height);
+}
+
+/* Sidebar base: sit under the navbar and occupy full height */
+.admin-sidebar {
+    position: fixed;
+    top: 0; /* start from top */
+    left: 0;
+    width: var(--admin-sidebar-width);
+    height: 100vh; /* full viewport height */
+    z-index: 1100;
+    overflow-y: auto;
+    transition: transform 0.28s ease, box-shadow 0.28s ease;
+    /* add padding-top to push content below navbar, but keep full scrollable height */
+    padding-top: var(--admin-navbar-height);
+    box-sizing: border-box; /* padding included in height calculation */
+}
+
+/* When content wrappers exist, they shouldn't add extra top margin; body padding covers it */
+.content-wrapper, .main-content {
+    margin-left: var(--admin-sidebar-width);
+    /* don't set margin-top here; body padding handles navbar space */
+    padding-top: 0; /* no extra top padding, navbar already provides space */
+    transition: margin-left 0.28s ease;
+    min-height: calc(100vh - var(--admin-navbar-height));
+}
+
+/* For .main-content, add comfortable padding */
+.main-content > .container-fluid {
+    padding: 1.75rem 2rem;
+}
+
+/* For .content-wrapper used in dashboard */
+.content-wrapper > .container-fluid {
+    padding: 1.75rem 2rem;
+}
+
+/* Desktop: keep sidebar visible */
+@media (min-width: 992px) {
+    .admin-sidebar {
+        transform: translateX(0);
+        box-shadow: 4px 0 14px rgba(0,0,0,0.06);
+    }
+}
+
+/* Mobile: hide sidebar off-canvas and add overlay when open */
+@media (max-width: 991.98px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+        width: calc(var(--admin-sidebar-width));
+        position: fixed;
+        left: 0;
+        top: 0; /* full height from top */
+        height: 100vh;
+        padding-top: var(--admin-navbar-height); /* visual offset */
+        box-sizing: border-box;
+        box-shadow: 8px 0 24px rgba(0,0,0,0.18);
+    }
+
+    /* class toggled by JS to show sidebar */
+    .admin-sidebar.show {
+        transform: translateX(0);
+    }
+
+    /* content area should not be pushed on mobile */
+    .content-wrapper, .main-content {
+        margin-left: 0 !important;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* overlay that closes sidebar when clicked */
+    .admin-sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 1090;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .admin-sidebar-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+/* Ensure navbar sits above sidebar visually (brand area inside navbar uses left offset) */
+.admin-navbar {
+    z-index: 1200;
+}
+
+/* Small polish: if a page used inline margins accidentally, make small reduction safe */
+.content-wrapper .page-header,
+.content-wrapper .top-header {
+    margin-top: 0;
+}
+
+/* Accessibility: focus outlines for toggle button */
+button[data-toggle="admin-sidebar"]:focus {
+    outline: 2px solid rgba(52,152,219,0.3);
+    outline-offset: 2px;
+}

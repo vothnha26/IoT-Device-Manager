@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi" 
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- Head -->
+<head th:replace="fragments/layout :: head('Dashboard - IoT Management')">
+    <title>Dashboard - IoT Management</title>
+    <style>
+        /* Additional dashboard-specific styles */
+        .dashboard-stats {
+            margin-top: 2rem;
+        }
+        .stat-card {
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Tổng quan hệ thống</h1>
+                <div>
+                    <a href="/thiet-bi/them" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Thêm thiết bị mới
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card" data-aos="fade-up">
+                    <div class="stat-icon">
+                        <i class="bi bi-map"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${stats.totalKhuVuc}">5</h3>
+                        <p>Tổng số Khu vực</p>
+                        <small class="text-success" th:if="${stats.khuVucGrowth > 0}">
+                            <i class="bi bi-arrow-up"></i>
+                            <span th:text="${stats.khuVucGrowth + '%'}">34%</span> từ tuần trước
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-icon">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${stats.totalControllers}">7</h3>
+                        <p>Thiết bị điều khiển</p>
+                        <small class="text-danger" th:if="${stats.controllerGrowth < 0}">
+                            <i class="bi bi-arrow-down"></i>
+                            <span th:text="${stats.controllerGrowth + '%'}">12%</span> từ tuần trước
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-icon">
+                        <i class="bi bi-thermometer"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${stats.totalSensors}">3</h3>
+                        <p>Cảm biến</p>
+                        <small class="text-success" th:if="${stats.sensorGrowth > 0}">
+                            <i class="bi bi-arrow-up"></i>
+                            <span th:text="${stats.sensorGrowth + '%'}">34%</span> từ tuần trước
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-icon">
+                        <i class="bi bi-laptop"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${stats.totalThietBi}">12</h3>
+                        <p>Tổng số thiết bị</p>
+                        <small class="text-success" th:if="${stats.thietBiGrowth > 0}">
+                            <i class="bi bi-arrow-up"></i>
+                            <span th:text="${stats.thietBiGrowth + '%'}">34%</span> từ tuần trước
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khu vực Overview -->
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <div class="dashboard-card" data-aos="fade-up">
+                        <div class="card-header">
+                            <h5 class="mb-0">Hoạt động gần đây</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Thời gian</th>
+                                            <th>Thiết bị</th>
+                                            <th>Hoạt động</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="activity : ${recentActivities}">
+                                            <td th:text="${activity.time}">10:30 AM</td>
+                                            <td th:text="${activity.device}">Cảm biến nhiệt độ</td>
+                                            <td th:text="${activity.action}">Cập nhật dữ liệu</td>
+                                            <td>
+                                                <span class="badge bg-success">Thành công</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="dashboard-card" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Cảnh báo mới nhất</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Nhiệt độ phòng họp vượt ngưỡng
+                            </div>
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-circle me-2"></i>
+                                Phát hiện khói tại khu vực bếp
+                            </div>
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Độ ẩm trong nhà kho thấp
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+
+    <!-- Scripts -->
+    <th:block th:replace="fragments/layout :: scripts"></th:block>
+
+</body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông tin cá nhân - IoT Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/theme.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #e9ecef;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #sidebar {
+            min-height: 100vh;
+            width: 240px;
+            min-width: 240px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            transition: width 0.3s;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-brand {
+            padding: 20px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-brand img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+        }
+
+        .sidebar-brand-text {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        #sidebar .nav-link {
+            padding: 15px 20px;
+            text-align: left;
+            color: rgba(255,255,255,0.6);
+            transition: all 0.3s;
+            position: relative;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        #sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.05);
+        }
+
+        #sidebar .nav-link.active {
+            color: white;
+            background: rgba(52, 152, 219, 0.2);
+            border-left-color: #3498db;
+        }
+
+        #sidebar .nav-link i {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        #sidebar .nav-link span {
+            font-size: 14px;
+        }
+
+        .main-content {
+            margin-left: 240px;
+            min-height: 100vh;
+            background-color: #e9ecef;
+        }
+
+        .top-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar-header {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 0;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .info-card h5 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .info-row {
+            display: flex;
+            padding: 15px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            flex: 0 0 200px;
+            font-weight: 600;
+            color: #7f8c8d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-value {
+            flex: 1;
+            color: #2c3e50;
+        }
+        
+        .badge-role {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .badge-user {
+            background: #3498db;
+            color: white;
+        }
+        
+        .badge-manager {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-box .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-box .label {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .action-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .status-active {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        
+        .status-inactive {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-brand">
+            <img src="https://ui-avatars.com/api/?name=IoT&background=3498db&color=fff&size=128" alt="Logo">
+            <span class="sidebar-brand-text">IoT Manager</span>
+        </div>
+        <ul class="nav flex-column flex-grow-1 mt-2">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>Bảng điều khiển</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/profile">
+                    <i class="fas fa-user"></i>
+                    <span>Thông tin cá nhân</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/khu-vuc">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>Quản lý khu vực</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/thiet-bi">
+                    <i class="fas fa-microchip"></i>
+                    <span>Quản lý thiết bị</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Dữ liệu cảm biến</span>
+                </a>
+            </li>
+            <!-- Chỉ hiển thị cho ROLE_MANAGER -->
+            <li class="nav-item mt-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;" th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}">
+                <a class="nav-link" href="/admin/users">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Quản lý Người dùng</span>
+                </a>
+            </li>
+            <li class="nav-item" th:if="${#authorization.expression('hasRole('ROLE_MANAGER')')}">
+                <a class="nav-link" href="/admin/packages">
+                    <i class="fas fa-box"></i>
+                    <span>Quản lý Gói cước</span>
+                </a>
+            </li>
+            <li class="nav-item" th:if="${#authorization.expression('hasRole('ROLE_MANAGER')')}">
+                <a class="nav-link" href="/admin/device-types">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Quản lý Loại thiết bị</span>
+                </a>
+            </li>
+        </ul>
+        <div class="p-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <button class="btn btn-danger btn-sm w-100" onclick="logout()">
+                <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <div class="top-header">
+            <h5 class="mb-0" style="color: #2c3e50;">
+                <i class="fas fa-bars me-3" style="cursor: pointer;"></i>
+                Thông tin cá nhân
+            </h5>
+            <div class="user-info">
+                <div class="user-avatar-header">
+                    <span th:text="${user.tenDangNhap != null ? #strings.substring(user.tenDangNhap, 0, 1).toUpperCase() : 'U'}">U</span>
+                </div>
+                <div>
+                    <div style="font-size: 14px; color: #2c3e50;">
+                        <strong th:text="${user.tenDangNhap}">Username</strong>
+                    </div>
+                </div>
+                <button class="btn btn-link" onclick="logout()" title="Đăng xuất">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="container">
+                <div class="profile-avatar">
+                    <span th:text="${user.tenDangNhap != null ? #strings.substring(user.tenDangNhap, 0, 1).toUpperCase() : 'U'}">U</span>
+                </div>
+                <h3 class="text-center mb-2" th:text="${user.tenDangNhap}">Tên người dùng</h3>
+                <p class="text-center mb-0">
+                    <i class="bi bi-envelope"></i>
+                    <span th:text="${user.email}">email@example.com</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="container pb-5">
+        <div class="row">
+            <!-- Left Column: Personal Info -->
+            <div class="col-lg-12">
+                <!-- Basic Information -->
+                <div class="info-card">
+                    <h5>
+                        <i class="bi bi-person-badge"></i> Thông tin cơ bản
+                    </h5>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-person"></i> Tên đăng nhập
+                        </div>
+                        <div class="info-value" th:text="${user.tenDangNhap}">username</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-envelope"></i> Email
+                        </div>
+                        <div class="info-value" th:text="${user.email}">email@example.com</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-shield-check"></i> Vai trò
+                        </div>
+                        <div class="info-value">
+                            <span th:each="role : ${user.vaiTro}" 
+                                  class="badge-role"
+                                  th:classappend="${role.tenVaiTro == 'ROLE_MANAGER'} ? 'badge-manager' : 'badge-user'"
+                                  th:text="${role.tenVaiTro == 'ROLE_MANAGER'} ? 'Quản lý' : 'Người dùng'">
+                                Người dùng
+                            </span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-toggle-on"></i> Trạng thái tài khoản
+                        </div>
+                        <div class="info-value">
+                            <span th:class="${user.kichHoat} ? 'status-active' : 'status-inactive'">
+                                <i th:class="${user.kichHoat} ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i>
+                                <span th:text="${user.kichHoat} ? 'Đã kích hoạt' : 'Chưa kích hoạt'">Đã kích hoạt</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-calendar-check"></i> Ngày tạo tài khoản
+                        </div>
+                        <div class="info-value" 
+                             th:text="${user.ngayTao != null ? #temporals.format(user.ngayTao, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}">
+                            01/01/2024 00:00:00
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-key"></i> Mã người dùng
+                        </div>
+                        <div class="info-value">
+                            <code th:text="${user.maNguoiDung}">#123</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Settings -->
+                <div class="info-card">
+                    <h5>
+                        <i class="bi bi-shield-lock"></i> Bảo mật
+                    </h5>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-lock"></i> Mật khẩu
+                        </div>
+                        <div class="info-value">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                <i class="bi bi-key"></i> Đổi mật khẩu
+                            </button>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="bi bi-shield-check"></i> Xác thực 2 yếu tố
+                        </div>
+                        <div class="info-value text-muted">
+                            <i class="bi bi-info-circle"></i> Chưa được hỗ trợ
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Actions -->
+                <div class="info-card">
+                    <h5>
+                        <i class="bi bi-gear"></i> Hành động tài khoản
+                    </h5>
+                    <div class="d-flex gap-3">
+                        <button class="btn btn-outline-primary action-btn" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                            <i class="bi bi-pencil"></i> Chỉnh sửa thông tin
+                        </button>
+                        <button class="btn btn-outline-danger action-btn" onclick="confirmDeleteAccount()">
+                            <i class="bi bi-trash"></i> Xóa tài khoản
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-key"></i> Đổi mật khẩu
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu hiện tại <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="currentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                            <small class="text-muted">Tối thiểu 6 ký tự</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="changePassword()">
+                        <i class="bi bi-save"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil"></i> Chỉnh sửa thông tin
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm">
+                        <div class="mb-3">
+                            <label class="form-label">Tên đăng nhập</label>
+                            <input type="text" class="form-control" id="editUsername" th:value="${user.tenDangNhap}" readonly>
+                            <small class="text-muted">Tên đăng nhập không thể thay đổi</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="editEmail" th:value="${user.email}" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="updateProfile()">
+                        <i class="bi bi-save"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        // Logout function
+        function logout() {
+            // Delete authToken cookie
+            document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            window.location.href = '/auth/login';
+        }
+
+        // Change password
+        function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('Vui lòng điền đầy đủ thông tin!');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                alert('Mật khẩu mới phải có ít nhất 6 ký tự!');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                alert('Mật khẩu xác nhận không khớp!');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/users/change-password',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    currentPassword: currentPassword,
+                    newPassword: newPassword
+                }),
+                success: function(response) {
+                    alert('Đổi mật khẩu thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+                    document.getElementById('changePasswordForm').reset();
+                },
+                error: function(xhr) {
+                    alert('Lỗi: ' + (xhr.responseText || 'Không thể đổi mật khẩu'));
+                }
+            });
+        }
+
+        // Update profile
+        function updateProfile() {
+            const email = document.getElementById('editEmail').value;
+
+            if (!email) {
+                alert('Email không được để trống!');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/users/update-profile',
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    email: email
+                }),
+                success: function(response) {
+                    alert('Cập nhật thông tin thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
+                    location.reload();
+                },
+                error: function(xhr) {
+                    alert('Lỗi: ' + (xhr.responseText || 'Không thể cập nhật thông tin'));
+                }
+            });
+        }
+
+        // Delete account confirmation
+        function confirmDeleteAccount() {
+            if (confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác!')) {
+                if (confirm('Tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn. Bạn có chắc chắn muốn tiếp tục?')) {
+                    // TODO: Implement delete account API
+                    alert('Tính năng xóa tài khoản đang được phát triển.');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

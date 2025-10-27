@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: admin-head('Quản lý Quyền Thiết Bị - IoT Manager')}"></head>
+
+<body class="admin-device-permissions">
+    <!-- Navbar -->
+    <nav th:replace="~{admin/layout :: admin-navbar}"></nav>
+    
+    <!-- Sidebar -->
+    <aside th:replace="~{admin/layout :: admin-sidebar}"></aside>
+
+    <style>
+        .main-content { min-height: 100vh; background-color: #f5f6fa; padding-top: 0; }
+        /* Use default sidebar offset; do not manually shift left on this page */
+        .page-header { margin-bottom: 1.5rem; padding-top: 0; }
+        .page-title { font-size: 1.75rem; font-weight: 600; color: #2c3e50; margin-bottom: 0.25rem; margin-top: 0; }
+        .page-subtitle { color: #718096; font-size: 0.95rem; }
+        /* Use dashboard-like container padding so header has standard left spacing */
+        .main-content > .container-fluid { padding-left: 2rem; padding-right: 2rem; }
+        .user-list { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; margin-top: 20px; width: 100%; margin-left: 0; }
+        .user-item { padding: 15px; border: 1px solid #e9ecef; margin-bottom: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #e9ecef; display: flex; align-items: center; justify-content: center; }
+        .user-name { font-size: 16px; font-weight: 500; color: #2c3e50; }
+        .user-email { font-size: 14px; color: #7f8c8d; }
+
+        @media (max-width: 991.98px) {
+            .user-list { margin-left: 0; border-radius: 8px; }
+        }
+    </style>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid px-0">
+            <div class="page-header">
+                <h1 class="page-title">Quản lý Quyền Truy Cập Thiết Bị</h1>
+                <p class="page-subtitle">Chọn người dùng để quản lý quyền thiết bị</p>
+            </div>
+
+            <div class="row g-0 ms-0">
+                <div class="col-12 px-0">
+                    <div class="user-list">
+                        <h3 class="section-title">Danh sách người dùng</h3>
+
+                        <div class="row mb-4">
+                            <div class="col-12 col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" id="searchUser" placeholder="Tìm kiếm người dùng...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div th:each="user : ${users}"
+                             class="user-item"
+                             th:classappend="${#lists.contains(user.vaiTro.![tenVaiTro], 'ROLE_ADMIN')} ? ' is-admin' : ''">
+                            <div class="user-info">
+                                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                                <div>
+                                    <div class="user-name" th:text="${user.tenDangNhap}">Nguyen Van A</div>
+                                    <div class="user-email" th:text="${user.email}">example@email.com</div>
+                                </div>
+                            </div>
+                            <div>
+                                <a th:href="@{/admin/device-permissions/{id}(id=${user.maNguoiDung})}" class="btn btn-primary">
+                                    <i class="fas fa-key me-1"></i>Quản lý quyền
+                                </a>
+                            </div>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(users)}" class="text-center text-muted py-5">
+                            <i class="fas fa-users fa-3x mb-3"></i>
+                            <p>Chưa có người dùng nào trong hệ thống</p>
+                        </div>
+                        <div id="noNonAdminState" class="text-center text-muted py-5" style="display:none">
+                            <i class="fas fa-user-shield fa-3x mb-3"></i>
+                            <p>Không có người dùng (ngoài Quản trị viên) để hiển thị</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{admin/layout :: admin-footer}"></footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchUser');
+            const allItems = Array.from(document.querySelectorAll('.user-item'));
+            const adminItems = allItems.filter(i => i.classList.contains('is-admin'));
+            const nonAdminItems = allItems.filter(i => !i.classList.contains('is-admin'));
+            const noNonAdminState = document.getElementById('noNonAdminState');
+
+            // Always hide admin accounts in this list
+            adminItems.forEach(i => { i.style.display = 'none'; });
+
+            // Show empty state if no non-admins
+            const updateEmptyState = () => {
+                const anyVisible = nonAdminItems.some(i => i.style.display !== 'none');
+                if (!anyVisible) { noNonAdminState.style.display = ''; } else { noNonAdminState.style.display = 'none'; }
+            };
+
+            updateEmptyState();
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const term = e.target.value.toLowerCase();
+                    nonAdminItems.forEach(item => {
+                        const name = item.querySelector('.user-name').textContent.toLowerCase();
+                        const email = item.querySelector('.user-email').textContent.toLowerCase();
+                        item.style.display = (name.includes(term) || email.includes(term)) ? '' : 'none';
+                    });
+                    // Keep admins hidden regardless of search
+                    adminItems.forEach(i => { i.style.display = 'none'; });
+                    updateEmptyState();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

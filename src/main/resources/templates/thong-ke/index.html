@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi" 
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- Head -->
+<head th:replace="fragments/layout :: head('Thống kê - IoT Management')">
+    <title>Thống kê - IoT Management</title>
+    <style>
+        /* Additional statistics page specific styles */
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .date-range-selector {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .date-range-selector select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        .stats-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2196f3, #00bcd4);
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .stat-info h4 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .stat-info p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Page header -->
+            <div class="page-header d-flex justify-content-between align-items-center mb-4">
+                <h2 class="page-title">Thống kê hoạt động</h2>
+                <div class="d-flex align-items-center gap-3">
+                    <select id="timeRange" class="form-select" onchange="this.form.submit()" th:form="timeRangeForm">
+                        <option value="day" th:selected="${selectedTimeRange == 'day'}">24 giờ qua</option>
+                        <option value="week" th:selected="${selectedTimeRange == 'week'}">7 ngày qua</option>
+                        <option value="month" th:selected="${selectedTimeRange == 'month'}">30 ngày qua</option>
+                    </select>
+                    <form id="timeRangeForm" method="get" th:action="@{/thong-ke}">
+                        <input type="hidden" name="timeRange" th:value="${selectedTimeRange}">
+                    </form>
+                    <a href="/thong-ke/export/excel" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Xuất Excel
+                    </a>
+                </div>
+            </div>
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Thống kê hệ thống</h1>
+                <div class="date-range-selector">
+                    <select class="form-select" id="timeRange">
+                        <option value="day">24 giờ qua</option>
+                        <option value="week">7 ngày qua</option>
+                        <option value="month">30 ngày qua</option>
+                        <option value="year">365 ngày qua</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-item" data-aos="fade-up">
+                    <div class="stat-icon">
+                        <i class="bi bi-activity"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 th:text="${totalActivities}">1,234</h4>
+                        <p>Tổng số hoạt động</p>
+                    </div>
+                </div>
+
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-icon">
+                        <i class="bi bi-bell"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 th:text="${totalAlerts}">56</h4>
+                        <p>Cảnh báo phát hiện</p>
+                    </div>
+                </div>
+
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-icon">
+                        <i class="bi bi-lightning"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 th:text="${avgResponseTime}">2.3s</h4>
+                        <p>Thời gian phản hồi TB</p>
+                    </div>
+                </div>
+
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-icon">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 th:text="${uptime + '%'}">99.9%</h4>
+                        <p>Thời gian hoạt động</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row">
+                <!-- Activity Chart -->
+                <div class="col-lg-8">
+                    <div class="chart-container" data-aos="fade-up">
+                        <div class="chart-header">
+                            <h5 class="chart-title">Biểu đồ hoạt động</h5>
+                        </div>
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Alert Distribution -->
+                <div class="col-lg-4">
+                    <div class="chart-container" data-aos="fade-up">
+                        <div class="chart-header">
+                            <h5 class="chart-title">Phân bố cảnh báo</h5>
+                        </div>
+                        <canvas id="alertChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Device Performance -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="chart-container" data-aos="fade-up">
+                        <div class="chart-header">
+                            <h5 class="chart-title">Hiệu suất thiết bị</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Thiết bị</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thời gian hoạt động</th>
+                                        <th>Số lần gửi dữ liệu</th>
+                                        <th>Độ trễ TB</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="device : ${deviceStats}">
+                                        <td th:text="${device.name}">Cảm biến nhiệt độ</td>
+                                        <td>
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        </td>
+                                        <td th:text="${device.uptime}">99.8%</td>
+                                        <td th:text="${device.dataPoints}">1,234</td>
+                                        <td th:text="${device.avgLatency}">120ms</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+
+    <!-- Scripts -->
+    <th:block th:replace="fragments/layout :: scripts"></th:block>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        // Activity Chart
+        const activityCtx = document.getElementById('activityChart').getContext('2d');
+        new Chart(activityCtx, {
+            type: 'line',
+            data: {
+                labels: /*[[${activityLabels}]]*/ ['1h', '2h', '3h', '4h', '5h', '6h'],
+                datasets: [{
+                    label: 'Hoạt động',
+                    data: /*[[${activityData}]]*/ [65, 59, 80, 81, 56, 55],
+                    fill: false,
+                    borderColor: '#2196f3',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Alert Distribution Chart
+        const alertCtx = document.getElementById('alertChart').getContext('2d');
+        new Chart(alertCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Nghiêm trọng', 'Cảnh báo', 'Thông tin'],
+                datasets: [{
+                    data: /*[[${alertDistribution}]]*/ [12, 19, 3],
+                    backgroundColor: [
+                        '#e74c3c',
+                        '#f39c12',
+                        '#3498db'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Time Range Selector
+        document.getElementById('timeRange').addEventListener('change', function() {
+            // Implement time range change logic here
+        });
+    </script>
+</body>
+</html>

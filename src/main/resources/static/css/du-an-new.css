@@ -1,0 +1,161 @@
+/* Project Header */
+.project-header {
+    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    margin-top: -20px;
+    padding-top: 100px !important;
+}
+
+/* Empty State */
+.empty-state-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+    border-radius: 1rem;
+    padding: 3rem;
+}
+
+.empty-state-content {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.empty-state-content i {
+    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Project Cards */
+.project-card {
+    transition: all 0.3s ease;
+}
+
+.project-card .card {
+    border-radius: 1rem;
+    overflow: hidden;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.shadow-hover {
+    transition: all 0.3s ease;
+}
+
+.shadow-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Card Header Gradient Border */
+.project-card-header {
+    position: relative;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.project-card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    border-radius: 3px;
+}
+
+/* Stats Section */
+.card-footer {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Buttons */
+.btn-gradient {
+    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+    background: linear-gradient(135deg, #1c7a94 0%, #5bc0db 100%);
+    transform: translateY(-2px);
+    color: white;
+}
+
+/* Modal Styling */
+.modal-content {
+    border-radius: 1rem;
+    border: none;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+}
+
+.modal-header .btn-close {
+    color: white;
+    filter: brightness(0) invert(1);
+}
+
+/* Form Controls */
+.form-control {
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #2193b0;
+    box-shadow: 0 0 0 0.2rem rgba(33, 147, 176, 0.25);
+}
+
+/* Card Footer Links */
+.card-footer a {
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.card-footer a:hover {
+    color: #2193b0;
+}
+
+.card-footer a:hover .text-primary {
+    color: #2193b0 !important;
+}
+
+.card-footer a:hover .bi-chevron-right {
+    transform: translateX(3px);
+}
+
+.card-footer .bi-chevron-right {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Hover effect for stats */
+.card-footer .text-primary {
+    transition: color 0.3s ease;
+}
+
+/* Fix modal stacking and interactivity issues
+   Ensure modals appear above any fixed elements and overlays
+   and are clickable even when other components set high z-index values. */
+.modal-backdrop {
+    z-index: 1060 !important;
+}
+.modal {
+    z-index: 1065 !important;
+    pointer-events: auto !important;
+}
+.modal .modal-dialog {
+    z-index: 1066 !important;
+}

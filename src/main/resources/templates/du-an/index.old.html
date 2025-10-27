@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
+
+<head>
+    <title th:fragment="title">Quản lý dự án</title>
+</head>
+<body>
+
+<main th:fragment="main">
+    <!-- Header Section with Gradient Background -->
+    <div class="project-header py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="display-5 fw-bold text-white mb-2">Dự án của bạn</h1>
+                    <p class="text-white-50 mb-0">Quản lý và theo dõi các dự án IoT một cách hiệu quả</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <button type="button" class="btn btn-light btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#themDuAnModal">
+                        <i class="bi bi-plus-lg me-2"></i>Thêm dự án mới
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(duAns)}" class="text-center py-5 empty-state-container">
+            <div class="empty-state-content">
+                <div class="mb-4">
+                    <i class="bi bi-building-add display-1"></i>
+                </div>
+                <h2 class="fw-bold mb-3">Bắt đầu hành trình IoT của bạn</h2>
+                <p class="text-muted mb-4">Tạo dự án đầu tiên và bắt đầu quản lý thiết bị IoT của bạn ngay hôm nay</p>
+                <button type="button" class="btn btn-gradient btn-lg" data-bs-toggle="modal" data-bs-target="#themDuAnModal">
+                    <i class="bi bi-plus-lg me-2"></i>Tạo dự án đầu tiên
+                </button>
+            </div>
+        </div>
+
+        <!-- Project List -->
+        <div class="row" th:unless="${#lists.isEmpty(duAns)}">
+            <div class="col-12 mb-4" th:each="duAn : ${duAns}">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-4 pb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold" th:text="${duAn.tenDuAn}">Tên dự án</h4>
+                            <div>
+                                <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" 
+                                        th:data-duan-id="${duAn.maDuAn}"
+                                        data-bs-target="#themKhuVucModal">
+                                    <i class="bi bi-plus-lg me-1"></i>Thêm khu vực
+                                </button>
+                                <div class="dropdown d-inline-block">
+                                    <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                               data-bs-target="#chinhSuaDuAnModal"
+                                               th:data-id="${duAn.maDuAn}"
+                                               th:data-ten="${duAn.tenDuAn}"
+                                               th:data-mota="${duAn.moTa}">
+                                                <i class="bi bi-pencil me-2"></i>Chỉnh sửa
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form th:action="@{/du-an/{id}/xoa(id=${duAn.maDuAn})}" 
+                                                  method="post" 
+                                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa dự án này?');">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="bi bi-trash me-2"></i>Xóa
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-muted mt-2 mb-0" th:text="${duAn.moTa}">Mô tả dự án</p>
+                    </div>
+                    
+                    <!-- Khu vực list -->
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Empty state cho khu vực -->
+                            <div class="col-12" th:if="${#lists.isEmpty(duAn.khuVucs)}">
+                                <div class="text-center py-4 border rounded">
+                                    <i class="bi bi-map display-4 text-muted"></i>
+                                    <h5 class="mt-3">Chưa có khu vực nào</h5>
+                                    <p class="text-muted">Hãy thêm khu vực để bắt đầu quản lý thiết bị</p>
+                                    <button class="btn btn-primary" data-bs-toggle="modal" 
+                                            th:data-duan-id="${duAn.maDuAn}"
+                                            data-bs-target="#themKhuVucModal">
+                                        <i class="bi bi-plus-lg me-1"></i>Thêm khu vực
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Khu vực cards -->
+                            <div class="col-md-4" th:each="khuVuc : ${duAn.khuVucs}">
+                                <div class="card h-100 border shadow-hover">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="card-title fw-bold mb-0" th:text="${khuVuc.tenKhuVuc}">Tên khu vực</h5>
+                                            <div class="dropdown">
+                                                <button class="btn btn-link text-dark p-0" type="button" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <a class="dropdown-item" th:href="@{/khu-vuc/{id}/thiet-bi(id=${khuVuc.maKhuVuc})}">
+                                                            <i class="bi bi-cpu me-2"></i>Xem thiết bị
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                                           data-bs-target="#chinhSuaKhuVucModal"
+                                                           th:data-id="${khuVuc.maKhuVuc}"
+                                                           th:data-duan-id="${duAn.maDuAn}"
+                                                           th:data-ten="${khuVuc.tenKhuVuc}"
+                                                           th:data-mota="${khuVuc.moTa}">
+                                                            <i class="bi bi-pencil me-2"></i>Chỉnh sửa
+                                                        </a>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form th:action="@{/du-an/{duAnId}/khu-vuc/{id}/xoa(duAnId=${duAn.maDuAn},id=${khuVuc.maKhuVuc})}" 
+                                                              method="post"
+                                                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa khu vực này?');">
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <i class="bi bi-trash me-2"></i>Xóa
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <p class="card-text text-muted mb-3" th:text="${khuVuc.moTa}">Mô tả khu vực</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a th:href="@{/khu-vuc/{id}/thiet-bi(id=${khuVuc.maKhuVuc})}" 
+                                               class="text-decoration-none text-primary d-flex align-items-center">
+                                                <span class="me-2">Xem thiết bị</span>
+                                                <i class="bi bi-arrow-right transition-transform"></i>
+                                            </a>
+                                            <span class="badge bg-light text-primary">
+                                                <i class="bi bi-cpu me-1"></i>
+                                                <span th:text="${#lists.size(khuVuc.thietBis)}">0</span> thiết bị
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm Dự Án -->
+    <div class="modal fade" id="themDuAnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm dự án mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="themDuAnForm" th:action="@{/du-an/them-moi}" method="post">
+                        <div class="mb-3">
+                            <label for="tenDuAn" class="form-label">Tên dự án<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="tenDuAn" name="tenDuAn" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="moTa" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="moTa" name="moTa" rows="3"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary" id="btnTaoDuAn">Tạo dự án</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm Khu Vực -->
+    <div class="modal fade" id="themKhuVucModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm khu vực mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="themKhuVucForm" method="post">
+                        <input type="hidden" id="maDuAnKhuVuc" name="maDuAn">
+                        <div class="mb-3">
+                            <label for="tenKhuVuc" class="form-label">Tên khu vực<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="tenKhuVuc" name="tenKhuVuc" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="moTaKhuVuc" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="moTaKhuVuc" name="moTa" rows="3"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary" id="btnTaoKhuVuc">Tạo khu vực</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chỉnh Sửa Dự Án -->
+    <div class="modal fade" id="chinhSuaDuAnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa dự án</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="chinhSuaDuAnForm" method="post">
+                        <input type="hidden" id="maDuAnEdit" name="maDuAn">
+                        <div class="mb-3">
+                            <label for="tenDuAnEdit" class="form-label">Tên dự án<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="tenDuAnEdit" name="tenDuAn" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="moTaEdit" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="moTaEdit" name="moTa" rows="3"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary" id="btnLuuDuAn">Lưu thay đổi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chỉnh Sửa Khu Vực -->
+    <div class="modal fade" id="chinhSuaKhuVucModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa khu vực</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="chinhSuaKhuVucForm" method="post">
+                        <input type="hidden" id="maKhuVucEdit" name="maKhuVuc">
+                        <input type="hidden" id="maDuAnKhuVucEdit" name="maDuAn">
+                        <div class="mb-3">
+                            <label for="tenKhuVucEdit" class="form-label">Tên khu vực<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="tenKhuVucEdit" name="tenKhuVuc" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="moTaKhuVucEdit" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="moTaKhuVucEdit" name="moTa" rows="3"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary" id="btnLuuKhuVuc">Lưu thay đổi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<th:block th:fragment="scripts">
+    <script th:inline="javascript">
+        // Set up CSRF token for all AJAX requests
+        const token = document.querySelector('meta[name="_csrf"]').content;
+        const header = document.querySelector('meta[name="_csrf_header"]').content;
+        
+        // Add CSRF token to all fetch requests
+        const originalFetch = window.fetch;
+        window.fetch = function() {
+            let [resource, config] = arguments;
+            if(config === undefined) {
+                config = {};
+            }
+            if(config.headers === undefined) {
+                config.headers = {};
+            }
+            config.headers[header] = token;
+            return originalFetch(resource, config);
+        };
+
+        // CSS styles
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            .project-header {
+                background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            }
+            .btn-gradient {
+                background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+                color: white;
+            }
+            .shadow-hover {
+                transition: all 0.3s ease;
+            }
+            .shadow-hover:hover {
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+            }
+            .transition-transform {
+                transition: transform 0.3s ease;
+            }
+            .card:hover .transition-transform {
+                transform: translateX(5px);
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+        // Handle modals and forms
+        function handleModalForm(modalId, formId, btnId) {
+            const modal = document.getElementById(modalId);
+            const form = document.getElementById(formId);
+            const submitBtn = document.getElementById(btnId);
+            
+            if (modal && form && submitBtn) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+                    
+                    try {
+                        const formData = new FormData(this);
+                        const response = await fetch(this.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                [document.querySelector('meta[name="_csrf_header"]').content]: document.querySelector('meta[name="_csrf"]').content
+                            },
+                            credentials: 'same-origin', // Send cookies including CSRF token
+                            body: JSON.stringify(Object.fromEntries(formData))
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    } catch (error) {
+                        alert(error.message || 'Có lỗi xảy ra');
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = submitBtn.getAttribute('data-original-text');
+                    }
+                });
+            }
+        }
+
+        // Set up form handlers
+        handleModalForm('themDuAnModal', 'themDuAnForm', 'btnTaoDuAn');
+        handleModalForm('themKhuVucModal', 'themKhuVucForm', 'btnTaoKhuVuc');
+        handleModalForm('chinhSuaDuAnModal', 'chinhSuaDuAnForm', 'btnLuuDuAn');
+        handleModalForm('chinhSuaKhuVucModal', 'chinhSuaKhuVucForm', 'btnLuuKhuVuc');
+
+        // Save original button text
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.setAttribute('data-original-text', btn.innerHTML);
+        });
+
+        // Handle dynamic form actions
+        const themKhuVucModal = document.getElementById('themKhuVucModal');
+        if (themKhuVucModal) {
+            themKhuVucModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const maDuAn = button.getAttribute('data-duan-id');
+                const form = this.querySelector('form');
+                form.action = `/du-an/${maDuAn}/khu-vuc/them-moi`;
+                this.querySelector('#maDuAnKhuVuc').value = maDuAn;
+            });
+        }
+
+        // Handle edit modals
+        ['chinhSuaDuAnModal', 'chinhSuaKhuVucModal'].forEach(modalId => {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const form = this.querySelector('form');
+                    
+                    if (modalId === 'chinhSuaDuAnModal') {
+                        const maDuAn = button.getAttribute('data-id');
+                        form.action = `/du-an/${maDuAn}/cap-nhat`;
+                        this.querySelector('#maDuAnEdit').value = maDuAn;
+                        this.querySelector('#tenDuAnEdit').value = button.getAttribute('data-ten');
+                        this.querySelector('#moTaEdit').value = button.getAttribute('data-mota');
+                    } else {
+                        const maKhuVuc = button.getAttribute('data-id');
+                        const maDuAn = button.getAttribute('data-duan-id');
+                        form.action = `/du-an/${maDuAn}/khu-vuc/${maKhuVuc}/cap-nhat`;
+                        this.querySelector('#maKhuVucEdit').value = maKhuVuc;
+                        this.querySelector('#maDuAnKhuVucEdit').value = maDuAn;
+                        this.querySelector('#tenKhuVucEdit').value = button.getAttribute('data-ten');
+                        this.querySelector('#moTaKhuVucEdit').value = button.getAttribute('data-mota');
+                    }
+                });
+            }
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

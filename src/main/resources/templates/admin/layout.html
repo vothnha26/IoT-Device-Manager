@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="admin-head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Admin Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Admin CSS -->
+    <link rel="stylesheet" th:href="@{/css/admin-reset.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <!-- Optional fixed-layout helpers (adds body padding and sidebar toggle) -->
+    <link rel="stylesheet" href="/assets/css/admin.fixed.css">
+    <style>
+        /* Soft red auth button */
+        .btn-soft-danger { 
+            background-color: #fde8e8; 
+            color: #c0392b; 
+            border: 1px solid #f5c6cb; 
+            transition: all .2s ease; 
+        }
+        .btn-soft-danger:hover { 
+            background-color: #f8d7da; 
+            color: #a93226; 
+            border-color: #f1b0b7; 
+            box-shadow: 0 4px 12px rgba(192,57,43,0.15);
+        }
+        .btn-soft-danger:active { 
+            background-color: #f3c6c9 !important; 
+            color: #922b21 !important; 
+            border-color: #ee9ca7 !important; 
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Admin Navbar -->
+    <nav th:fragment="admin-navbar" class="admin-navbar navbar navbar-expand-lg fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin">
+                <i class="fas fa-shield-alt me-2"></i>
+                IoT Manager Admin
+            </a>
+            <!-- Mobile sidebar toggle (visible on small screens) -->
+            <button class="btn btn-outline-secondary d-lg-none ms-2" data-toggle="admin-sidebar" aria-label="Toggle sidebar">
+                <i class="fa fa-bars"></i>
+            </button>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            
+                <div class="ms-auto d-flex align-items-center" th:fragment="admin-user-info">
+                    <span class="text-dark me-3">
+                        <i class="fas fa-user-shield me-1"></i>
+                        <span sec:authentication="name">admin</span>
+                    </span>
+                    <form th:action="@{/logout}" method="post">
+                        <button class="btn btn-soft-danger btn-sm" type="submit">
+                            <i class="fas fa-sign-out-alt me-1"></i>Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Sidebar -->
+   <aside th:fragment="admin-sidebar" class="admin-sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-shield-alt"></i>
+            <span>Admin Panel</span>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/admin/dashboard" th:classappend="${request.requestURI == '/admin/dashboard'} ? 'active'">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/users" th:classappend="${request.requestURI == '/admin/users'} ? 'active'">
+                    <i class="fas fa-users"></i>
+                    <span>Quản lý người dùng</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/device-types" th:classappend="${request.requestURI == '/admin/device-types'} ? 'active'">
+                    <i class="fas fa-microchip"></i>
+                    <span>Quản lý loại thiết bị</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/packages" th:classappend="${request.requestURI == '/admin/packages'} ? 'active'">
+                    <i class="fas fa-box"></i>
+                    <span>Quản lý gói dịch vụ</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/device-permissions" th:classappend="${request.requestURI.startsWith('/admin/device-permissions')} ? 'active'">
+                    <i class="fas fa-key"></i>
+                    <span>Quản lý quyền thiết bị</span>
+                </a>
+            </li>
+            
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main th:fragment="admin-main">
+        <div class="content-wrapper">
+            <div class="container-fluid">
+                <!-- Content goes here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:fragment="admin-footer">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Layout helper JS (handles sidebar toggle on mobile) -->
+        <script src="/assets/js/admin-layout.js" defer></script>
+        <!-- Additional scripts -->
+    </footer>
+</body>
+</html>
