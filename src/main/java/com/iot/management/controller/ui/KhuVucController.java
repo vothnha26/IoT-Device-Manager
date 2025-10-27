@@ -36,20 +36,30 @@ public class KhuVucController {
     @GetMapping("")
     public String danhSachKhuVuc(@PathVariable Long maDuAn, Model model, Authentication authentication) {
         try {
+            // Kiểm tra authentication
             if (authentication == null || !(authentication.getPrincipal() instanceof SecurityUser)) {
-                return "redirect:/auth/login";
+                System.out.println("❌ Authentication failed - redirecting to login");
+                return "redirect:/auth/login?redirect=/du-an/" + maDuAn + "/khu-vuc";
             }
             
             SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
             NguoiDung nguoiDung = securityUser.getNguoiDung();
+            
+            System.out.println("✅ User authenticated: " + nguoiDung.getTenDangNhap());
+            System.out.println("📍 Accessing project: " + maDuAn);
+            
             Optional<DuAn> duAnOpt = duAnService.findByIdAndNguoiDung(maDuAn, nguoiDung);
             
             if (duAnOpt.isEmpty()) {
+                System.out.println("❌ Project not found or no access: " + maDuAn);
                 return "redirect:/du-an?error=not_found";
             }
             
             DuAn duAn = duAnOpt.get();
+            System.out.println("✅ Project found: " + duAn.getTenDuAn());
+            
             List<KhuVuc> khuVucs = khuVucService.findByDuAn(maDuAn);
+            System.out.println("📊 Found " + khuVucs.size() + " zones");
             
             // Force load thietBis để tránh lazy loading exception
             khuVucs.forEach(kv -> {
@@ -70,7 +80,8 @@ public class KhuVucController {
             
             return "khu-vuc/index";
         } catch (Exception e) {
-            // Log the error
+            // Log the error with more detail
+            System.err.println("❌ Error in danhSachKhuVuc: " + e.getMessage());
             e.printStackTrace();
             return "redirect:/du-an?error=unexpected";
         }

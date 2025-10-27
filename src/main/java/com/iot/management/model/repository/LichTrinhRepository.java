@@ -14,4 +14,7 @@ public interface LichTrinhRepository extends JpaRepository<LichTrinh, Long> {
 
     // Find schedules for a specific device
     List<LichTrinh> findByThietBi_MaThietBi(Long maThietBi);
+    
+    // Find schedules by device list
+    List<LichTrinh> findByThietBiMaThietBiIn(List<Long> maThietBiList);
 }

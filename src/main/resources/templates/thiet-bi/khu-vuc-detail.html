@@ -4,7 +4,7 @@
       th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
 
 <head>
-    <title th:text="${khuVuc.tenKhuVuc} + ' - Quản lý thiết bị'">Quản lý thiết bị</title>
+    <title th:inline="text">Quản lý thiết bị khu vực [[${khuVuc.tenKhuVuc}]]</title>
 </head>
 
 <body>
@@ -104,7 +104,8 @@
                                                     <i class="bi bi-three-dots-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                                    <li>
+                                                    <!-- Chỉ hiện các option nếu có quyền điều khiển thiết bị này -->
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
                                                         <a class="dropdown-item d-flex align-items-center" href="#" 
                                                            onclick="showEditModal(this)"
                                                            th:data-id="${thietBi.maThietBi}"
@@ -114,29 +115,37 @@
                                                             Chỉnh sửa
                                                         </a>
                                                     </li>
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    <li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}"><hr class="dropdown-divider"></li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
                                                         <a class="dropdown-item d-flex align-items-center" 
                                                            th:href="@{'/thiet-bi/' + ${thietBi.maThietBi} + '/rules'}">
                                                             <i class="bi bi-gear me-2 text-success"></i>
                                                             <span>Quản lý luật</span>
                                                         </a>
                                                     </li>
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    <li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}"><hr class="dropdown-divider"></li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
                                                         <a class="dropdown-item d-flex align-items-center" href="#"
-                                                           th:onclick="'showConfigModal(' + ${thietBi.maThietBi} + ')'">
+                                                           th:onclick="|showConfigModal(${thietBi.maThietBi})|">
                                                             <i class="bi bi-sliders me-2 text-info"></i>
                                                             <span>Cấu hình</span>
                                                         </a>
                                                     </li>
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    <li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}"><hr class="dropdown-divider"></li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
                                                         <a class="dropdown-item d-flex align-items-center" href="#"
-                                                           th:onclick="'deleteDevice(' + ${thietBi.maThietBi} + ')'">
+                                                           th:onclick="|deleteDevice(${thietBi.maThietBi})|">
                                                             <i class="bi bi-trash me-2 text-danger"></i>
                                                             <span class="text-danger">Xóa</span>
                                                         </a>
+                                                    </li>
+                                                    
+                                                    <!-- Thông báo nếu chỉ có quyền xem -->
+                                                    <li th:unless="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
+                                                        <span class="dropdown-item text-muted">
+                                                            <i class="bi bi-eye me-2"></i>
+                                                            Chỉ xem (không có quyền điều khiển)
+                                                        </span>
                                                     </li>
                                                 </ul>
                                             </div>
@@ -173,18 +182,26 @@
                                                         <i class="bi bi-power me-2 text-primary"></i>
                                                         <span class="text-muted small">Điều khiển</span>
                                                     </label>
-                                                    <div class="form-check form-switch">
+                                                    <!-- Kiểm tra quyền điều khiển từng thiết bị -->
+                                                    <div class="form-check form-switch" th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
                                                         <input class="form-check-input" type="checkbox" role="switch"
                                                                style="width: 2.5rem; height: 1.25rem;"
                                                                th:id="'switch-' + ${thietBi.maThietBi}"
                                                                th:checked="${thietBi.trangThai == 'hoat_dong'}"
                                                                onchange="toggleDevice(this)">
                                                     </div>
+                                                    <!-- Hiển thị badge trạng thái nếu không có quyền điều khiển -->
+                                                    <span th:unless="${quyenDieuKhienThietBi[thietBi.maThietBi]}" 
+                                                          class="badge"
+                                                          th:classappend="${thietBi.trangThai == 'hoat_dong' ? 'bg-success' : 'bg-secondary'}"
+                                                          th:text="${thietBi.trangThai == 'hoat_dong' ? 'Đang bật' : 'Đã tắt'}">
+                                                    </span>
                                                 </div>
                                             </div>
                                             
                                             <!-- Brightness Control for Lights -->
-                                            <div class="control-item mb-3 p-2 rounded-3" th:if="${loai.tenLoai == 'Đèn'}"
+                                            <div class="control-item mb-3 p-2 rounded-3" 
+                                                 th:if="${loai.tenLoai == 'Đèn' && quyenDieuKhienThietBi[thietBi.maThietBi]}"
                                                  style="background: linear-gradient(135deg, rgba(248,249,250,0.5) 0%, rgba(248,249,250,1) 100%)">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <label class="d-flex align-items-center mb-0">
@@ -214,7 +231,7 @@
                                                         <span class="text-muted small">Lịch trình</span>
                                                     </div>
                                                     <button class="btn btn-sm btn-outline-primary"
-                                                            th:onclick="'showScheduleModal(' + ${thietBi.maThietBi} + ')'">
+                                                            th:onclick="|showScheduleModal(${thietBi.maThietBi})|">
                                                         <i class="bi bi-plus-lg"></i>
                                                     </button>
                                                 </div>

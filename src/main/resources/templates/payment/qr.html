@@ -56,66 +56,47 @@
   </div>
   
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script th:src="@{/js/sockjs.min.js}"></script>
-  <script th:src="@{/js/stomp.min.js}"></script>
   <script th:inline="javascript">
     const orderId = /*[[${orderId}]]*/ '0';
     console.log('Payment page loaded. Order ID:', orderId);
-    
-    let stompClient = null;
-    
-    function connect() {
-      console.log('Connecting to WebSocket...');
-      const statusDiv = document.getElementById('paymentStatus');
-      statusDiv.style.display = 'block';
-      
-      const socket = new SockJS('/stomp');
-      stompClient = Stomp.over(socket);
-      
-      stompClient.connect({}, function(frame) {
-        console.log('✅ WebSocket connected:', frame);
-        
-        // Subscribe to payment notifications for this order
-        stompClient.subscribe('/topic/payment/' + orderId, function(message) {
-          console.log('📨 Payment notification received:', message.body);
-          const payload = JSON.parse(message.body);
-          handlePaymentNotification(payload);
-        });
-        
-        console.log('✅ Subscribed to /topic/payment/' + orderId);
-      }, function(error) {
-        console.error('❌ WebSocket connection error:', error);
-        statusDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Không thể kết nối WebSocket';
-      });
-    }
-    
-    function handlePaymentNotification(payload) {
-      console.log('Processing payment notification:', payload);
-      const statusDiv = document.getElementById('paymentStatus');
-      
-      if (payload.type === 'PAYMENT_SUCCESS') {
-        statusDiv.className = 'payment-status success';
-        statusDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i> <strong>Thanh toán thành công!</strong> Đang chuyển tới trang người dùng...';
-        
-        // Redirect to user profile immediately after short delay
-        setTimeout(function() {
-          window.location.href = '/profile';
-        }, 1200);
+    const statusDiv = document.getElementById('paymentStatus');
+    statusDiv.style.display = 'block';
+
+    let attempts = 0;
+    const maxAttempts = 400; // ~20 minutes at 3s interval
+    const intervalMs = 3000;
+
+    async function pollStatus() {
+      attempts++;
+      try {
+        const res = await fetch(`/api/payments/status/${orderId}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        console.log('Status:', data);
+
+        if (data.active === true) {
+          statusDiv.className = 'payment-status success';
+          statusDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i> <strong>Thanh toán thành công!</strong> Đang chuyển tới trang người dùng...';
+          setTimeout(() => { window.location.href = data.redirect || '/profile'; }, 900);
+          return true;
+        }
+      } catch (e) {
+        console.warn('Polling error:', e);
       }
+      return false;
     }
-    
-    function disconnect() {
-      if (stompClient !== null) {
-        stompClient.disconnect();
-        console.log('WebSocket disconnected');
+
+    // Start polling
+    const timer = setInterval(async () => {
+      if (attempts >= maxAttempts) {
+        clearInterval(timer);
+        statusDiv.className = 'payment-status pending';
+        statusDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Hết thời gian chờ. Vui lòng thử lại hoặc liên hệ hỗ trợ.';
+        return;
       }
-    }
-    
-    // Connect when page loads
-    window.addEventListener('load', connect);
-    
-    // Disconnect when page unloads
-    window.addEventListener('beforeunload', disconnect);
+      const done = await pollStatus();
+      if (done) clearInterval(timer);
+    }, intervalMs);
   </script>
 </body>
 </html>

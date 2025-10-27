@@ -8,7 +8,6 @@ import com.iot.management.model.enums.DuAnRole;
 import com.iot.management.model.repository.DuAnRepository;
 import com.iot.management.model.repository.PhanQuyenDuAnRepository;
 import java.util.stream.Collectors;
-import java.util.HashSet;
 import com.iot.management.service.DuAnService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
@@ -108,7 +107,22 @@ public class DuAnServiceImpl implements DuAnService {
 
     @Override
     public Optional<DuAn> findByIdAndNguoiDung(Long maDuAn, NguoiDung nguoiDung) {
-        return duAnRepository.findByMaDuAnAndNguoiDungAndTrangThai(maDuAn, nguoiDung, "HOAT_DONG");
+        // Tìm dự án theo ID và trạng thái hoạt động
+        Optional<DuAn> duAnOpt = duAnRepository.findById(maDuAn);
+        
+        if (duAnOpt.isEmpty() || !"HOAT_DONG".equals(duAnOpt.get().getTrangThai())) {
+            return Optional.empty();
+        }
+        
+        DuAn duAn = duAnOpt.get();
+        
+        // Kiểm tra xem người dùng có quyền truy cập dự án không
+        // Bao gồm: CHU_SO_HUU, QUAN_LY, THANH_VIEN
+        Optional<PhanQuyenDuAn> phanQuyen = phanQuyenDuAnRepository
+            .findByDuAnAndNguoiDung(duAn, nguoiDung);
+        
+        // Nếu có quyền (bất kỳ vai trò nào), trả về dự án
+        return phanQuyen.isPresent() ? Optional.of(duAn) : Optional.empty();
     }
 
     @Override

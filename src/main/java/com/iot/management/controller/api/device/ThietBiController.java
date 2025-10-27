@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Arrays;
 
 import com.iot.management.websocket.DeviceMessagingService;
+import com.iot.management.model.repository.LenhDieuKhienRepository;
+import com.iot.management.model.entity.LenhDieuKhien;
 
 @Controller
 @RequestMapping("/thiet-bi")
@@ -55,9 +57,17 @@ public class ThietBiController {
 
     @Autowired
     private com.iot.management.service.TuDongHoaService tuDongHoaService;
+    
+    @Autowired
+    private com.iot.management.service.PhanQuyenService phanQuyenService;
+    
+    @Autowired
+    private com.iot.management.model.repository.ThietBiRepository thietBiRepository;
 
     private final KhuVucRepository khuVucRepository;
     private final NguoiDungRepository nguoiDungRepository;
+    @Autowired
+    private LenhDieuKhienRepository lenhDieuKhienRepository;
     
     public ThietBiController(KhuVucRepository khuVucRepository,
                             NguoiDungRepository nguoiDungRepository) {
@@ -97,6 +107,47 @@ public class ThietBiController {
         model.addAttribute("user", user);
         model.addAttribute("khuVuc", khuVuc);
         model.addAttribute("loaiThietBis", loaiThietBis);
+        
+        // Kiểm tra vai trò của user trong dự án
+        boolean laChuSoHuu = false;
+        if (duAn != null) {
+            com.iot.management.model.enums.DuAnRole vaiTroDuAn = phanQuyenService.layVaiTroDuAn(duAn.getMaDuAn(), user.getMaNguoiDung());
+            laChuSoHuu = (vaiTroDuAn == com.iot.management.model.enums.DuAnRole.CHU_SO_HUU);
+        }
+        
+        // Kiểm tra quyền của user với từng thiết bị trong khu vực
+        java.util.Map<Long, Boolean> quyenDieuKhienThietBi = new java.util.HashMap<>();
+        java.util.Map<Long, Boolean> quyenXemDuLieuThietBi = new java.util.HashMap<>();
+        java.util.Set<ThietBi> thietBiCoQuyenXem = new java.util.HashSet<>();
+        
+        // Lấy tất cả thiết bị trong khu vực
+        List<ThietBi> thietBis = thietBiRepository.findByKhuVuc_MaKhuVuc(maKhuVuc);
+        for (ThietBi tb : thietBis) {
+            // CHU_SO_HUU thấy tất cả thiết bị, không cần check quyền
+            if (laChuSoHuu) {
+                thietBiCoQuyenXem.add(tb);
+                quyenDieuKhienThietBi.put(tb.getMaThietBi(), true);
+                quyenXemDuLieuThietBi.put(tb.getMaThietBi(), true);
+            } else {
+                // Người dùng khác phải check quyền
+                boolean coQuyenXem = phanQuyenService.kiemTraQuyenXemDuLieuThietBi(tb.getMaThietBi(), user.getMaNguoiDung());
+                
+                // Chỉ thêm thiết bị vào danh sách nếu có quyền xem
+                if (coQuyenXem) {
+                    boolean coQuyenDieuKhien = phanQuyenService.kiemTraQuyenDieuKhienThietBi(tb.getMaThietBi(), user.getMaNguoiDung());
+                    
+                    thietBiCoQuyenXem.add(tb);
+                    quyenDieuKhienThietBi.put(tb.getMaThietBi(), coQuyenDieuKhien);
+                    quyenXemDuLieuThietBi.put(tb.getMaThietBi(), coQuyenXem);
+                }
+            }
+        }
+        
+        // Cập nhật danh sách thiết bị trong khu vực (chỉ thiết bị có quyền xem)
+        khuVuc.setThietBis(thietBiCoQuyenXem);
+        
+        model.addAttribute("quyenDieuKhienThietBi", quyenDieuKhienThietBi);
+        model.addAttribute("quyenXemDuLieuThietBi", quyenXemDuLieuThietBi);
         
         return "thiet-bi/khu-vuc-detail";
     }
@@ -249,8 +300,9 @@ public class ThietBiController {
     @PutMapping("/{id}/state")
     @ResponseBody
     public ResponseEntity<?> toggleDeviceState(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> payload) {
+        @PathVariable Long id,
+        @RequestBody Map<String, String> payload,
+        Authentication authentication) {
         try {
             String trangThai = payload.get("trangThai"); // "hoat_dong" hoặc "tat"
             logger.info("🎯 [API] PUT /thiet-bi/{}/state - Request: {}", id, trangThai);
@@ -283,6 +335,31 @@ public class ThietBiController {
                     System.err.println("⚠️ Failed to save control log: " + e.getMessage());
                     // Không throw exception để không ảnh hưởng đến điều khiển thiết bị
                 }
+
+                // Lưu lịch sử lệnh điều khiển kèm người dùng (LenhDieuKhien)
+                try {
+                    Optional<ThietBi> deviceOpt = thietBiService.findDeviceById(id);
+                    if (deviceOpt.isPresent()) {
+                        LenhDieuKhien lenh = new LenhDieuKhien();
+                        lenh.setThietBi(deviceOpt.get());
+                        // Tên lệnh theo trường điều khiển để dễ tra cứu
+                        lenh.setTenLenh("toggle_" + fieldName);
+                        // Giá trị lệnh: giữ nguyên chuỗi trạng thái gửi xuống
+                        lenh.setGiaTriLenh(normalized);
+                        // Trạng thái thực thi của lệnh
+                        lenh.setTrangThai("executed");
+
+                        // Gán người dùng nếu có xác thực
+                        if (authentication != null) {
+                            String email = authentication.getName();
+                            nguoiDungRepository.findByEmail(email).ifPresent(lenh::setNguoiGui);
+                        }
+
+                        lenhDieuKhienRepository.save(lenh);
+                    }
+                } catch (Exception e) {
+                    System.err.println("⚠️ Failed to save command history (LenhDieuKhien): " + e.getMessage());
+                }
             }
 
             return ResponseEntity.ok(Map.of(
@@ -300,8 +377,9 @@ public class ThietBiController {
     @PutMapping("/{id}/led1")
     @ResponseBody
     public ResponseEntity<?> toggleLED1(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> payload) {
+        @PathVariable Long id,
+        @RequestBody Map<String, Object> payload,
+        Authentication authentication) {
         try {
             // Chấp nhận cả boolean và string
             Object stateObj = payload.get("state");
@@ -336,6 +414,25 @@ public class ThietBiController {
             } catch (Exception e) {
                 System.err.println("⚠️ Failed to save LED1 control log: " + e.getMessage());
             }
+
+            // Lưu lịch sử lệnh điều khiển kèm người dùng (LenhDieuKhien)
+            try {
+                Optional<ThietBi> deviceOpt = thietBiService.findDeviceById(id);
+                if (deviceOpt.isPresent()) {
+                    LenhDieuKhien lenh = new LenhDieuKhien();
+                    lenh.setThietBi(deviceOpt.get());
+                    lenh.setTenLenh("toggle_led1");
+                    lenh.setGiaTriLenh(trangThai);
+                    lenh.setTrangThai("executed");
+                    if (authentication != null) {
+                        String email = authentication.getName();
+                        nguoiDungRepository.findByEmail(email).ifPresent(lenh::setNguoiGui);
+                    }
+                    lenhDieuKhienRepository.save(lenh);
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to save command history (LenhDieuKhien - led1): " + e.getMessage());
+            }
             
             return ResponseEntity.ok(Map.of(
                     "maThietBi", id,
@@ -354,8 +451,9 @@ public class ThietBiController {
     @PutMapping("/{id}/led2")
     @ResponseBody
     public ResponseEntity<?> toggleLED2(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> payload) {
+        @PathVariable Long id,
+        @RequestBody Map<String, Object> payload,
+        Authentication authentication) {
         try {
             // Chấp nhận cả boolean và string
             Object stateObj = payload.get("state");
@@ -389,6 +487,25 @@ public class ThietBiController {
                 System.out.println("📝 Saved LED2 control log for device " + id + ": " + trangThai);
             } catch (Exception e) {
                 System.err.println("⚠️ Failed to save LED2 control log: " + e.getMessage());
+            }
+
+            // Lưu lịch sử lệnh điều khiển kèm người dùng (LenhDieuKhien)
+            try {
+                Optional<ThietBi> deviceOpt = thietBiService.findDeviceById(id);
+                if (deviceOpt.isPresent()) {
+                    LenhDieuKhien lenh = new LenhDieuKhien();
+                    lenh.setThietBi(deviceOpt.get());
+                    lenh.setTenLenh("toggle_led2");
+                    lenh.setGiaTriLenh(trangThai);
+                    lenh.setTrangThai("executed");
+                    if (authentication != null) {
+                        String email = authentication.getName();
+                        nguoiDungRepository.findByEmail(email).ifPresent(lenh::setNguoiGui);
+                    }
+                    lenhDieuKhienRepository.save(lenh);
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to save command history (LenhDieuKhien - led2): " + e.getMessage());
             }
             
             return ResponseEntity.ok(Map.of(
@@ -454,6 +571,47 @@ public class ThietBiController {
         return Arrays.stream(ghiChu.split(","))
                     .map(v -> Map.of("value", v.trim(), "label", v.trim()))
                     .toList();
+    }
+
+    /**
+     * Kiểm tra trạng thái kết nối WebSocket của thiết bị
+     */
+    @GetMapping("/{id}/connection-status")
+    @ResponseBody
+    public ResponseEntity<?> checkConnectionStatus(@PathVariable Long id) {
+        try {
+            // Kiểm tra thiết bị có tồn tại không
+            Optional<ThietBi> deviceOpt = thietBiService.findDeviceById(id);
+            if (deviceOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Kiểm tra kết nối WebSocket
+            boolean isConnected = false;
+            String message = "Device is offline";
+            
+            if (deviceMessagingService != null) {
+                var registry = deviceMessagingService.getRegistry();
+                if (registry != null) {
+                    isConnected = registry.isOnline(id);
+                    message = isConnected ? "Device is online and ready" : "Device is not connected to WebSocket";
+                }
+            }
+            
+            logger.info("🔍 Connection status for device {}: {}", id, isConnected ? "ONLINE" : "OFFLINE");
+            
+            return ResponseEntity.ok(Map.of(
+                "deviceId", id,
+                "connected", isConnected,
+                "status", isConnected ? "online" : "offline",
+                "message", message
+            ));
+        } catch (Exception e) {
+            logger.error("❌ Error checking connection status for device {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", e.getMessage()
+            ));
+        }
     }
 
 

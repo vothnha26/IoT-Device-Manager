@@ -3,10 +3,12 @@ package com.iot.management.service.impl;
 import com.iot.management.model.entity.LuatNguong;
 import com.iot.management.model.entity.NhatKyDuLieu;
 import com.iot.management.model.entity.LichTrinh;
+import com.iot.management.model.entity.LichSuCanhBao;
 import com.iot.management.model.repository.LuatNguongRepository;
 import com.iot.management.model.repository.LichTrinhRepository;
 import com.iot.management.model.repository.NhatKyDuLieuRepository;
 import com.iot.management.model.repository.ThongBaoRepository;
+import com.iot.management.model.repository.LichSuCanhBaoRepository;
 import com.iot.management.service.TuDongHoaService;
 import com.iot.management.service.ThietBiService;
 import com.iot.management.service.ThongBaoService;
@@ -32,6 +34,7 @@ public class TuDongHoaServiceImpl implements TuDongHoaService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ThongBaoService thongBaoService;
     private final ThongBaoRepository thongBaoRepository;
+    private final LichSuCanhBaoRepository lichSuCanhBaoRepository;
     // Theo dõi thời điểm điều kiện của luật bắt đầu được thỏa mãn để hỗ trợ "thời gian duy trì điều kiện"
     private final java.util.concurrent.ConcurrentHashMap<Long, java.time.Instant> satisfiedSince = new java.util.concurrent.ConcurrentHashMap<>();
     // Theo dõi luật nào đã trigger để tránh ghi notification trùng lặp
@@ -44,7 +47,8 @@ public class TuDongHoaServiceImpl implements TuDongHoaService {
             NhatKyDuLieuRepository nhatKyDuLieuRepository,
             SimpMessagingTemplate messagingTemplate,
             ThongBaoService thongBaoService,
-            ThongBaoRepository thongBaoRepository) {
+            ThongBaoRepository thongBaoRepository,
+            LichSuCanhBaoRepository lichSuCanhBaoRepository) {
         this.luatNguongRepository = luatNguongRepository;
         this.lichTrinhRepository = lichTrinhRepository;
         this.thietBiService = thietBiService;
@@ -52,6 +56,7 @@ public class TuDongHoaServiceImpl implements TuDongHoaService {
         this.messagingTemplate = messagingTemplate;
         this.thongBaoService = thongBaoService;
         this.thongBaoRepository = thongBaoRepository;
+        this.lichSuCanhBaoRepository = lichSuCanhBaoRepository;
     }
 
     @Override
@@ -302,49 +307,44 @@ public class TuDongHoaServiceImpl implements TuDongHoaService {
             normalized
         );
         
-        // Ghi cảnh báo vào lịch sử thông báo (CHỈ LẦN ĐẦU TIÊN khi luật trigger)
-        try {
-            var now = java.time.Instant.now();
-            var lastTrigger = lastTriggered.get(rule.getMaLuat());
+        // Lưu log vào bảng lich_su_canh_bao
+        var now = java.time.Instant.now();
+        var lastTrigger = lastTriggered.get(rule.getMaLuat());
+        
+        // Chỉ log nếu đã qua ít nhất 60 giây kể từ lần trigger trước
+        boolean shouldLog = lastTrigger == null || 
+            java.time.Duration.between(lastTrigger, now).getSeconds() >= 60;
+        
+        if (shouldLog) {
+            String actionText = normalized.equals("hoat_dong") ? "BẬT" : "TẮT";
             
-            // Chỉ ghi notification nếu đã qua ít nhất 60 giây kể từ lần trigger trước
-            boolean shouldCreateNotification = lastTrigger == null || 
-                java.time.Duration.between(lastTrigger, now).getSeconds() >= 60;
-            
-            if (shouldCreateNotification) {
-                String actionText = normalized.equals("hoat_dong") ? "BẬT" : "TẮT";
-                String tieuDe = "Cảnh báo: Luật tự động đã kích hoạt";
-                String noiDung = String.format(
-                    "Luật '%s' đã tự động %s thiết bị '%s' lúc %s",
+            // Tạo log cảnh báo trong database
+            try {
+                LichSuCanhBao lichSu = new LichSuCanhBao();
+                lichSu.setLuat(rule);
+                lichSu.setThietBi(rule.getThietBi());
+                lichSu.setNoiDung(String.format(
+                    "Luật '%s' đã tự động %s thiết bị '%s'",
                     rule.getBieuThucLogic(),
                     actionText,
+                    rule.getThietBi().getTenThietBi()
+                ));
+                lichSuCanhBaoRepository.save(lichSu);
+                
+                logger.info("⚡ Luật tự động [ID: {}] kích hoạt: {} thiết bị '{}' (ID: {}) | Biểu thức: '{}' | Thời gian: {}", 
+                    rule.getMaLuat(),
+                    actionText,
                     rule.getThietBi().getTenThietBi(),
+                    rule.getThietBi().getMaThietBi(),
+                    rule.getBieuThucLogic(),
                     java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
                 );
-                
-                // Tạo thông báo có cả thông tin thiết bị và khu vực
-                com.iot.management.model.entity.ThongBao thongBao = thongBaoService.createDeviceNotification(
-                    rule.getThietBi().getChuSoHuu(),
-                    rule.getThietBi(),
-                    tieuDe,
-                    noiDung,
-                    "WARNING"
-                );
-                
-                // Cập nhật thêm khu vực nếu có
-                if (rule.getThietBi().getKhuVuc() != null) {
-                    thongBao.setKhuVuc(rule.getThietBi().getKhuVuc());
-                    thongBaoRepository.save(thongBao);
-                }
-                
-                // Đánh dấu đã trigger
-                lastTriggered.put(rule.getMaLuat(), now);
-                
-                logger.info("📝 Rule {} triggered: {} device {}", 
-                    rule.getMaLuat(), actionText, rule.getThietBi().getMaThietBi());
+            } catch (Exception e) {
+                logger.error("❌ Lỗi lưu lịch sử cảnh báo: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            logger.error("❌ Lỗi ghi thông báo: {}", e.getMessage());
+            
+            // Đánh dấu đã trigger
+            lastTriggered.put(rule.getMaLuat(), now);
         }
         
         // Send WebSocket notification

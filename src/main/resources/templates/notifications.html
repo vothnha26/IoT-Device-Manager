@@ -353,6 +353,17 @@
                 justify-content: space-between;
             }
         }
+
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 <body>
@@ -411,8 +422,7 @@
                 <div class="notification-card" 
                      th:each="notification : ${notifications}"
                      th:classappend="${!notification.daDoc ? 'unread' : ''}"
-                     th:attr="data-notification-id=${notification.maThongBao}"
-                     th:onclick="${notification.urlLienKet != null ? 'window.location.href=\'' + notification.urlLienKet + '\'' : ''}">
+                     th:attr="data-notification-id=${notification.maThongBao},data-url=${notification.urlLienKet}">
                     
                     <div class="notification-card-main">
                         <div class="notification-card-icon" th:classappend="${notification.loaiThongBao}">
@@ -443,12 +453,12 @@
                                 <div class="notification-card-actions" onclick="event.stopPropagation()">
                                     <button class="action-btn mark-read" 
                                             th:if="${!notification.daDoc}"
-                                            th:onclick="'markAsReadPage(' + ${notification.maThongBao} + ')'"
+                                            th:attr="onclick=|markAsReadPage(${notification.maThongBao})|"
                                             title="Đánh dấu đã đọc">
                                         <i class="bi bi-check"></i>
                                     </button>
                                     <button class="action-btn delete" 
-                                            th:onclick="'deleteNotificationPage(' + ${notification.maThongBao} + ')'"
+                                            th:attr="onclick=|deleteNotificationPage(${notification.maThongBao})|"
                                             title="Xóa">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -462,6 +472,36 @@
     </div>
 
     <script th:inline="javascript">
+        /*<![CDATA[*/
+        
+        // Handle notification card click
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationCards = document.querySelectorAll('.notification-card');
+            notificationCards.forEach(card => {
+                const notificationId = card.getAttribute('data-notification-id');
+                
+                // Get the URL link from the notification data
+                const urlLienKet = card.getAttribute('data-url');
+                
+                card.addEventListener('click', function(e) {
+                    // Don't navigate if clicking on action buttons
+                    if (e.target.closest('.notification-card-actions')) {
+                        return;
+                    }
+                    
+                    // Mark as read first
+                    fetch(`/api/notifications/${notificationId}/read`, {
+                        method: 'PUT'
+                    });
+                    
+                    // Navigate if URL exists
+                    if (urlLienKet && urlLienKet !== '') {
+                        window.location.href = urlLienKet;
+                    }
+                });
+            });
+        });
+        
         // Mark single notification as read
         function markAsReadPage(notificationId) {
             fetch(`/api/notifications/${notificationId}/read`, {
@@ -523,6 +563,7 @@
             })
             .catch(error => console.error('Error:', error));
         }
+        /*]]>*/
     </script>
 </main>
 </body>

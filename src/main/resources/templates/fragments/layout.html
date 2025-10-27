@@ -1,63 +1,69 @@
 <!DOCTYPE html>
-<html lang="vi" 
+<html lang="vi"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:fragment="layout(title, content, scripts)">
-<head>
-    <meta charset="UTF-8">
-    <title th:replace="${title}">IoT Manager</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+
+    <title th:text="${title}">IoT Manager</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+    <!-- Bootstrap 5 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+
+    <!-- AOS Animation -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet"/>
+
+    <!-- ApexCharts (nếu dùng) -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
-    <link th:href="@{/css/device-management.css}" rel="stylesheet">
-    <link th:href="@{/css/schedule.css}" rel="stylesheet">
-    <link th:href="@{/css/theme.css}" rel="stylesheet">
-    <link th:href="@{/css/du-an-new.css}" rel="stylesheet">
-    <!-- Khu vực theme -->
-    <link th:href="@{/css/khu-vuc-new.css}" rel="stylesheet">
-    <link th:href="@{/css/khu-vuc-theme.css}" rel="stylesheet">
-    <link th:href="@{/css/khu-vuc-detail.css}" rel="stylesheet">
-    <link th:href="@{/css/footer.css}" rel="stylesheet">
-    <link th:href="@{/css/layout-fix.css}" rel="stylesheet">
-    <!-- Notification styles -->
-    <link th:href="@{/css/notifications.css}" rel="stylesheet">
-    
+    <!-- Custom CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet"/>
+    <link th:href="@{/css/device-management.css}" rel="stylesheet"/>
+    <link th:href="@{/css/schedule.css}" rel="stylesheet"/>
+    <link th:href="@{/css/theme.css}" rel="stylesheet"/>
+    <link th:href="@{/css/du-an-new.css}" rel="stylesheet"/>
+    <link th:href="@{/css/khu-vuc-new.css}" rel="stylesheet"/>
+    <link th:href="@{/css/khu-vuc-theme.css}" rel="stylesheet"/>
+    <link th:href="@{/css/khu-vuc-detail.css}" rel="stylesheet"/>
+    <link th:href="@{/css/footer.css}" rel="stylesheet"/>
+    <link th:href="@{/css/layout-fix.css}" rel="stylesheet"/>
+
+    <!-- ==================== CSS TOÀN CỤC ==================== -->
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-            background: linear-gradient(120deg, #f6f9fc 0%, #ecf4f7 100%);
-            color: #2c3e50;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+        /* Reset & Base */
+        *, *::before, *::after {
+            box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(120deg, #f6f9fc 0%, #ecf4f7 100%);
+            color: #2c3e50;
+        }
+
+        /* Layout chính */
         .wrapper {
-            flex: 1 0 auto;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
         }
 
         .main-content {
             flex: 1;
-            width: 100%;
-            max-width: 100%;
-            margin: 0 auto;
-            padding-bottom: 60px; /* Để tránh content bị footer che */
-            position: relative;
+            padding-top: 80px; /* Khoảng cách cho navbar fixed */
+            padding-bottom: 0; /* Footer không còn fixed nên không cần padding */
         }
 
         .container {
@@ -65,32 +71,43 @@
             margin: 0 auto;
             padding: 0 1rem;
         }
+
+        /* Navbar */
         .navbar {
-            background: rgba(255, 255, 255, 0.9) !important;
+            background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(10px);
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
             transition: all 0.4s ease;
+            z-index: 1050;
         }
+
         .navbar.scrolled {
-            background: rgba(255, 255, 255, 0.98) !important;
+background: rgba(255, 255, 255, 0.98) !important;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
+
         .navbar-brand {
             background: linear-gradient(45deg, #2196f3, #00bcd4);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent !important;
             font-weight: 700;
+            font-size: 1.5rem;
         }
+
         .nav-link {
             color: #37474f !important;
-            transition: all 0.3s;
+            font-weight: 500;
             position: relative;
             padding: 0.5rem 1rem;
+            transition: color 0.3s ease;
         }
-        .nav-link:hover, .nav-link.active {
+
+        .nav-link:hover,
+        .nav-link.active {
             color: #2196f3 !important;
         }
+
         .nav-link::after {
             content: '';
             position: absolute;
@@ -99,62 +116,159 @@
             width: 0;
             height: 2px;
             background: linear-gradient(45deg, #2196f3, #00bcd4);
-            transition: all 0.3s;
+            transition: width 0.3s ease;
             transform: translateX(-50%);
         }
-        .nav-link:hover::after, .nav-link.active::after {
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
             width: 100%;
         }
+
+        /* Notification Bell Styles */
+        #notificationDropdown {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #notificationDropdown:hover {
+            color: #2196f3 !important;
+            transform: scale(1.1);
+        }
+
+        #notification-count {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.35rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, 0) scale(1); }
+            50% { transform: translate(-50%, 0) scale(1.1); }
+        }
+
+        .notification-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s ease;
+        }
+
+        .notification-item:hover {
+            background: #f8f9fa;
+        }
+
+        .notification-item.unread {
+            background: #e3f2fd;
+        }
+
+        .notification-item.unread:hover {
+            background: #bbdefb;
+        }
+
+        /* Footer */
         footer {
+            position: relative;
+            width: 100%;
             background: linear-gradient(45deg, #1a237e, #0d47a1);
             color: white;
-            padding: 2rem 0;
+            padding: 0.9rem 0;
             margin-top: auto;
+            flex-shrink: 0;
         }
+
         footer p {
             color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 0;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        footer h5 {
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
 
-<body sec:authorize="isAuthenticated()" th:attr="data-user-id=${#authentication.principal.maNguoiDung}">
+<body>
+    <!-- ==================== NAVBAR FRAGMENT ==================== -->
     <nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-light fixed-top">
         <div class="container">
             <a class="navbar-brand" href="/">IoT Manager</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
             <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                <!-- Menu chính -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" th:href="@{/du-an}" th:classappend="${#strings.equals(currentUri, '/du-an') ? 'active' : ''}">
-                            <i class="bi bi-building me-1"></i>Dự án
+                        <a class="nav-link"
+                           th:href="@{/du-an}"
+                           th:classappend="${#strings.equals(currentUri, '/du-an') || #strings.startsWith(currentUri, '/du-an/') ? 'active' : ''}">
+                            <i class="bi bi-building me-1"></i> Dự án
                         </a>
                     </li>
+                    <!-- Thêm menu khác ở đây -->
                 </ul>
-                
+
+                <!-- User Menu -->
                 <ul class="navbar-nav">
-                    <li class="nav-item" sec:authorize="!isAuthenticated()">
-                        <a class="btn btn-primary ms-3" href="/auth/login">Đăng nhập</a>
-                    </li>
                     <!-- Notification Bell -->
-                    <li class="nav-item" sec:authorize="isAuthenticated()">
-                        <div th:replace="~{fragments/notification-bell :: notification-bell}"></div>
+                    <li class="nav-item dropdown me-3" sec:authorize="isAuthenticated()">
+                        <a class="nav-link position-relative" href="#" id="notificationDropdown" 
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell fs-5"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  id="notification-count" style="display: none;">
+                                0
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" 
+                            style="width: 350px; max-height: 500px; overflow-y: auto;" 
+                            aria-labelledby="notificationDropdown">
+                            <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Thông báo</span>
+                                <a href="#" class="text-primary small" onclick="markAllAsRead()">Đánh dấu đã đọc</a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <div id="notification-list">
+                                <li class="text-center text-muted py-3">
+                                    <i class="bi bi-bell-slash fs-4"></i>
+                                    <p class="mb-0 small">Không có thông báo mới</p>
+                                </li>
+                            </div>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-center text-primary small" th:href="@{/notifications}">
+                                    Xem tất cả thông báo
+                                </a>
+                            </li>
+                        </ul>
                     </li>
+
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="btn btn-primary ms-3" th:href="@{/auth/login}">Đăng nhập</a>
+                    </li>
+
                     <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
+                           id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle me-2"></i>
                             <span sec:authentication="name">User</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/profile"><i class="bi bi-person me-2"></i>Hồ sơ</a></li>
-                            <li><a class="dropdown-item" href="/settings"><i class="bi bi-gear me-2"></i>Cài đặt</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" th:href="@{/dashboard}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+                            <li><hr class="dropdown-divider"/></li>
+                            <li><a class="dropdown-item" th:href="@{/profile}"><i class="bi bi-person me-2"></i> Hồ sơ</a></li>
+                            <li><a class="dropdown-item" th:href="@{/settings}"><i class="bi bi-gear me-2"></i> Cài đặt</a></li>
+                            <li><hr class="dropdown-divider"/></li>
                             <li>
-                                <form th:action="@{/logout}" method="post" style="margin: 0;">
+                                <form th:action="@{/logout}" method="post" class="d-inline">
                                     <button type="submit" class="dropdown-item text-danger">
-                                        <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                                        <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
                                     </button>
                                 </form>
                             </li>
@@ -165,56 +279,204 @@
         </div>
     </nav>
 
+    <!-- ==================== MAIN LAYOUT ==================== -->
     <div class="wrapper">
-        <nav th:replace="~{fragments/layout :: navbar}"></nav>
+        <!-- Navbar đã được nhúng ở trên -->
         <div class="main-content">
-            <main th:replace="${content}"></main>
-        </div>
-        <footer th:fragment="footer" class="footer bg-white border-top mt-auto">
             <div class="container">
-                <div class="row py-3">
+                <main th:replace="${content}"></main>
+            </div>
+        </div>
+
+        <!-- ==================== FOOTER ==================== -->
+        <footer>
+            <div class="container-fluid px-0">
+                <div class="row align-items-center py-2 mx-0">
                     <div class="col-md-6">
-                        <h5 class="mb-2">IoT Manager</h5>
-                        <p class="mb-0">© 2025 IoT Management. All rights reserved.</p>
+                        <h5 class="mb-1">IoT Manager</h5>
+                        <p>© 2025 IoT Management. All rights reserved.</p>
                     </div>
-                    <div class="col-md-6 text-md-end d-flex align-items-center justify-content-end">
-                        <p class="mb-0">Liên hệ: support@iotmanager.vn</p>
+                    <div class="col-md-6 text-md-end">
+                        <p>Liên hệ: <a href="mailto:support@iotmanager.vn" style="color: #a5d8ff;">support@iotmanager.vn</a></p>
                     </div>
                 </div>
             </div>
         </footer>
     </div>
 
+    <!-- ==================== SCRIPTS FRAGMENT ==================== -->
     <th:block th:fragment="scripts">
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+                integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+                crossorigin="anonymous"></script>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- STOMP/SockJS for realtime updates -->
-    <script th:src="@{/js/sockjs.min.js}"></script>
-    <script th:src="@{/js/stomp.min.js}"></script>
-    
-    <!-- Notification WebSocket -->
-    <script th:src="@{/js/notifications.js}"></script>
+        <!-- AOS Animation -->
+        <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+        <!-- Khởi tạo AOS -->
+        <script>
+            AOS.init({
+                duration: 1000,
+                once: true,
+                offset: 100
+            });
+        </script>
 
-    <script>
-        AOS.init({
-            duration: 1000,
-            once: true
-        });
+        <!-- Navbar Scroll Effect -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const navbar = document.querySelector('.navbar');
+                if (navbar) {
+                    window.addEventListener('scroll', () => {
+                        navbar.classList.toggle('scrolled', window.scrollY > 50);
+                    });
+                }
+            });
+        </script>
 
-        // Navbar scroll effect
-        window.addEventListener("scroll", () => {
-            const navbar = document.querySelector(".navbar");
-            if (navbar) { // Thêm kiểm tra null
-                 navbar.classList.toggle("scrolled", window.scrollY > 50);
+        <!-- CSRF Token cho AJAX (nếu cần) -->
+        <script th:if="${_csrf}">
+            const csrfToken = "[[${_csrf.token}]]";
+            const csrfHeader = "[[${_csrf.headerName}]]";
+
+            // Tự động thêm CSRF vào các form/AJAX
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                if (form.method.toUpperCase() === 'POST' && !form.querySelector('input[name="_csrf"]')) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = '_csrf';
+                    input.value = csrfToken;
+                    form.appendChild(input);
+                }
+            });
+        </script>
+
+        <!-- Notification Bell Script -->
+        <script>
+            // Fetch notifications
+            function loadNotifications() {
+                fetch('/api/notifications/unread')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateNotificationBell(data);
+                    })
+                    .catch(error => console.error('Error loading notifications:', error));
             }
-        });
-    </script>
-</th:block>
 
-<th:block th:replace="${scripts}"></th:block>
+            function updateNotificationBell(notifications) {
+                const count = notifications.length;
+                const badge = document.getElementById('notification-count');
+                const list = document.getElementById('notification-list');
+
+                // Update count badge
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                // Update notification list
+                if (count === 0) {
+                    list.innerHTML = `
+                        <li class="text-center text-muted py-3">
+                            <i class="bi bi-bell-slash fs-4"></i>
+                            <p class="mb-0 small">Không có thông báo mới</p>
+                        </li>
+                    `;
+                } else {
+                    list.innerHTML = notifications.map(notif => `
+                        <li>
+                            <a class="dropdown-item notification-item ${notif.daDoc ? '' : 'unread'}" 
+                               href="#" onclick="markAsRead(${notif.maThongBao})">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi ${getNotificationIcon(notif.loaiThongBao)} fs-5 ${getNotificationColor(notif.loaiThongBao)}"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1 small">${notif.tieuDe}</h6>
+                                        <p class="mb-1 small text-muted">${notif.noiDung}</p>
+                                        <small class="text-muted">${formatTime(notif.thoiGianTao)}</small>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    `).join('');
+                }
+            }
+
+            function getNotificationIcon(type) {
+                switch(type) {
+                    case 'WARNING': return 'bi-exclamation-triangle-fill';
+                    case 'ERROR': return 'bi-x-circle-fill';
+                    case 'SUCCESS': return 'bi-check-circle-fill';
+                    case 'INFO': return 'bi-info-circle-fill';
+                    default: return 'bi-bell-fill';
+                }
+            }
+
+            function getNotificationColor(type) {
+                switch(type) {
+                    case 'WARNING': return 'text-warning';
+                    case 'ERROR': return 'text-danger';
+                    case 'SUCCESS': return 'text-success';
+                    case 'INFO': return 'text-info';
+                    default: return 'text-primary';
+                }
+            }
+
+            function formatTime(timestamp) {
+                const now = new Date();
+                const time = new Date(timestamp);
+                const diff = Math.floor((now - time) / 1000); // seconds
+
+                if (diff < 60) return 'Vừa xong';
+                if (diff < 3600) return Math.floor(diff / 60) + ' phút trước';
+                if (diff < 86400) return Math.floor(diff / 3600) + ' giờ trước';
+                if (diff < 604800) return Math.floor(diff / 86400) + ' ngày trước';
+                return time.toLocaleDateString('vi-VN');
+            }
+
+            function markAsRead(notificationId) {
+                fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(() => loadNotifications())
+                .catch(error => console.error('Error marking as read:', error));
+            }
+
+            function markAllAsRead() {
+                fetch('/api/notifications/read-all', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(() => loadNotifications())
+                .catch(error => console.error('Error marking all as read:', error));
+                return false;
+            }
+
+            // Load notifications on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                if (document.getElementById('notification-count')) {
+                    loadNotifications();
+                    // Refresh every 30 seconds
+                    setInterval(loadNotifications, 30000);
+                }
+            });
+        </script>
+    </th:block>
+
+    <!-- Nhúng scripts -->
+    <th:block th:replace="${scripts}"></th:block>
 </body>
 </html>

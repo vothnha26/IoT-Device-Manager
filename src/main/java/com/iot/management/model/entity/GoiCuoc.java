@@ -34,6 +34,9 @@ public class GoiCuoc {
     @Column(name = "sl_token_toi_da", nullable = false)
     private int slTokenToiDa;
 
+    @Column(name = "sl_nguoi_dung_toi_da")
+    private Integer slNguoiDungToiDa;
+
     // Getters and setters
     public Integer getMaGoiCuoc() { return maGoiCuoc; }
     public void setMaGoiCuoc(Integer maGoiCuoc) { this.maGoiCuoc = maGoiCuoc; }
@@ -67,5 +70,13 @@ public class GoiCuoc {
 
     public void setSlTokenToiDa(int slTokenToiDa) {
         this.slTokenToiDa = slTokenToiDa;
+    }
+
+    public Integer getSlNguoiDungToiDa() {
+        return slNguoiDungToiDa;
+    }
+
+    public void setSlNguoiDungToiDa(Integer slNguoiDungToiDa) {
+        this.slNguoiDungToiDa = slNguoiDungToiDa;
     }
 }

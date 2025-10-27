@@ -38,7 +38,7 @@
             <h4 class="text-muted">📭 Chưa có luật</h4>
         </div>
 
-        <div th:each="rule : ${rules}" class="rule-card" th:classappend="${!rule.kichHoat ? 'inactive' : ''}">
+        <div th:each="rule : ${rules}" class="rule-card" th:classappend="${!rule.kichHoat ? 'inactive' : ''}" th:attr="data-rule-id=${rule.maLuat}">
             <div class="row">
                 <div class="col-md-9">
                     <span class="badge bg-primary">🔗 Biểu thức</span>
@@ -61,11 +61,62 @@
                     </div>
                 </div>
                 <div class="col-md-3 text-end">
+                    <button class="btn btn-sm btn-info" th:attr="data-rule-id=${rule.maLuat}" onclick="toggleRuleLogs(this)" title="Xem lịch sử cảnh báo">
+                        👁️ Log
+                    </button>
                     <button class="btn btn-sm btn-primary" th:onclick="'editRule(' + ${rule.maLuat} + ')'">✏️</button>
                     <button class="btn btn-sm" th:classappend="${rule.kichHoat ? 'btn-warning' : 'btn-success'}" th:onclick="'toggleRule(' + ${rule.maLuat} + ', ' + ${!rule.kichHoat} + ')'">
                         <span th:text="${rule.kichHoat ? '⏸️' : '▶️'}"></span>
                     </button>
                     <button class="btn btn-sm btn-danger" th:onclick="'deleteRule(' + ${rule.maLuat} + ')'">🗑️</button>
+                </div>
+            </div>
+            
+            <!-- Log Panel (Hidden by default) -->
+            <div class="log-panel" th:id="'logPanel-' + ${rule.maLuat}" style="display: none; margin-top: 15px; border-top: 2px dashed #ddd; padding-top: 15px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        📊 Lịch Sử Cảnh Báo 
+                        <span class="badge bg-secondary" th:id="'logCount-' + ${rule.maLuat}">0</span>
+                    </h6>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" th:id="'timeFilter-' + ${rule.maLuat}" onchange="filterLogs(this)" style="width: 150px;">
+                            <option value="all">Tất cả</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="yesterday">Hôm qua</option>
+                            <option value="week">7 ngày qua</option>
+                            <option value="month">30 ngày qua</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-secondary" th:onclick="'refreshLogs(' + ${rule.maLuat} + ')'">
+                            🔄 Tải lại
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 60px;">#</th>
+                                <th>Nội dung</th>
+                                <th style="width: 200px;">Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody th:id="'logTable-' + ${rule.maLuat}">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    Đang tải...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center" th:id="'loadMoreBtn-' + ${rule.maLuat}" style="display: none;">
+                    <button class="btn btn-sm btn-outline-primary" th:onclick="'loadMoreLogs(' + ${rule.maLuat} + ')'">
+                        Xem thêm...
+                    </button>
                 </div>
             </div>
         </div>
@@ -426,6 +477,167 @@
         window.addEventListener('beforeunload', function() {
             disconnectWebSocket();
         });
+        
+        // ============= VIEW RULE LOGS =============
+        const openLogPanels = new Set(); // Track which panels are open
+        const logCache = {}; // Cache log data by ruleId
+        
+        function toggleRuleLogs(button) {
+            const ruleId = button.getAttribute('data-rule-id');
+            const panel = document.getElementById('logPanel-' + ruleId);
+            
+            if (panel.style.display === 'none') {
+                // Show panel and load logs
+                panel.style.display = 'block';
+                button.innerHTML = '👁️ Ẩn';
+                button.classList.remove('btn-info');
+                button.classList.add('btn-secondary');
+                openLogPanels.add(ruleId);
+                loadRuleLogs(ruleId, 0);
+            } else {
+                // Hide panel
+                panel.style.display = 'none';
+                button.innerHTML = '👁️ Log';
+                button.classList.remove('btn-secondary');
+                button.classList.add('btn-info');
+                openLogPanels.delete(ruleId);
+            }
+        }
+        
+        function loadRuleLogs(ruleId, page = 0) {
+            const tableBody = document.getElementById('logTable-' + ruleId);
+            const logCount = document.getElementById('logCount-' + ruleId);
+            const loadMoreBtn = document.getElementById('loadMoreBtn-' + ruleId);
+            const timeFilter = document.getElementById('timeFilter-' + ruleId).value;
+            
+            // Show loading
+            if (page === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            Đang tải...
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            fetch(`/api/lich-su-canh-bao/luat/${ruleId}?page=${page}&size=20&filter=${timeFilter}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Cache data
+                    if (!logCache[ruleId]) logCache[ruleId] = { page: 0, data: [] };
+                    if (page === 0) {
+                        logCache[ruleId].data = data.content;
+                    } else {
+                        logCache[ruleId].data.push(...data.content);
+                    }
+                    logCache[ruleId].page = page;
+                    
+                    // Update count
+                    logCount.textContent = data.totalElements;
+                    
+                    // Render table
+                    if (data.content && data.content.length > 0) {
+                        const startIndex = page * 20;
+                        tableBody.innerHTML = logCache[ruleId].data.map((log, idx) => {
+                            const timeInfo = formatDateTime(log.thoiGian);
+                            return `
+                                <tr>
+                                    <td class="text-muted">${startIndex + idx + 1}</td>
+                                    <td>${log.noiDung}</td>
+                                    <td class="text-muted">
+                                        <div style="line-height: 1.3;">
+                                            <strong style="color: #495057;">${timeInfo.relative}</strong>
+                                            <br>
+                                            <small style="font-size: 0.85em;">${timeInfo.absolute}</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                        
+                        // Show/hide load more button
+                        if (data.totalPages > page + 1) {
+                            loadMoreBtn.style.display = 'block';
+                        } else {
+                            loadMoreBtn.style.display = 'none';
+                        }
+                    } else {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    📭 Chưa có lịch sử cảnh báo
+                                </td>
+                            </tr>
+                        `;
+                        loadMoreBtn.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading logs:', error);
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="text-center text-danger">
+                                ❌ Không thể tải lịch sử: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function loadMoreLogs(ruleId) {
+            const currentPage = logCache[ruleId]?.page || 0;
+            loadRuleLogs(ruleId, currentPage + 1);
+        }
+        
+        function refreshLogs(ruleId) {
+            delete logCache[ruleId];
+            loadRuleLogs(ruleId, 0);
+        }
+        
+        function filterLogs(selectElement) {
+            const ruleId = selectElement.id.replace('timeFilter-', '');
+            delete logCache[ruleId];
+            loadRuleLogs(ruleId, 0);
+        }
+        
+        function formatDateTime(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            const absoluteTime = date.toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let relativeTime;
+            if (diffMins < 1) {
+                relativeTime = 'Vừa xong';
+            } else if (diffMins < 60) {
+                relativeTime = `${diffMins} phút trước`;
+            } else if (diffHours < 24) {
+                relativeTime = `${diffHours} giờ trước`;
+            } else if (diffDays < 7) {
+                relativeTime = `${diffDays} ngày trước`;
+            } else {
+                relativeTime = absoluteTime;
+            }
+            
+            return {
+                relative: relativeTime,
+                absolute: absoluteTime
+            };
+        }
     </script>
 </body>
 </html>

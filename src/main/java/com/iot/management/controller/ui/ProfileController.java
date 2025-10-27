@@ -56,9 +56,9 @@ public class ProfileController {
         model.addAttribute("totalKhuVuc", totalKhuVuc);
         model.addAttribute("totalThietBi", totalThietBi);
         
-        // Thông tin gói cước hiện tại (ACTIVE)
+        // Thông tin gói cước hiện tại (ACTIVE và còn hạn)
         DangKyGoi activePackage = user.getDangKyGois().stream()
-            .filter(dk -> "ACTIVE".equals(dk.getTrangThai()) && 
+            .filter(dk -> DangKyGoi.TRANG_THAI_ACTIVE.equals(dk.getTrangThai()) && 
                          dk.getNgayKetThuc() != null &&
                          dk.getNgayKetThuc().isAfter(LocalDateTime.now()))
             .findFirst()

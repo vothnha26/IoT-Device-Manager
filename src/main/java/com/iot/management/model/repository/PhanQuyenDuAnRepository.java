@@ -13,5 +13,6 @@ import java.util.Optional;
 public interface PhanQuyenDuAnRepository extends JpaRepository<PhanQuyenDuAn, Long> {
     List<PhanQuyenDuAn> findByNguoiDungAndVaiTro(NguoiDung nguoiDung, DuAnRole vaiTro);
     List<PhanQuyenDuAn> findByNguoiDung(NguoiDung nguoiDung);
+    List<PhanQuyenDuAn> findByDuAn(DuAn duAn);
     Optional<PhanQuyenDuAn> findByDuAnAndNguoiDung(DuAn duAn, NguoiDung nguoiDung);
 }

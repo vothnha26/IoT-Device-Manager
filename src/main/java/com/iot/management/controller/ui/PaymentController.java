@@ -15,6 +15,9 @@ import com.iot.management.model.dto.payment.PaymentResponse;
 import com.iot.management.security.SecurityUser;
 import com.iot.management.service.GoiCuocService;
 import com.iot.management.service.impl.PaymentService;
+import com.iot.management.model.repository.DangKyGoiRepository;
+import com.iot.management.model.entity.DangKyGoi;
+import java.time.LocalDateTime;
 import com.iot.management.service.VietQRService;
 
 @Controller
@@ -24,13 +27,16 @@ public class PaymentController {
     private final GoiCuocService goiCuocService;
     private final PaymentService paymentService;
     private final VietQRService vietQRService;
+    private final DangKyGoiRepository dangKyGoiRepository;
     
     public PaymentController(GoiCuocService goiCuocService,
                              PaymentService paymentService,
-                             VietQRService vietQRService) {
+                             VietQRService vietQRService,
+                             DangKyGoiRepository dangKyGoiRepository) {
         this.goiCuocService = goiCuocService;
         this.paymentService = paymentService;
         this.vietQRService = vietQRService;
+        this.dangKyGoiRepository = dangKyGoiRepository;
     }
 
     // ================= TẠO THANH TOÁN =================
@@ -44,6 +50,15 @@ public class PaymentController {
         Long maNguoiDung = securityUser.getMaNguoiDung();
         if (maNguoiDung == null) {
             throw new RuntimeException("Không lấy được ID người dùng");
+        }
+
+        // Nếu đã có gói ACTIVE và còn hạn thì chuyển về profile luôn
+        var activeOpt = dangKyGoiRepository.findByNguoiDung_MaNguoiDungAndTrangThai(maNguoiDung, DangKyGoi.TRANG_THAI_ACTIVE);
+        if (activeOpt.isPresent()) {
+            DangKyGoi dk = activeOpt.get();
+            if (dk.getNgayKetThuc() != null && dk.getNgayKetThuc().isAfter(LocalDateTime.now())) {
+                return "redirect:/profile";
+            }
         }
 
         PaymentRequest req = new PaymentRequest();
@@ -65,6 +80,15 @@ public class PaymentController {
         Long maNguoiDung = securityUser.getMaNguoiDung();
         if (maNguoiDung == null) {
             throw new RuntimeException("Không lấy được ID người dùng từ session");
+        }
+
+        // Nếu đã ACTIVE và còn hạn -> chuyển thẳng về profile
+        var activeOpt = dangKyGoiRepository.findByNguoiDung_MaNguoiDungAndTrangThai(maNguoiDung, DangKyGoi.TRANG_THAI_ACTIVE);
+        if (activeOpt.isPresent()) {
+            DangKyGoi dk = activeOpt.get();
+            if (dk.getNgayKetThuc() != null && dk.getNgayKetThuc().isAfter(LocalDateTime.now())) {
+                return "redirect:/profile";
+            }
         }
         
         GoiCuoc goiCuoc = goiCuocService.findById(maGoiCuoc)

@@ -19,4 +19,7 @@ public interface KhuVucRepository extends JpaRepository<KhuVuc, Long> {
     // Tìm tất cả khu vực của một dự án
     @Query("SELECT k FROM KhuVuc k WHERE k.duAn.maDuAn = :maDuAn")
     List<KhuVuc> findByDuAn_MaDuAn(Long maDuAn);
+    
+    // Tìm theo mã dự án (phương thức rút gọn)
+    List<KhuVuc> findByDuAnMaDuAn(Long maDuAn);
 }

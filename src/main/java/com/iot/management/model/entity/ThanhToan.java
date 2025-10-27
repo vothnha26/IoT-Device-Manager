@@ -23,9 +23,17 @@ public class ThanhToan {
     private Long maThanhToan;
 
     // HOÀN TÁC: Liên kết với DangKyGoi thay vì NguoiDung/GoiCuoc
+    // Nullable vì khi tạo đơn hàng chưa có DangKyGoi, chỉ tạo khi thanh toán thành công
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ma_dang_ky", nullable = false)
+    @JoinColumn(name = "ma_dang_ky", nullable = true)
     private DangKyGoi dangKyGoi;
+    
+    // Thông tin tạm để tạo DangKyGoi khi thanh toán thành công
+    @Column(name = "ma_nguoi_dung")
+    private Long maNguoiDung;
+    
+    @Column(name = "ma_goi_cuoc")
+    private Long maGoiCuoc;
 
     @Column(name = "so_tien", nullable = false)
     private BigDecimal soTien;
@@ -97,5 +105,21 @@ public class ThanhToan {
 
     public void setTrangThai(String trangThai) {
         this.trangThai = trangThai;
+    }
+
+    public Long getMaNguoiDung() {
+        return maNguoiDung;
+    }
+
+    public void setMaNguoiDung(Long maNguoiDung) {
+        this.maNguoiDung = maNguoiDung;
+    }
+
+    public Long getMaGoiCuoc() {
+        return maGoiCuoc;
+    }
+
+    public void setMaGoiCuoc(Long maGoiCuoc) {
+        this.maGoiCuoc = maGoiCuoc;
     }
 }

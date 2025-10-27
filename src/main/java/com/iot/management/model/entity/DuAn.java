@@ -109,4 +109,12 @@ public class DuAn {
     public void setKhuVucs(Set<KhuVuc> khuVucs) {
         this.khuVucs = khuVucs;
     }
+
+    public Set<PhanQuyenDuAn> getPhanQuyens() {
+        return phanQuyens;
+    }
+
+    public void setPhanQuyens(Set<PhanQuyenDuAn> phanQuyens) {
+        this.phanQuyens = phanQuyens;
+    }
 }

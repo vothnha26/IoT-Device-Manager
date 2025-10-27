@@ -90,6 +90,9 @@ public class SecurityConfig {
                 // Admin routes require ADMIN role
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Public invitation acceptance endpoints (validated by token)
+                .requestMatchers("/du-an/loi-moi/chap-nhan").permitAll()
+                .requestMatchers("/du-an/loi-moi/tu-choi").permitAll()
                 // API endpoints require authentication (except those explicitly permitted above)
                 .requestMatchers("/api/**").authenticated()
                 .requestMatchers("/du-an/**").authenticated()

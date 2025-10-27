@@ -131,14 +131,18 @@ public class SePayServiceImpl implements SePayService {
                 log.info("✅ Found ThanhToan: ID={}, CurrentStatus={}, Amount={}", 
                     thanhToan.getMaThanhToan(), thanhToan.getTrangThai(), thanhToan.getSoTien());
                 
+                // Kiểm tra xem đã thanh toán chưa
+                if ("DA_THANH_TOAN".equals(thanhToan.getTrangThai())) {
+                    log.warn("⚠️ ThanhToan {} already paid, skipping", orderId);
+                    return;
+                }
+                
                 DangKyGoi dk = thanhToan.getDangKyGoi();
                 
                 if (dk == null) {
                     log.error("❌ ThanhToan {} has no associated DangKyGoi", orderId);
                     return;
                 }
-                
-                log.info("✅ Found DangKyGoi: ID={}, CurrentStatus={}", dk.getMaDangKy(), dk.getTrangThai());
                 
                 log.info("✅ Found DangKyGoi: ID={}, CurrentStatus={}", dk.getMaDangKy(), dk.getTrangThai());
                 
@@ -158,14 +162,14 @@ public class SePayServiceImpl implements SePayService {
                 thanhToanRepository.save(thanhToan);
                 log.info("✅ ThanhToan saved successfully");
                 
-                // Update registration status to paid
-                String newDangKyStatus = "DA_THANH_TOAN";
-                log.info("🔄 Updating DangKyGoi from {} to {}", dk.getTrangThai(), newDangKyStatus);
-                dk.setTrangThai(newDangKyStatus);
+                // Kích hoạt gói cước: Update DangKyGoi từ PENDING → ACTIVE và set ngày kết thúc
+                log.info("🔄 Activating package: DangKyGoi {} from {} to ACTIVE", dk.getMaDangKy(), dk.getTrangThai());
+                dk.setTrangThai(DangKyGoi.TRANG_THAI_ACTIVE);
+                dk.setNgayKetThuc(LocalDateTime.now().plusDays(30)); // 30 ngày
                 dangKyGoiRepository.save(dk);
-                log.info("✅ DangKyGoi saved successfully");
+                log.info("✅ DangKyGoi activated successfully");
 
-                log.info("🎉 Payment {} updated to DA_THANH_TOAN, Order {} marked as DA_THANH_TOAN", 
+                log.info("🎉 Payment {} completed, Package {} activated", 
                     orderId, dk.getMaDangKy());
 
                 // Notify via websocket (topic: /topic/payment/{orderId})

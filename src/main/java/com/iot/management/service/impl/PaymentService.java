@@ -33,7 +33,8 @@ public class PaymentService {
     private final ThanhToanRepository thanhToanRepository;
 
     public PaymentService(VietQRService vietQRService, NguoiDungRepository nguoiDungRepository, 
-                          GoiCuocRepository goiCuocRepository, DangKyGoiRepository dangKyGoiRepository,
+                          GoiCuocRepository goiCuocRepository,
+                          DangKyGoiRepository dangKyGoiRepository,
                           ThanhToanRepository thanhToanRepository) {
         this.vietQRService = vietQRService;
         this.nguoiDungRepository = nguoiDungRepository;
@@ -53,15 +54,19 @@ public class PaymentService {
 
         BigDecimal amount = goiCuoc.getGiaTien();
 
+        // Tạo DangKyGoi tạm với trạng thái PENDING (để thỏa constraint NOT NULL)
         DangKyGoi dangKyGoi = new DangKyGoi();
         dangKyGoi.setNguoiDung(nguoiDung);
         dangKyGoi.setGoiCuoc(goiCuoc);
         dangKyGoi.setNgayBatDau(LocalDateTime.now());
-        dangKyGoi.setTrangThai("PENDING");
+        dangKyGoi.setTrangThai("PENDING"); // Sẽ chuyển thành ACTIVE khi thanh toán thành công
         dangKyGoi = dangKyGoiRepository.save(dangKyGoi);
 
+        // Tạo ThanhToan liên kết với DangKyGoi
         ThanhToan thanhToan = new ThanhToan();
         thanhToan.setDangKyGoi(dangKyGoi);
+        thanhToan.setMaNguoiDung(nguoiDung.getMaNguoiDung());
+        thanhToan.setMaGoiCuoc(goiCuoc.getMaGoiCuoc().longValue());
         thanhToan.setSoTien(amount);
         thanhToan.setPhuongThuc("QR");
         thanhToan.setTrangThai("PENDING");

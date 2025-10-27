@@ -54,6 +54,22 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
+                                        <a class="dropdown-item" 
+                                           th:href="@{/du-an/{id}/thanh-vien(id=${duAn.maDuAn})}">
+                                            <i class="bi bi-people me-2"></i>Quản lý thành viên
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item invite-member-link" href="#" 
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#moiThanhVienModal"
+                                           th:data-du-an-id="${duAn.maDuAn}"
+                                           th:data-du-an-ten="${duAn.tenDuAn}">
+                                            <i class="bi bi-person-plus me-2"></i>Mời thành viên
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
                                         <a class="dropdown-item" href="#" data-bs-toggle="modal"
                                            data-bs-target="#chinhSuaDuAnModal"
                                            th:data-id="${duAn.maDuAn}"
@@ -151,6 +167,62 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Mời Thành Viên -->
+    <div class="modal fade" id="moiThanhVienModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Mời thành viên</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="moiThanhVienForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="maDuAnInvite">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Dự án</label>
+                            <p class="form-control-plaintext" id="tenDuAnInvite"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label for="emailInvite" class="form-label">Email thành viên<span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="emailInvite" 
+                                   placeholder="Nhập email người dùng" required>
+                            <div class="form-text">Người dùng phải đã đăng ký tài khoản</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Vai trò<span class="text-danger">*</span></label>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="vaiTroInvite" 
+                                           id="vaiTroQuanLy" value="QUAN_LY" autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100 py-3" for="vaiTroQuanLy">
+                                        <i class="bi bi-briefcase d-block fs-3 mb-2"></i>
+                                        <strong class="d-block">Quản lý</strong>
+                                        <small class="text-muted d-block mt-1">Quản lý dự án và thành viên</small>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="vaiTroInvite" 
+                                           id="vaiTroNguoiDung" value="NGUOI_DUNG" checked autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100 py-3" for="vaiTroNguoiDung">
+                                        <i class="bi bi-person d-block fs-3 mb-2"></i>
+                                        <strong class="d-block">Người dùng</strong>
+                                        <small class="text-muted d-block mt-1">Xem và điều khiển thiết bị</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuiLoiMoi">
+                            <i class="bi bi-send me-2"></i>Gửi lời mời
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </main>
 
 
@@ -183,6 +255,7 @@
         // Di chuyển modals ra body để tránh z-index conflicts với main container
         const themModalEl = document.getElementById('themDuAnModal');
         const suaModalEl = document.getElementById('chinhSuaDuAnModal');
+        const moiModalEl = document.getElementById('moiThanhVienModal');
         
         if (themModalEl && themModalEl.parentElement.tagName !== 'BODY') {
             document.body.appendChild(themModalEl);
@@ -190,10 +263,14 @@
         if (suaModalEl && suaModalEl.parentElement.tagName !== 'BODY') {
             document.body.appendChild(suaModalEl);
         }
+        if (moiModalEl && moiModalEl.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(moiModalEl);
+        }
 
         // Initialize modals after moving to body
         const themDuAnModal = new bootstrap.Modal(themModalEl);
         const chinhSuaDuAnModal = new bootstrap.Modal(suaModalEl);
+        const moiThanhVienModal = new bootstrap.Modal(moiModalEl);
 
         // Form handling for create
         document.getElementById('themDuAnForm').addEventListener('submit', async function(e) {
@@ -284,6 +361,20 @@
             document.getElementById('moTaEdit').value = moTa;
         });
 
+        // Handle invite modal data population
+        document.getElementById('moiThanhVienModal').addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            if (button && button.classList.contains('invite-member-link')) {
+                const maDuAn = button.getAttribute('data-du-an-id');
+                const tenDuAn = button.getAttribute('data-du-an-ten');
+                
+                document.getElementById('maDuAnInvite').value = maDuAn;
+                document.getElementById('tenDuAnInvite').textContent = tenDuAn;
+                document.getElementById('emailInvite').value = '';
+                document.getElementById('vaiTroNguoiDung').checked = true;
+            }
+        });
+
         // Delete project handler
         async function xoaDuAn(maDuAn) {
             if (!confirm('Bạn có chắc chắn muốn xóa dự án này?')) {
@@ -310,6 +401,45 @@
                 return false;
             }
         }
+
+        // Form handling for invite member
+        document.getElementById('moiThanhVienForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnGuiLoiMoi');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang gửi...';
+
+            try {
+                const maDuAn = document.getElementById('maDuAnInvite').value;
+                const email = document.getElementById('emailInvite').value;
+                const vaiTro = document.querySelector('input[name="vaiTroInvite"]:checked').value;
+
+                const response = await fetch(`/du-an/${maDuAn}/thanh-vien/moi`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    },
+                    body: JSON.stringify({ email, vaiTro })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Đã gửi lời mời thành công!');
+                    moiThanhVienModal.hide();
+                    this.reset();
+                } else {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
     </script>
 </th:block>
 
