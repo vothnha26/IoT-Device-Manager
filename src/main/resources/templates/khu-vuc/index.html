@@ -186,7 +186,7 @@
                                                         Chỉnh sửa
                                                     </a>
                                                 </li>
-                                                <li>
+                                                <li th:if="${coQuyenXoaKhuVuc}">
                                                     <a class="dropdown-item text-danger" href="#"
                                                         th:onclick="'return deleteKhuVuc(' + ${khuVuc.maKhuVuc} + ')'">
                                                         <i class="bi bi-trash me-2"></i>
@@ -325,7 +325,7 @@
 
         <!-- Modal Thêm/Sửa Khu vực -->
         <div class="modal fade" id="themKhuVucModal" tabindex="-1" aria-labelledby="themKhuVucModalLabel"
-            aria-hidden="true">
+            aria-hidden="true" style="z-index: 9999 !important;">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -374,7 +374,7 @@
 
         <!-- Modal Sửa Khu vực -->
         <div class="modal fade" id="suaKhuVucModal" tabindex="-1" aria-labelledby="suaKhuVucModalLabel"
-            aria-hidden="true">
+            aria-hidden="true" style="z-index: 9999 !important;">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -476,6 +476,18 @@
                 suaModal = new bootstrap.Modal(document.getElementById('suaKhuVucModal'));
 
                 console.log('Modals initialized:', { themModal, suaModal });
+
+                // FIX: Move modals to body to avoid z-index issues
+                const themModalEl = document.getElementById('themKhuVucModal');
+                const suaModalEl = document.getElementById('suaKhuVucModal');
+                if (themModalEl && themModalEl.parentElement.tagName !== 'BODY') {
+                    document.body.appendChild(themModalEl);
+                    console.log('Moved themKhuVucModal to body');
+                }
+                if (suaModalEl && suaModalEl.parentElement.tagName !== 'BODY') {
+                    document.body.appendChild(suaModalEl);
+                    console.log('Moved suaKhuVucModal to body');
+                }
 
                 // Lưu text gốc của các nút
                 document.querySelectorAll('button[type="submit"]').forEach(btn => {

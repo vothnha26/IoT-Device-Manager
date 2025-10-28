@@ -10,6 +10,12 @@ public interface ThietBiService {
 
     // Lấy tất cả thiết bị của một người dùng
     List<ThietBi> findDevicesByOwner(Long ownerId);
+    
+    // Lấy tất cả thiết bị theo khu vực
+    List<ThietBi> findDevicesByKhuVuc(Long maKhuVuc);
+    
+    // Lấy thiết bị theo khu vực mà user có quyền xem (dựa vào vai trò)
+    List<ThietBi> findThietBiCoQuyenXemTrongKhuVuc(Long maKhuVuc, Long maNguoiDung);
 
     // Lấy thông tin chi tiết của một thiết bị bằng ID
     Optional<ThietBi> findDeviceById(Long deviceId);

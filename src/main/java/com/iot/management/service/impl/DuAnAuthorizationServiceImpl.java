@@ -52,8 +52,15 @@ public class DuAnAuthorizationServiceImpl implements DuAnAuthorizationService {
 
     @Override
     public boolean coQuyenXemKhuVuc(Long maDuAn, Long maNguoiDung) {
-        // Tất cả các vai trò đều có quyền xem khu vực
-        return layVaiTroTrongDuAn(maDuAn, maNguoiDung) != null;
+        DuAnRole role = layVaiTroTrongDuAn(maDuAn, maNguoiDung);
+        
+        // CHU_SO_HUU và QUAN_LY được xem tất cả khu vực
+        if (role == DuAnRole.CHU_SO_HUU || role == DuAnRole.QUAN_LY) {
+            return true;
+        }
+        
+        // NGUOI_DUNG chỉ xem khu vực được phân quyền cụ thể (kiểm tra ở KhuVucAuthorizationService)
+        return role == DuAnRole.NGUOI_DUNG;
     }
 
     @Override

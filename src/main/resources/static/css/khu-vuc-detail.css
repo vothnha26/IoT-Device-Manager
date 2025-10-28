@@ -35,13 +35,13 @@ main.bg-light {
     z-index: 1;
 }
 
-/* Thiết lập z-index hierarchy */
+/* Thiết lập z-index hierarchy - Fix backdrop issue */
 .modal-backdrop {
-    z-index: 1040;
+    z-index: 1054 !important;
 }
 
 .modal {
-    z-index: 1045;
+    z-index: 1055 !important;
 }
 
 /* Style cho nút thêm */

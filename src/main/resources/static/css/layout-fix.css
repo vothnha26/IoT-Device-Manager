@@ -17,3 +17,8 @@ html, body {
     overflow-x: hidden;
     overflow-y: auto !important;
 }
+
+/* Navbar z-index */
+.navbar {
+    z-index: 1030 !important;
+}

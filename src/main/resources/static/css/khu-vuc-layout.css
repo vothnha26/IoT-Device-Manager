@@ -19,7 +19,7 @@
     top: calc(var(--navbar-height) + var(--project-header-height));
     bottom: 0;
     overflow-y: auto;
-    z-index: 1019;
+    z-index: 1010;
     transition: transform .3s ease-in-out;
 }
 

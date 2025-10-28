@@ -219,13 +219,32 @@
                     <h6 class="mb-3">
                         <i class="bi bi-cpu me-2"></i>Quyền truy cập thiết bị
                     </h6>
+                    
+                    <!-- Bộ lọc và tìm kiếm -->
+                    <div class="mb-3">
+                        <div class="row g-2">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="deviceSearchInput" 
+                                           placeholder="Tìm kiếm thiết bị theo tên...">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" id="deviceAreaFilter">
+                                    <option value="">Tất cả khu vực</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div id="devicePermissionsContainer">
                         <div class="list-group" id="devicePermissionsList">
                             <!-- Will be populated by JavaScript -->
                         </div>
                         <div class="text-center text-muted py-3" id="noDevicesMessage" style="display: none;">
                             <i class="bi bi-inbox fs-4"></i>
-                            <p class="mb-0 mt-2">Chưa có thiết bị nào trong dự án</p>
+                            <p class="mb-0 mt-2">Không tìm thấy thiết bị nào</p>
                         </div>
                     </div>
                 </div>
@@ -468,7 +487,8 @@
                             </div>
                             <select class="form-select form-select-sm role-select" 
                                     id="areaRole_${area.maKhuVuc}" 
-                                    ${!area.hasPermission || area.inheritedFromProject ? 'disabled' : ''}>
+                                    ${!area.hasPermission || area.inheritedFromProject ? 'disabled' : ''}
+                                    onchange="filterDevicesByArea()">
                                 <option value="XEM" ${area.vaiTro === 'XEM' ? 'selected' : ''}>
                                     <i class="bi bi-eye"></i> Xem
                                 </option>
@@ -488,9 +508,37 @@
                 const devicesList = document.getElementById('devicePermissionsList');
                 const noDevicesMessage = document.getElementById('noDevicesMessage');
                 
+                // Store all devices for filtering
+                window.allDevicesData = data.devices || [];
+                
+                // Populate area filter dropdown
+                const areaFilterSelect = document.getElementById('deviceAreaFilter');
+                if (data.areas && data.areas.length > 0) {
+                    areaFilterSelect.innerHTML = '<option value="">Tất cả khu vực</option>' + 
+                        data.areas.map(area => `<option value="${area.maKhuVuc}">${area.tenKhuVuc}</option>`).join('');
+                }
+                
+                // Gắn event listeners cho tìm kiếm và lọc SAU KHI đã render xong
+                setTimeout(() => {
+                    const searchInput = document.getElementById('deviceSearchInput');
+                    const areaFilter = document.getElementById('deviceAreaFilter');
+                    
+                    if (searchInput) {
+                        searchInput.removeEventListener('input', filterAndSearchDevices);
+                        searchInput.addEventListener('input', filterAndSearchDevices);
+                    }
+                    
+                    if (areaFilter) {
+                        areaFilter.removeEventListener('change', filterAndSearchDevices);
+                        areaFilter.addEventListener('change', filterAndSearchDevices);
+                    }
+                }, 100);
+                
                 if (data.devices && data.devices.length > 0) {
                     devicesList.innerHTML = data.devices.map(device => `
-                        <div class="list-group-item permission-item d-flex align-items-center justify-content-between">
+                        <div class="list-group-item permission-item d-flex align-items-center justify-content-between" 
+                             data-area-id="${device.maKhuVuc}"
+                             data-device-name="${device.tenThietBi.toLowerCase()}">
                             <div class="d-flex align-items-center">
                                 <input type="checkbox" class="form-check-input permission-checkbox me-3" 
                                        id="device_${device.maThietBi}" 
@@ -506,7 +554,7 @@
                             </div>
                             <div id="devicePerms_${device.maThietBi}" ${!device.hasPermission ? 'style="display:none;"' : ''}>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" 
+                                    <input class="form-check-input device-view-checkbox" type="checkbox" 
                                            id="deviceView_${device.maThietBi}" 
                                            ${device.coQuyenXemDuLieu ? 'checked' : ''}
                                            ${device.inheritedFromProject ? 'disabled' : ''}>
@@ -515,10 +563,11 @@
                                     </label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" 
+                                    <input class="form-check-input device-control-checkbox" type="checkbox" 
                                            id="deviceControl_${device.maThietBi}" 
                                            ${device.coQuyenDieuKhien ? 'checked' : ''}
-                                           ${device.inheritedFromProject ? 'disabled' : ''}>
+                                           ${device.inheritedFromProject ? 'disabled' : ''}
+                                           onchange="handleControlCheckbox(${device.maThietBi}, this.checked)">
                                     <label class="form-check-label" for="deviceControl_${device.maThietBi}">
                                         <i class="bi bi-sliders"></i> Điều khiển
                                     </label>
@@ -541,6 +590,79 @@
         function toggleAreaRole(maKhuVuc, enabled) {
             const roleSelect = document.getElementById(`areaRole_${maKhuVuc}`);
             roleSelect.disabled = !enabled;
+            
+            // Lọc thiết bị khi chọn/bỏ chọn khu vực
+            filterDevicesByArea();
+        }
+        
+        function filterDevicesByArea() {
+            // Lấy tất cả các khu vực được chọn
+            const selectedAreas = [];
+            document.querySelectorAll('[id^="area_"]').forEach(checkbox => {
+                if (checkbox.checked) {
+                    const maKhuVuc = parseInt(checkbox.id.replace('area_', ''));
+                    selectedAreas.push(maKhuVuc);
+                }
+            });
+            
+            // Lọc và hiển thị thiết bị
+            const devicesList = document.getElementById('devicePermissionsList');
+            const noDevicesMessage = document.getElementById('noDevicesMessage');
+            
+            if (!window.allDevicesData || window.allDevicesData.length === 0) {
+                devicesList.innerHTML = '';
+                noDevicesMessage.style.display = 'block';
+                return;
+            }
+            
+            // Nếu không có khu vực nào được chọn, hiện tất cả
+            const filteredDevices = selectedAreas.length === 0 
+                ? window.allDevicesData 
+                : window.allDevicesData.filter(device => selectedAreas.includes(device.maKhuVuc));
+            
+            if (filteredDevices.length > 0) {
+                devicesList.innerHTML = filteredDevices.map(device => `
+                    <div class="list-group-item permission-item d-flex align-items-center justify-content-between" data-area-id="${device.maKhuVuc}">
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox" class="form-check-input permission-checkbox me-3" 
+                                   id="device_${device.maThietBi}" 
+                                   ${device.hasPermission ? 'checked' : ''}
+                                   ${device.inheritedFromProject ? 'disabled' : ''}
+                                   onchange="toggleDevicePermissions(${device.maThietBi}, this.checked)">
+                            <label for="device_${device.maThietBi}" class="mb-0">
+                                <strong>${device.tenThietBi}</strong>
+                                ${device.inheritedFromProject ? '<span class="badge bg-info ms-2">Từ dự án</span>' : ''}
+                                <br>
+                                <small class="text-muted">Khu vực: ${device.tenKhuVuc}</small>
+                            </label>
+                        </div>
+                        <div id="devicePerms_${device.maThietBi}" ${!device.hasPermission ? 'style="display:none;"' : ''}>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="deviceView_${device.maThietBi}" 
+                                       ${device.coQuyenXemDuLieu ? 'checked' : ''}
+                                       ${device.inheritedFromProject ? 'disabled' : ''}>
+                                <label class="form-check-label" for="deviceView_${device.maThietBi}">
+                                    <i class="bi bi-eye"></i> Xem
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="deviceControl_${device.maThietBi}" 
+                                       ${device.coQuyenDieuKhien ? 'checked' : ''}
+                                       ${device.inheritedFromProject ? 'disabled' : ''}>
+                                <label class="form-check-label" for="deviceControl_${device.maThietBi}">
+                                    <i class="bi bi-sliders"></i> Điều khiển
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                noDevicesMessage.style.display = 'none';
+            } else {
+                devicesList.innerHTML = '';
+                noDevicesMessage.style.display = 'block';
+            }
         }
 
         function toggleDevicePermissions(maThietBi, enabled) {
@@ -551,6 +673,44 @@
                 document.getElementById(`deviceView_${maThietBi}`).checked = false;
                 document.getElementById(`deviceControl_${maThietBi}`).checked = false;
             }
+        }
+        
+        // Xử lý khi tick "Điều khiển" thì tự động tick "Xem"
+        function handleControlCheckbox(maThietBi, checked) {
+            if (checked) {
+                // Nếu tick Điều khiển thì tự động tick Xem
+                const viewCheckbox = document.getElementById(`deviceView_${maThietBi}`);
+                if (viewCheckbox && !viewCheckbox.disabled) {
+                    viewCheckbox.checked = true;
+                }
+            }
+        }
+        
+        // Tìm kiếm và lọc thiết bị
+        function filterAndSearchDevices() {
+            const searchTerm = document.getElementById('deviceSearchInput').value.toLowerCase();
+            const selectedAreaId = document.getElementById('deviceAreaFilter').value;
+            const deviceItems = document.querySelectorAll('#devicePermissionsList .permission-item');
+            const noDevicesMessage = document.getElementById('noDevicesMessage');
+            
+            let visibleCount = 0;
+            
+            deviceItems.forEach(item => {
+                const deviceName = item.dataset.deviceName || '';
+                const areaId = item.dataset.areaId || '';
+                
+                const matchesSearch = !searchTerm || deviceName.includes(searchTerm);
+                const matchesArea = !selectedAreaId || areaId === selectedAreaId;
+                
+                if (matchesSearch && matchesArea) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            noDevicesMessage.style.display = visibleCount === 0 ? 'block' : 'none';
         }
 
         // Save detail permissions

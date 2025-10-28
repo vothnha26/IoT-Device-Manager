@@ -79,7 +79,7 @@
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li>
+                                    <li th:if="${deletePermissions[duAn.maDuAn]}">
                                         <a class="dropdown-item text-danger" href="#" 
                                            th:onclick="'return xoaDuAn(' + ${duAn.maDuAn} + ')'">
                                             <i class="bi bi-trash me-2"></i>Xóa

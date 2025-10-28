@@ -110,9 +110,11 @@ public class ThietBiController {
         
         // Kiểm tra vai trò của user trong dự án
         boolean laChuSoHuu = false;
+        boolean laQuanLy = false;
         if (duAn != null) {
             com.iot.management.model.enums.DuAnRole vaiTroDuAn = phanQuyenService.layVaiTroDuAn(duAn.getMaDuAn(), user.getMaNguoiDung());
             laChuSoHuu = (vaiTroDuAn == com.iot.management.model.enums.DuAnRole.CHU_SO_HUU);
+            laQuanLy = (vaiTroDuAn == com.iot.management.model.enums.DuAnRole.QUAN_LY);
         }
         
         // Kiểm tra quyền của user với từng thiết bị trong khu vực
@@ -123,19 +125,23 @@ public class ThietBiController {
         // Lấy tất cả thiết bị trong khu vực
         List<ThietBi> thietBis = thietBiRepository.findByKhuVuc_MaKhuVuc(maKhuVuc);
         for (ThietBi tb : thietBis) {
-            // CHU_SO_HUU thấy tất cả thiết bị, không cần check quyền
-            if (laChuSoHuu) {
+            // CHU_SO_HUU và QUAN_LY thấy tất cả thiết bị và có full quyền điều khiển
+            if (laChuSoHuu || laQuanLy) {
                 thietBiCoQuyenXem.add(tb);
                 quyenDieuKhienThietBi.put(tb.getMaThietBi(), true);
                 quyenXemDuLieuThietBi.put(tb.getMaThietBi(), true);
             } else {
-                // Người dùng khác phải check quyền
+                // NGUOI_DUNG phải check quyền chi tiết
+                boolean coQuyenDieuKhien = phanQuyenService.kiemTraQuyenDieuKhienThietBi(tb.getMaThietBi(), user.getMaNguoiDung());
                 boolean coQuyenXem = phanQuyenService.kiemTraQuyenXemDuLieuThietBi(tb.getMaThietBi(), user.getMaNguoiDung());
                 
-                // Chỉ thêm thiết bị vào danh sách nếu có quyền xem
-                if (coQuyenXem) {
-                    boolean coQuyenDieuKhien = phanQuyenService.kiemTraQuyenDieuKhienThietBi(tb.getMaThietBi(), user.getMaNguoiDung());
-                    
+                // Có quyền điều khiển thì tự động có quyền xem
+                if (coQuyenDieuKhien) {
+                    coQuyenXem = true;
+                }
+                
+                // Chỉ thêm thiết bị vào danh sách nếu có quyền xem hoặc điều khiển
+                if (coQuyenXem || coQuyenDieuKhien) {
                     thietBiCoQuyenXem.add(tb);
                     quyenDieuKhienThietBi.put(tb.getMaThietBi(), coQuyenDieuKhien);
                     quyenXemDuLieuThietBi.put(tb.getMaThietBi(), coQuyenXem);
@@ -161,10 +167,32 @@ public class ThietBiController {
         KhuVuc khuVuc = khuVucService.getKhuVucById(maKhuVuc);
         model.addAttribute("khuVuc", khuVuc);
 
-        // Optional: pass known device IDs for LEDs and sensor if you want dynamic mapping later
-        // For now, keep the simple mapping used elsewhere
-        model.addAttribute("sensorDeviceId", 4L);
-        model.addAttribute("switchDeviceIds", java.util.List.of(2L, 3L));
+        // Lấy danh sách thiết bị của khu vực này
+        List<ThietBi> thietBis = thietBiService.findDevicesByKhuVuc(maKhuVuc);
+        
+        // Lọc ra sensor device (DHT11) - lấy device đầu tiên có nhóm SENSOR
+        Long sensorDeviceId = null;
+        for (ThietBi tb : thietBis) {
+            if (tb.getLoaiThietBi() != null && 
+                tb.getLoaiThietBi().getNhomThietBi() != null &&
+                tb.getLoaiThietBi().getNhomThietBi().name().equals("SENSOR")) {
+                sensorDeviceId = tb.getMaThietBi();
+                break;
+            }
+        }
+        
+        // Lọc ra switch devices (LED) - lấy tất cả devices có nhóm CONTROLLER
+        List<Long> switchDeviceIds = new java.util.ArrayList<>();
+        for (ThietBi tb : thietBis) {
+            if (tb.getLoaiThietBi() != null && 
+                tb.getLoaiThietBi().getNhomThietBi() != null &&
+                tb.getLoaiThietBi().getNhomThietBi().name().equals("CONTROLLER")) {
+                switchDeviceIds.add(tb.getMaThietBi());
+            }
+        }
+        
+        model.addAttribute("sensorDeviceId", sensorDeviceId != null ? sensorDeviceId : 0L);
+        model.addAttribute("switchDeviceIds", switchDeviceIds.isEmpty() ? java.util.List.of() : switchDeviceIds);
 
         return "thiet-bi/khu-vuc-stats";
     }

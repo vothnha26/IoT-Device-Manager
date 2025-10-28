@@ -1,0 +1,78 @@
+/* Modal Fix - Đảm bảo modal và backdrop hiển thị đúng */
+
+/* Bootstrap Modal z-index override - SỬ DỤNG Z-INDEX CỰC CAO */
+.modal-backdrop {
+    z-index: 9998 !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal {
+    z-index: 9999 !important;
+}
+
+.modal-dialog {
+    z-index: 9999 !important;
+}
+
+/* Đảm bảo body không bị ảnh hưởng khi modal mở */
+body.modal-open {
+    overflow: hidden !important;
+    padding-right: 0 !important;
+}
+
+/* Đảm bảo main content không che modal */
+main {
+    position: relative;
+    z-index: auto !important;
+}
+
+/* Navbar phải dưới modal */
+.navbar,
+.navbar-fixed-top,
+.navbar-fixed-bottom {
+    z-index: 1030 !important;
+}
+
+/* Dropdown và notification phải dưới modal */
+.dropdown-menu,
+.notification-dropdown {
+    z-index: 1040 !important;
+}
+
+/* Fix cho các element fixed khác */
+.position-fixed {
+    z-index: 1020 !important;
+}
+
+/* Override cho button add nếu có */
+.add-device-btn,
+.btn-primary.position-fixed {
+    z-index: 1020 !important;
+}
+
+/* Đảm bảo wrapper không ảnh hưởng modal */
+.wrapper,
+.khu-vuc-wrapper,
+.main-content {
+    position: relative;
+    z-index: auto !important;
+}
+
+/* Remove transform và perspective có thể ảnh hưởng stacking context */
+.khu-vuc-wrapper *,
+.main-content * {
+    transform: none !important;
+    perspective: none !important;
+}
+
+/* Force modal lên trên tất cả */
+#themKhuVucModal,
+#suaKhuVucModal {
+    z-index: 9999 !important;
+    position: fixed !important;
+}
+
+#themKhuVucModal .modal-dialog,
+#suaKhuVucModal .modal-dialog {
+    z-index: 9999 !important;
+}

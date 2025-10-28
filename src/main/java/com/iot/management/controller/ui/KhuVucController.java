@@ -30,8 +30,11 @@ public class KhuVucController {
     @Autowired
     private DuAnService duAnService;
 
-     @Autowired
-    private PackageLimitService packageLimitService; 
+    @Autowired
+    private PackageLimitService packageLimitService;
+    
+    @Autowired
+    private com.iot.management.service.DuAnAuthorizationService duAnAuthorizationService; 
 
     @GetMapping("")
     public String danhSachKhuVuc(@PathVariable Long maDuAn, Model model, Authentication authentication) {
@@ -58,8 +61,16 @@ public class KhuVucController {
             DuAn duAn = duAnOpt.get();
             System.out.println("✅ Project found: " + duAn.getTenDuAn());
             
-            List<KhuVuc> khuVucs = khuVucService.findByDuAn(maDuAn);
-            System.out.println("📊 Found " + khuVucs.size() + " zones");
+            // LẤY CHỈ NHỮNG KHU VỰC CÓ QUYỀN XEM
+            List<KhuVuc> khuVucs = khuVucService.findKhuVucCoQuyenXem(maDuAn, nguoiDung.getMaNguoiDung());
+            System.out.println("📊 Found " + khuVucs.size() + " zones with permission");
+            
+            // Kiểm tra quyền xóa dự án và khu vực
+            boolean coQuyenXoaDuAn = duAnAuthorizationService.coQuyenXoaDuAn(maDuAn, nguoiDung.getMaNguoiDung());
+            System.out.println("🔑 Can delete project: " + coQuyenXoaDuAn);
+            
+            boolean coQuyenXoaKhuVuc = duAnAuthorizationService.coQuyenXoaKhuVuc(maDuAn, nguoiDung.getMaNguoiDung());
+            System.out.println("🔑 Can delete zone: " + coQuyenXoaKhuVuc);
             
             // Force load thietBis để tránh lazy loading exception
             khuVucs.forEach(kv -> {
@@ -77,6 +88,8 @@ public class KhuVucController {
             model.addAttribute("duAn", duAn);
             model.addAttribute("khuVucs", khuVucs);
             model.addAttribute("maDuAn", maDuAn);
+            model.addAttribute("coQuyenXoaDuAn", coQuyenXoaDuAn);
+            model.addAttribute("coQuyenXoaKhuVuc", coQuyenXoaKhuVuc);
             
             return "khu-vuc/index";
         } catch (Exception e) {
@@ -175,6 +188,14 @@ public class KhuVucController {
 
             if (duAnService.findByIdAndNguoiDung(maDuAn, nguoiDung).isEmpty()) {
                 throw new RuntimeException("Dự án không tồn tại hoặc bạn không có quyền truy cập");
+            }
+            
+            // Kiểm tra quyền xóa khu vực (chỉ CHU_SO_HUU)
+            if (!duAnAuthorizationService.coQuyenXoaKhuVuc(maDuAn, nguoiDung.getMaNguoiDung())) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "success", false,
+                    "message", "Chỉ chủ sở hữu dự án mới có quyền xóa khu vực"
+                ));
             }
 
             KhuVuc khuVuc = khuVucService.getKhuVucById(maKhuVuc);

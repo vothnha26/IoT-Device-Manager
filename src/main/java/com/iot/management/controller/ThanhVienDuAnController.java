@@ -612,6 +612,7 @@ public class ThanhVienDuAnController {
                 deviceData.put("maThietBi", device.getMaThietBi());
                 deviceData.put("tenThietBi", device.getTenThietBi());
                 deviceData.put("tenKhuVuc", device.getKhuVuc().getTenKhuVuc());
+                deviceData.put("maKhuVuc", device.getKhuVuc().getMaKhuVuc()); // Thêm maKhuVuc để filter
                 
                 // CHU_SO_HUU và QUAN_LY: tự động có full quyền thiết bị, không chỉnh được
                 // Chỉ NGUOI_DUNG mới cần phân quyền chi tiết

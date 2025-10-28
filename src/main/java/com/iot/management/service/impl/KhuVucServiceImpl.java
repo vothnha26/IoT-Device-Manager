@@ -3,13 +3,18 @@ package com.iot.management.service.impl;
 import com.iot.management.model.entity.DuAn;
 import com.iot.management.model.entity.KhuVuc;
 import com.iot.management.model.entity.NguoiDung;
+import com.iot.management.model.enums.DuAnRole;
 import com.iot.management.model.repository.DuAnRepository;
 import com.iot.management.model.repository.KhuVucRepository;
 import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.service.KhuVucService;
+import com.iot.management.service.KhuVucAuthorizationService;
+import com.iot.management.service.DuAnAuthorizationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class KhuVucServiceImpl implements KhuVucService {
@@ -17,6 +22,12 @@ public class KhuVucServiceImpl implements KhuVucService {
     private final KhuVucRepository khuVucRepository;
     private final NguoiDungRepository nguoiDungRepository;
     private final DuAnRepository duAnRepository;
+    
+    @Autowired
+    private KhuVucAuthorizationService khuVucAuthorizationService;
+    
+    @Autowired
+    private DuAnAuthorizationService duAnAuthorizationService;
 
     public KhuVucServiceImpl(KhuVucRepository khuVucRepository, 
                             NguoiDungRepository nguoiDungRepository,
@@ -45,6 +56,25 @@ public class KhuVucServiceImpl implements KhuVucService {
     @Override
     public List<KhuVuc> findByDuAn(Long duAnId) {
         return khuVucRepository.findByDuAn_MaDuAn(duAnId);
+    }
+
+    @Override
+    public List<KhuVuc> findKhuVucCoQuyenXem(Long duAnId, Long maNguoiDung) {
+        // Lấy tất cả khu vực của dự án
+        List<KhuVuc> allKhuVucs = khuVucRepository.findByDuAn_MaDuAn(duAnId);
+        
+        // Kiểm tra vai trò trong dự án
+        DuAnRole role = duAnAuthorizationService.layVaiTroTrongDuAn(duAnId, maNguoiDung);
+        
+        // CHU_SO_HUU và QUAN_LY thấy tất cả khu vực
+        if (role == DuAnRole.CHU_SO_HUU || role == DuAnRole.QUAN_LY) {
+            return allKhuVucs;
+        }
+        
+        // NGUOI_DUNG chỉ thấy khu vực được phân quyền cụ thể
+        return allKhuVucs.stream()
+                .filter(khuVuc -> khuVucAuthorizationService.coQuyenXemKhuVuc(khuVuc.getMaKhuVuc(), maNguoiDung))
+                .collect(Collectors.toList());
     }
 
     @Override

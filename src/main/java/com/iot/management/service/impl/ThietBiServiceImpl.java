@@ -4,14 +4,18 @@ import com.iot.management.model.entity.KhuVuc;
 import com.iot.management.model.entity.LoaiThietBi;
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.entity.ThietBi;
+import com.iot.management.model.enums.DuAnRole;
 import com.iot.management.model.repository.KhuVucRepository;
 import com.iot.management.model.repository.LoaiThietBiRepository;
 import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.model.repository.ThietBiRepository;
 import com.iot.management.service.ThietBiService;
+import com.iot.management.service.ThietBiAuthorizationService;
+import com.iot.management.service.DuAnAuthorizationService;
 import com.iot.management.websocket.DeviceSessionRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -19,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ThietBiServiceImpl implements ThietBiService {
@@ -29,6 +34,12 @@ public class ThietBiServiceImpl implements ThietBiService {
     private final LoaiThietBiRepository loaiThietBiRepository;
     private final KhuVucRepository khuVucRepository;
     private final DeviceSessionRegistry deviceSessionRegistry;
+    
+    @Autowired
+    private ThietBiAuthorizationService thietBiAuthorizationService;
+    
+    @Autowired
+    private DuAnAuthorizationService duAnAuthorizationService;
 
     public ThietBiServiceImpl(ThietBiRepository thietBiRepository,
                               NguoiDungRepository nguoiDungRepository,
@@ -89,6 +100,38 @@ public class ThietBiServiceImpl implements ThietBiService {
     @Override
     public List<ThietBi> findDevicesByOwner(Long ownerId) {
         return thietBiRepository.findByChuSoHuu_MaNguoiDung(ownerId);
+    }
+
+    @Override
+    public List<ThietBi> findDevicesByKhuVuc(Long maKhuVuc) {
+        return thietBiRepository.findByKhuVuc_MaKhuVuc(maKhuVuc);
+    }
+    
+    @Override
+    public List<ThietBi> findThietBiCoQuyenXemTrongKhuVuc(Long maKhuVuc, Long maNguoiDung) {
+        // Lấy tất cả thiết bị trong khu vực
+        List<ThietBi> allDevices = thietBiRepository.findByKhuVuc_MaKhuVuc(maKhuVuc);
+        
+        if (allDevices.isEmpty()) {
+            return allDevices;
+        }
+        
+        // Lấy maDuAn từ thiết bị đầu tiên (tất cả thiết bị trong cùng khu vực thuộc cùng dự án)
+        Long maDuAn = allDevices.get(0).getKhuVuc().getDuAn().getMaDuAn();
+        
+        // Kiểm tra vai trò
+        DuAnRole role = duAnAuthorizationService.layVaiTroTrongDuAn(maDuAn, maNguoiDung);
+        
+        // CHU_SO_HUU và QUAN_LY thấy tất cả thiết bị
+        if (role == DuAnRole.CHU_SO_HUU || role == DuAnRole.QUAN_LY) {
+            return allDevices;
+        }
+        
+        // NGUOI_DUNG chỉ thấy thiết bị có bất kỳ quyền nào (VIEW, CONTROL, MANAGE)
+        // Kiểm tra qua coQuyenTruyCapThietBi (trả về true nếu có bất kỳ quyền nào)
+        return allDevices.stream()
+                .filter(thietBi -> thietBiAuthorizationService.coQuyenTruyCapThietBi(thietBi.getMaThietBi(), maNguoiDung))
+                .collect(Collectors.toList());
     }
 
     @Override

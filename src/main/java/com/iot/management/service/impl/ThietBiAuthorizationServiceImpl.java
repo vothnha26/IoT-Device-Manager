@@ -38,11 +38,14 @@ public class ThietBiAuthorizationServiceImpl implements ThietBiAuthorizationServ
             PhanQuyenThietBi phanQuyen = phanQuyenOpt.get();
             
             // Dựa vào các boolean flags để xác định loại quyền
+            // Ưu tiên cao nhất: MANAGE > CONTROL > VIEW
             if (Boolean.TRUE.equals(phanQuyen.getCoQuyenChinhSua())) {
                 return "MANAGE";
             } else if (Boolean.TRUE.equals(phanQuyen.getCoQuyenDieuKhien())) {
+                // Có quyền điều khiển = có quyền xem + điều khiển
                 return "CONTROL";
             } else if (Boolean.TRUE.equals(phanQuyen.getCoQuyenXemDuLieu())) {
+                // Chỉ có quyền xem
                 return "VIEW";
             }
         }

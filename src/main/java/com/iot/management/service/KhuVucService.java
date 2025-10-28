@@ -10,6 +10,9 @@ public interface KhuVucService {
     // Lấy danh sách khu vực theo dự án
     List<KhuVuc> findByDuAn(Long duAnId);
     
+    // Lấy danh sách khu vực mà user có quyền xem
+    List<KhuVuc> findKhuVucCoQuyenXem(Long duAnId, Long maNguoiDung);
+    
     // Cập nhật thông tin khu vực
     KhuVuc updateLocation(Long ownerId, KhuVuc khuVuc);
     

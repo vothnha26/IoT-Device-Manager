@@ -5,6 +5,8 @@ import com.iot.management.model.entity.DuAn;
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.service.DuAnService;
 import com.iot.management.service.NguoiDungService;
+import com.iot.management.service.DuAnAuthorizationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,6 +25,9 @@ public class DuAnController {
 
     private final DuAnService duAnService;
     private final NguoiDungService nguoiDungService;
+    
+    @Autowired
+    private DuAnAuthorizationService duAnAuthorizationService;
 
     public DuAnController(DuAnService duAnService, NguoiDungService nguoiDungService) {
         this.duAnService = duAnService;
@@ -44,7 +49,15 @@ public class DuAnController {
             List<DuAn> duAns = duAnService.findAllByNguoiDung(nguoiDung);
             System.out.println("📊 Found " + duAns.size() + " projects for user: " + nguoiDung.getEmail());
             
+            // Tạo Map để lưu quyền xóa cho từng dự án
+            Map<Long, Boolean> deletePermissions = new HashMap<>();
+            for (DuAn duAn : duAns) {
+                boolean coQuyen = duAnAuthorizationService.coQuyenXoaDuAn(duAn.getMaDuAn(), nguoiDung.getMaNguoiDung());
+                deletePermissions.put(duAn.getMaDuAn(), coQuyen);
+            }
+            
             model.addAttribute("duAns", duAns);
+            model.addAttribute("deletePermissions", deletePermissions);
             return "du-an/index";
         } catch (Exception e) {
             System.err.println("❌ Error loading projects: " + e.getMessage());
@@ -85,12 +98,18 @@ public class DuAnController {
             NguoiDung nguoiDung = nguoiDungService.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
+            // Xóa dự án - service sẽ tự kiểm tra quyền CHU_SO_HUU
             duAnService.delete(maDuAn, nguoiDung);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Xóa dự án thành công");
             return ResponseEntity.ok(response);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Chỉ chủ sở hữu mới có quyền xóa dự án");
+            return ResponseEntity.status(403).body(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
