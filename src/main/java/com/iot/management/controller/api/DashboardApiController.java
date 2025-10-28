@@ -1,6 +1,7 @@
 package com.iot.management.controller.api;
 
 import com.iot.management.model.dto.DashboardStatsDTO;
+import com.iot.management.model.dto.PackageUsageDTO;
 import com.iot.management.service.DashboardService;
 import com.iot.management.util.SecurityUtils;
 import org.springframework.http.ResponseEntity;
@@ -23,5 +24,12 @@ public class DashboardApiController {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         DashboardStatsDTO stats = dashboardService.getDashboardStats(currentUserId);
         return ResponseEntity.ok(stats);
+    }
+    
+    @GetMapping("/package-usage")
+    public ResponseEntity<PackageUsageDTO> getPackageUsage() {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        PackageUsageDTO packageUsage = dashboardService.getPackageUsage(currentUserId);
+        return ResponseEntity.ok(packageUsage);
     }
 }

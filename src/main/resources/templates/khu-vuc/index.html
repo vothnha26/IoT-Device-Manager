@@ -186,7 +186,7 @@
                                                         Chỉnh sửa
                                                     </a>
                                                 </li>
-                                                <li th:if="${coQuyenXoaKhuVuc}">
+                                                <li>
                                                     <a class="dropdown-item text-danger" href="#"
                                                         th:onclick="'return deleteKhuVuc(' + ${khuVuc.maKhuVuc} + ')'">
                                                         <i class="bi bi-trash me-2"></i>
@@ -276,56 +276,13 @@
                 </div>
             </div>
 
-            <!-- Main Content -->
-            <div class="khu-vuc-content bg-white rounded-4 shadow-sm p-4 mb-4">
-                <div class="content-inner">
-
-                    <!-- Area details state -->
-                    <div id="areaDetails" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-start mb-4">
-                            <div>
-                                <h3 class="mb-2" id="detailAreaName">Tên khu vực</h3>
-                                <p class="text-muted mb-0" id="detailAreaType">Loại khu vực</p>
-                            </div>
-                            <a href="#" id="btnViewDevices" class="btn btn-primary">
-                                <i class="bi bi-cpu me-2"></i>Xem thiết bị
-                            </a>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="card mb-4">
-                                    <div class="card-body">
-                                        <h5 class="card-title mb-3">Mô tả</h5>
-                                        <p class="card-text" id="detailAreaDesc">Mô tả khu vực</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title mb-3">Thống kê</h5>
-                                        <div class="d-flex align-items-center mb-3">
-                                            <i class="bi bi-cpu h4 mb-0 me-2"></i>
-                                            <div>
-                                                <div class="small text-muted">Số lượng thiết bị</div>
-                                                <div class="h5 mb-0" id="detailDeviceCount">0</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    
 
         </div> <!-- Kết thúc .khu-vuc-wrapper -->
 
         <!-- Modal Thêm/Sửa Khu vực -->
         <div class="modal fade" id="themKhuVucModal" tabindex="-1" aria-labelledby="themKhuVucModalLabel"
-            aria-hidden="true" style="z-index: 9999 !important;">
+            aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -374,7 +331,7 @@
 
         <!-- Modal Sửa Khu vực -->
         <div class="modal fade" id="suaKhuVucModal" tabindex="-1" aria-labelledby="suaKhuVucModalLabel"
-            aria-hidden="true" style="z-index: 9999 !important;">
+            aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -476,18 +433,6 @@
                 suaModal = new bootstrap.Modal(document.getElementById('suaKhuVucModal'));
 
                 console.log('Modals initialized:', { themModal, suaModal });
-
-                // FIX: Move modals to body to avoid z-index issues
-                const themModalEl = document.getElementById('themKhuVucModal');
-                const suaModalEl = document.getElementById('suaKhuVucModal');
-                if (themModalEl && themModalEl.parentElement.tagName !== 'BODY') {
-                    document.body.appendChild(themModalEl);
-                    console.log('Moved themKhuVucModal to body');
-                }
-                if (suaModalEl && suaModalEl.parentElement.tagName !== 'BODY') {
-                    document.body.appendChild(suaModalEl);
-                    console.log('Moved suaKhuVucModal to body');
-                }
 
                 // Lưu text gốc của các nút
                 document.querySelectorAll('button[type="submit"]').forEach(btn => {
@@ -622,13 +567,24 @@
             });
 
             function showNotification(message, type = 'success') {
+                // Map type to Bootstrap colors and icons
+                const typeConfig = {
+                    'success': { bg: 'success', icon: 'check-circle-fill', text: 'text-white' },
+                    'danger': { bg: 'danger', icon: 'exclamation-triangle-fill', text: 'text-white' },
+                    'warning': { bg: 'warning', icon: 'exclamation-circle-fill', text: 'text-dark' },
+                    'info': { bg: 'info', icon: 'info-circle-fill', text: 'text-white' }
+                };
+                
+                const config = typeConfig[type] || typeConfig['success'];
+                
                 const toast = $(`
-                <div class="toast align-items-center text-white bg-${type} border-0 position-fixed top-0 end-0 m-3" style="z-index: 1050">
+                <div class="toast align-items-center border-0 position-fixed end-0 bg-${config.bg} ${config.text}" style="top: 70px; right: 1rem; z-index: 1050; min-width: 300px;">
                     <div class="d-flex">
-                        <div class="toast-body">
+                        <div class="toast-body d-flex align-items-center">
+                            <i class="bi bi-${config.icon} me-2"></i>
                             ${message}
                         </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        <button type="button" class="btn-close ${config.text === 'text-white' ? 'btn-close-white' : ''} me-2 m-auto" data-bs-dismiss="toast"></button>
                     </div>
                 </div>
             `);

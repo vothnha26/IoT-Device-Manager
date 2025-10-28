@@ -24,4 +24,10 @@ public class GoiCuocController {
         List<GoiCuoc> packages = goiCuocRepository.findAll();
         return ResponseEntity.ok(packages);
     }
+    
+    @GetMapping
+    public ResponseEntity<List<GoiCuoc>> getAllPackages() {
+        List<GoiCuoc> packages = goiCuocRepository.findAll();
+        return ResponseEntity.ok(packages);
+    }
 }

@@ -10,7 +10,7 @@
     <meta name="_csrf" th:content="${_csrf?.token}"/>
     <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
 
-    <title th:text="${title}">IoT Manager</title>
+    <title th:replace="${title}">IoT Manager</title>
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -293,12 +293,8 @@ background: rgba(255, 255, 255, 0.98) !important;
         <footer>
             <div class="container-fluid px-0">
                 <div class="row align-items-center py-2 mx-0">
-                    <div class="col-md-6">
-                        <h5 class="mb-1">IoT Manager</h5>
-                        <p>© 2025 IoT Management. All rights reserved.</p>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <p>Liên hệ: <a href="mailto:support@iotmanager.vn" style="color: #a5d8ff;">support@iotmanager.vn</a></p>
+                    <div class="col-12 text-center">
+                        <p class="mb-0">© 2025 IoT Management System. All rights reserved.</p>
                     </div>
                 </div>
             </div>

@@ -49,12 +49,16 @@ public class ThietBi {
     private KhuVuc khuVuc;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "thietBi")
+    @OneToMany(mappedBy = "thietBi", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<NhatKyDuLieu> nhatKyDuLieus;
 
     @JsonIgnore
     @OneToMany(mappedBy = "thietBi", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LichTrinh> lichTrinhs;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "thietBi", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ThongBao> thongBaos;
 
     public ThietBi() {
     }
@@ -153,5 +157,13 @@ public class ThietBi {
 
     public void setMoTa(String moTa) {
         this.moTa = moTa;
+    }
+
+    public Set<ThongBao> getThongBaos() {
+        return thongBaos;
+    }
+
+    public void setThongBaos(Set<ThongBao> thongBaos) {
+        this.thongBaos = thongBaos;
     }
 }

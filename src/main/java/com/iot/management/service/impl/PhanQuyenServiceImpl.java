@@ -403,7 +403,6 @@ public class PhanQuyenServiceImpl implements PhanQuyenService {
                 phanQuyen.setNguoiDung(targetUser);
                 phanQuyen.setVaiTro(targetUserRole); // Sử dụng vai trò dự án của target user
                 phanQuyen.setCoQuyenXemDuLieu(deviceDto.isCoQuyenXemDuLieu());
-                phanQuyen.setCoQuyenChinhSua(deviceDto.isCoQuyenChinhSua());
                 phanQuyen.setCoQuyenDieuKhien(deviceDto.isCoQuyenDieuKhien());
                 phanQuyen.setNgayCapQuyen(LocalDateTime.now());
                 

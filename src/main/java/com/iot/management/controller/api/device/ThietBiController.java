@@ -11,6 +11,7 @@ import com.iot.management.service.LoaiThietBiService;
 import com.iot.management.service.NhatKyDuLieuService;
 import com.iot.management.service.PackageLimitService;
 import com.iot.management.service.ThietBiService;
+import com.iot.management.model.enums.DuAnRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +63,9 @@ public class ThietBiController {
     private com.iot.management.service.PhanQuyenService phanQuyenService;
     
     @Autowired
+    private com.iot.management.service.DuAnAuthorizationService duAnAuthorizationService;
+    
+    @Autowired
     private com.iot.management.model.repository.ThietBiRepository thietBiRepository;
 
     private final KhuVucRepository khuVucRepository;
@@ -88,6 +92,10 @@ public class ThietBiController {
         
         // Get area and device types
         KhuVuc khuVuc = khuVucService.getKhuVucById(maKhuVuc);
+        if (khuVuc == null) {
+            throw new RuntimeException("Khu vực không tồn tại");
+        }
+        
         List<LoaiThietBi> loaiThietBis = loaiThietBiService.findAllDeviceTypes();
         
         // Get user's active package
@@ -113,8 +121,10 @@ public class ThietBiController {
         boolean laQuanLy = false;
         if (duAn != null) {
             com.iot.management.model.enums.DuAnRole vaiTroDuAn = phanQuyenService.layVaiTroDuAn(duAn.getMaDuAn(), user.getMaNguoiDung());
-            laChuSoHuu = (vaiTroDuAn == com.iot.management.model.enums.DuAnRole.CHU_SO_HUU);
-            laQuanLy = (vaiTroDuAn == com.iot.management.model.enums.DuAnRole.QUAN_LY);
+            if (vaiTroDuAn != null) {
+                laChuSoHuu = (vaiTroDuAn == com.iot.management.model.enums.DuAnRole.CHU_SO_HUU);
+                laQuanLy = (vaiTroDuAn == com.iot.management.model.enums.DuAnRole.QUAN_LY);
+            }
         }
         
         // Kiểm tra quyền của user với từng thiết bị trong khu vực
@@ -172,12 +182,18 @@ public class ThietBiController {
         
         // Lọc ra sensor device (DHT11) - lấy device đầu tiên có nhóm SENSOR
         Long sensorDeviceId = null;
+        Long lightSensorDeviceId = null;
         for (ThietBi tb : thietBis) {
             if (tb.getLoaiThietBi() != null && 
                 tb.getLoaiThietBi().getNhomThietBi() != null &&
                 tb.getLoaiThietBi().getNhomThietBi().name().equals("SENSOR")) {
-                sensorDeviceId = tb.getMaThietBi();
-                break;
+                // Phân biệt cảm biến ánh sáng (Device ID 18) và DHT11 (Device ID 4)
+                Long deviceId = tb.getMaThietBi();
+                if (deviceId != null && deviceId == 18L) {
+                    lightSensorDeviceId = deviceId;
+                } else if (sensorDeviceId == null) {
+                    sensorDeviceId = deviceId;
+                }
             }
         }
         
@@ -192,6 +208,7 @@ public class ThietBiController {
         }
         
         model.addAttribute("sensorDeviceId", sensorDeviceId != null ? sensorDeviceId : 0L);
+        model.addAttribute("lightSensorDeviceId", lightSensorDeviceId != null ? lightSensorDeviceId : 0L);
         model.addAttribute("switchDeviceIds", switchDeviceIds.isEmpty() ? java.util.List.of() : switchDeviceIds);
 
         return "thiet-bi/khu-vuc-stats";
@@ -211,9 +228,25 @@ public class ThietBiController {
         ThietBi thietBi = thietBiService.findDeviceById(maThietBi)
                 .orElseThrow(() -> new RuntimeException("Thiết bị không tồn tại"));
 
-        // Verify ownership
+        // Check permission: owner OR member with QUAN_LY/CHU_SO_HUU role in project
+        boolean hasPermission = false;
+        
+        // Check if user is device owner
         if (thietBi.getChuSoHuu() != null && 
-            !thietBi.getChuSoHuu().getMaNguoiDung().equals(user.getMaNguoiDung())) {
+            thietBi.getChuSoHuu().getMaNguoiDung().equals(user.getMaNguoiDung())) {
+            hasPermission = true;
+        }
+        
+        // Check if user has QUAN_LY or CHU_SO_HUU role in project
+        if (!hasPermission && thietBi.getKhuVuc() != null && thietBi.getKhuVuc().getDuAn() != null) {
+            Long maDuAn = thietBi.getKhuVuc().getDuAn().getMaDuAn();
+            DuAnRole role = duAnAuthorizationService.layVaiTroTrongDuAn(maDuAn, user.getMaNguoiDung());
+            if (role == DuAnRole.CHU_SO_HUU || role == DuAnRole.QUAN_LY) {
+                hasPermission = true;
+            }
+        }
+        
+        if (!hasPermission) {
             throw new RuntimeException("Bạn không có quyền truy cập thiết bị này");
         }
 

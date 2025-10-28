@@ -90,7 +90,13 @@ public class TuDongHoaServiceImpl implements TuDongHoaService {
     @Transactional
     public void deleteRule(Long ruleId) {
         try {
+            // Xóa tất cả lịch sử cảnh báo liên quan đến luật này trước
+            lichSuCanhBaoRepository.deleteByLuat_MaLuat(ruleId);
+            
+            // Sau đó xóa luật
             luatNguongRepository.deleteById(ruleId);
+            
+            logger.info("Đã xóa luật ID {} và lịch sử cảnh báo liên quan", ruleId);
         } catch (Exception e) {
             logger.error("Lỗi khi xóa luật ngưỡng ID {}: {}", ruleId, e.getMessage());
             throw new RuntimeException("Không thể xóa luật ngưỡng", e);
@@ -276,10 +282,17 @@ public class TuDongHoaServiceImpl implements TuDongHoaService {
     private boolean sustained(LuatNguong rule) {
         Integer seconds = rule.getThoiGianDuyTriDieuKien();
         if (seconds == null || seconds <= 0) return true;
+        
         var now = java.time.Instant.now();
-        satisfiedSince.putIfAbsent(rule.getMaLuat(), now);
         var since = satisfiedSince.get(rule.getMaLuat());
-        if (since.equals(now)) return false; // vừa bắt đầu thoả mãn
+        
+        // Lần đầu tiên điều kiện đúng -> ghi nhận thời điểm bắt đầu
+        if (since == null) {
+            satisfiedSince.put(rule.getMaLuat(), now);
+            return false; // Chưa đủ thời gian duy trì
+        }
+        
+        // Kiểm tra đã đủ thời gian duy trì chưa
         long elapsed = java.time.Duration.between(since, now).getSeconds();
         return elapsed >= seconds;
     }

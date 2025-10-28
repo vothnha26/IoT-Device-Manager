@@ -53,13 +53,15 @@
                                     <i class="bi bi-three-dots-vertical"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
+                                    <!-- Quản lý thành viên - chỉ CHU_SO_HUU -->
+                                    <li th:if="${managePermissions[duAn.maDuAn]}">
                                         <a class="dropdown-item" 
                                            th:href="@{/du-an/{id}/thanh-vien(id=${duAn.maDuAn})}">
                                             <i class="bi bi-people me-2"></i>Quản lý thành viên
                                         </a>
                                     </li>
-                                    <li>
+                                    <!-- Mời thành viên - chỉ CHU_SO_HUU -->
+                                    <li th:if="${managePermissions[duAn.maDuAn]}">
                                         <a class="dropdown-item invite-member-link" href="#" 
                                            data-bs-toggle="modal"
                                            data-bs-target="#moiThanhVienModal"
@@ -68,8 +70,9 @@
                                             <i class="bi bi-person-plus me-2"></i>Mời thành viên
                                         </a>
                                     </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
+                                    <li th:if="${managePermissions[duAn.maDuAn]}"><hr class="dropdown-divider"></li>
+                                    <!-- Chỉnh sửa - CHU_SO_HUU và QUAN_LY -->
+                                    <li th:if="${editPermissions[duAn.maDuAn]}">
                                         <a class="dropdown-item" href="#" data-bs-toggle="modal"
                                            data-bs-target="#chinhSuaDuAnModal"
                                            th:data-id="${duAn.maDuAn}"
@@ -78,7 +81,8 @@
                                             <i class="bi bi-pencil me-2"></i>Chỉnh sửa
                                         </a>
                                     </li>
-                                    <li><hr class="dropdown-divider"></li>
+                                    <!-- Xóa - chỉ CHU_SO_HUU -->
+                                    <li th:if="${deletePermissions[duAn.maDuAn]}"><hr class="dropdown-divider"></li>
                                     <li th:if="${deletePermissions[duAn.maDuAn]}">
                                         <a class="dropdown-item text-danger" href="#" 
                                            th:onclick="'return xoaDuAn(' + ${duAn.maDuAn} + ')'">
@@ -89,11 +93,29 @@
                             </div>
                         </div>
                         <p class="card-text text-muted mb-4" th:text="${duAn.moTa}">Mô tả dự án</p>
-                        <div class="d-flex justify-content-between align-items-center">
+                        
+                        <!-- Vai trò người dùng -->
+                        <div class="mb-3">
+                            <span class="badge" 
+                                  th:classappend="${userRoles[duAn.maDuAn] == 'CHU_SO_HUU' ? 'bg-danger' : (userRoles[duAn.maDuAn] == 'QUAN_LY' ? 'bg-warning text-dark' : 'bg-info')}">
+                                <i class="bi" 
+                                   th:classappend="${userRoles[duAn.maDuAn] == 'CHU_SO_HUU' ? 'bi-crown-fill' : (userRoles[duAn.maDuAn] == 'QUAN_LY' ? 'bi-briefcase-fill' : 'bi-person-fill')}"></i>
+                                <span th:text="${userRoles[duAn.maDuAn] == 'CHU_SO_HUU' ? 'Chủ sở hữu' : (userRoles[duAn.maDuAn] == 'QUAN_LY' ? 'Quản lý' : 'Người dùng')}">Vai trò</span>
+                            </span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
                             <a th:href="@{/du-an/{id}/khu-vuc(id=${duAn.maDuAn})}" 
                                class="btn btn-outline-primary">
                                 <i class="bi bi-diagram-3 me-2"></i>Xem khu vực
                             </a>
+                            <button type="button" class="btn btn-outline-success" 
+                                    th:onclick="'exportProjectReport(' + ${duAn.maDuAn} + ')'">
+                                <i class="bi bi-file-earmark-excel me-2"></i>Xuất báo cáo
+                            </button>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div></div>
                             <div>
                                 <span class="badge bg-light text-primary me-2">
                                     <i class="bi bi-diagram-3 me-1"></i>
@@ -223,11 +245,125 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Xuất Báo Cáo -->
+    <div class="modal fade" id="xuatBaoCaoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xuất báo cáo dự án</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="maDuAnExport">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn khu vực</label>
+                        <select class="form-select" id="khuVucSelect" required>
+                            <option value="">-- Chọn khu vực --</option>
+                        </select>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Từ ngày</label>
+                            <input type="datetime-local" class="form-control" id="startTimeExport" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Đến ngày</label>
+                            <input type="datetime-local" class="form-control" id="endTimeExport" required />
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Lọc nhanh</label>
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setExportTimeRange(2)">2 giờ</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setExportTimeRange(24)">Hôm nay</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setExportTimeRange(168)">7 ngày</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setExportTimeRange(720)">30 ngày</button>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Báo cáo bao gồm: Thông tin khu vực, dữ liệu cảm biến, và thời gian hoạt động thiết bị
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-success" onclick="downloadReport()">
+                        <i class="bi bi-download me-2"></i>Tải báo cáo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
 
 
 <th:block th:fragment="scripts">
     <script th:inline="javascript">
+        // Toast notification function - Hiển thị thông báo đẹp mắt
+        function showToast(message, type = 'success') {
+            // Remove existing toasts
+            const existingToasts = document.querySelectorAll('.custom-toast');
+            existingToasts.forEach(toast => toast.remove());
+            
+            // Create toast container if it doesn't exist
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container position-fixed end-0 p-3';
+                container.style.top = '80px'; // Đặt xuống dưới header
+                container.style.zIndex = '99999';
+                document.body.appendChild(container);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast custom-toast align-items-center border-0 shadow-lg';
+            toast.setAttribute('role', 'alert');
+            toast.style.minWidth = '300px';
+            
+            // Set color based on type
+            if (type === 'success') {
+                toast.style.backgroundColor = '#28a745';
+            } else {
+                toast.style.backgroundColor = '#dc3545';
+            }
+            
+            const body = document.createElement('div');
+            body.className = 'd-flex align-items-center';
+            
+            // Add icon
+            const icon = document.createElement('i');
+            icon.className = type === 'success' ? 'bi bi-check-circle-fill text-white ms-3 me-2' : 'bi bi-x-circle-fill text-white ms-3 me-2';
+            icon.style.fontSize = '1.25rem';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'toast-body text-white fw-bold py-3 flex-grow-1';
+            messageDiv.textContent = message;
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'btn-close btn-close-white me-2';
+            closeBtn.type = 'button';
+            closeBtn.onclick = () => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            };
+            
+            body.appendChild(icon);
+            body.appendChild(messageDiv);
+            body.appendChild(closeBtn);
+            toast.appendChild(body);
+            container.appendChild(toast);
+            
+            // Show toast with animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
         // CSS styles
         const styleSheet = document.createElement('style');
         styleSheet.textContent = `
@@ -249,6 +385,17 @@
                 border-radius: .375rem;
                 box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
             }
+            
+            /* Toast Animation */
+            .custom-toast {
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease-in-out;
+            }
+            .custom-toast.show {
+                opacity: 1;
+                transform: translateX(0);
+            }
         `;
         document.head.appendChild(styleSheet);
 
@@ -256,6 +403,7 @@
         const themModalEl = document.getElementById('themDuAnModal');
         const suaModalEl = document.getElementById('chinhSuaDuAnModal');
         const moiModalEl = document.getElementById('moiThanhVienModal');
+        const xuatBaoCaoModalEl = document.getElementById('xuatBaoCaoModal');
         
         if (themModalEl && themModalEl.parentElement.tagName !== 'BODY') {
             document.body.appendChild(themModalEl);
@@ -266,11 +414,15 @@
         if (moiModalEl && moiModalEl.parentElement.tagName !== 'BODY') {
             document.body.appendChild(moiModalEl);
         }
+        if (xuatBaoCaoModalEl && xuatBaoCaoModalEl.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(xuatBaoCaoModalEl);
+        }
 
         // Initialize modals after moving to body
         const themDuAnModal = new bootstrap.Modal(themModalEl);
         const chinhSuaDuAnModal = new bootstrap.Modal(suaModalEl);
         const moiThanhVienModal = new bootstrap.Modal(moiModalEl);
+        const xuatBaoCaoModal = new bootstrap.Modal(xuatBaoCaoModalEl);
 
         // Form handling for create
         document.getElementById('themDuAnForm').addEventListener('submit', async function(e) {
@@ -298,12 +450,21 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    location.reload();
+                    // Đóng modal ngay
+                    themDuAnModal.hide();
+                    
+                    // Hiển thị thông báo thành công
+                    showToast('✓ ' + (data.message || 'Thêm dự án thành công!'), 'success');
+                    
+                    // Reload sau 2 giây
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
                 } else {
                     throw new Error(data.message || 'Có lỗi xảy ra');
                 }
             } catch (error) {
-                alert(error.message);
+                showToast('✗ Lỗi thêm dự án: ' + error.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalText;
@@ -337,12 +498,21 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    location.reload();
+                    // Đóng modal ngay
+                    chinhSuaDuAnModal.hide();
+                    
+                    // Hiển thị thông báo thành công
+                    showToast('✓ ' + (data.message || 'Cập nhật dự án thành công!'), 'success');
+                    
+                    // Reload sau 2 giây
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
                 } else {
                     throw new Error(data.message || 'Có lỗi xảy ra');
                 }
             } catch (error) {
-                alert(error.message);
+                showToast('✗ Lỗi cập nhật dự án: ' + error.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalText;
@@ -377,7 +547,7 @@
 
         // Delete project handler
         async function xoaDuAn(maDuAn) {
-            if (!confirm('Bạn có chắc chắn muốn xóa dự án này?')) {
+            if (!confirm('⚠️ Cảnh báo: Xóa dự án sẽ xóa toàn bộ khu vực, thiết bị và dữ liệu liên quan. Bạn có chắc chắn muốn xóa dự án này?')) {
                 return false;
             }
 
@@ -392,12 +562,18 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    location.reload();
+                    // Hiển thị thông báo thành công
+                    showToast('✓ ' + (data.message || 'Xóa dự án thành công!'), 'success');
+                    
+                    // Reload sau 2 giây
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
                 } else {
                     throw new Error(data.message || 'Có lỗi xảy ra');
                 }
             } catch (error) {
-                alert('Có lỗi xảy ra khi xóa: ' + error.message);
+                showToast('✗ Lỗi xóa dự án: ' + error.message, 'error');
                 return false;
             }
         }
@@ -440,6 +616,74 @@
                 btn.innerHTML = originalText;
             }
         });
+        
+        // Export project report
+        async function exportProjectReport(maDuAn) {
+            try {
+                // Lấy danh sách khu vực của dự án
+                const response = await fetch(`/api/khu-vuc/du-an/${maDuAn}`);
+                const khuVucs = await response.json();
+                
+                // Populate select box
+                const selectBox = document.getElementById('khuVucSelect');
+                selectBox.innerHTML = '<option value="">-- Chọn khu vực --</option>';
+                khuVucs.forEach(kv => {
+                    selectBox.innerHTML += `<option value="${kv.maKhuVuc}">${kv.tenKhuVuc}</option>`;
+                });
+                
+                // Set default time range (24 hours)
+                setExportTimeRange(24);
+                
+                // Store project ID
+                document.getElementById('maDuAnExport').value = maDuAn;
+                
+                // Show modal
+                xuatBaoCaoModal.show();
+            } catch (error) {
+                alert('Không thể tải danh sách khu vực: ' + error.message);
+            }
+        }
+        
+        function setExportTimeRange(hours) {
+            const now = new Date();
+            const start = new Date(now.getTime() - hours * 60 * 60 * 1000);
+            
+            document.getElementById('endTimeExport').value = formatDateTimeLocal(now);
+            document.getElementById('startTimeExport').value = formatDateTimeLocal(start);
+        }
+        
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        
+        function downloadReport() {
+            const khuVucId = document.getElementById('khuVucSelect').value;
+            const startTime = document.getElementById('startTimeExport').value;
+            const endTime = document.getElementById('endTimeExport').value;
+            
+            if (!khuVucId) {
+                alert('Vui lòng chọn khu vực');
+                return;
+            }
+            
+            if (!startTime || !endTime) {
+                alert('Vui lòng chọn khoảng thời gian');
+                return;
+            }
+            
+            const startISO = new Date(startTime).toISOString();
+            const endISO = new Date(endTime).toISOString();
+            
+            const url = `/api/data-logs/export-report?khuVucId=${khuVucId}&startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}`;
+            window.open(url, '_blank');
+            
+            xuatBaoCaoModal.hide();
+        }
     </script>
 </th:block>
 

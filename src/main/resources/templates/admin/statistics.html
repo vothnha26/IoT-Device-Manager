@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="vi" 
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:replace="~{admin/layout :: admin-head('Thống kê hệ thống')}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav th:replace="~{admin/layout :: admin-navbar}"></nav>
+    
+    <!-- Admin Layout Container -->
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside th:replace="~{admin/layout :: admin-sidebar}"></aside>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <div class="container-fluid">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="admin-card-title mb-1">
+                            <i class="fas fa-chart-bar me-2"></i>Thống kê hệ thống
+                        </h1>
+                        <p class="text-muted">Tổng quan về người dùng, dự án và gói dịch vụ</p>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="text-muted mt-2">Đang tải dữ liệu thống kê...</p>
+                </div>
+
+                <!-- Stats Overview Cards -->
+                <div id="statsContent" style="display: none;">
+                    <div class="row mb-4">
+                        <div class="col-md-3 mb-3">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-icon" style="background: var(--admin-accent)">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="admin-stat-info">
+                                    <h4 id="totalUsers">0</h4>
+                                    <p>Tổng số người dùng</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-icon" style="background: var(--admin-success)">
+                                    <i class="fas fa-project-diagram"></i>
+                                </div>
+                                <div class="admin-stat-info">
+                                    <h4 id="totalProjects">0</h4>
+                                    <p>Tổng số dự án</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-icon" style="background: var(--admin-warning)">
+                                    <i class="fas fa-microchip"></i>
+                                </div>
+                                <div class="admin-stat-info">
+                                    <h4 id="totalDevices">0</h4>
+                                    <p>Tổng số thiết bị</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-icon" style="background: var(--admin-danger)">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="admin-stat-info">
+                                    <h4 id="totalAreas">0</h4>
+                                    <p>Tổng số khu vực</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="row">
+                        <!-- Bar Chart - Tổng quan -->
+                        <div class="col-md-6 mb-4">
+                            <div class="admin-card h-100">
+                                <div class="admin-card-header">
+                                    <h5 class="admin-card-title">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Tổng quan hệ thống
+                                    </h5>
+                                    <p class="text-muted small mb-0">Số lượng người dùng, dự án, thiết bị và khu vực</p>
+                                </div>
+                                <div class="chart-container" style="position: relative; height: 400px;">
+                                    <canvas id="overviewBarChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pie Chart - Người dùng theo gói -->
+                        <div class="col-md-6 mb-4">
+                            <div class="admin-card h-100">
+                                <div class="admin-card-header">
+                                    <h5 class="admin-card-title">
+                                        <i class="fas fa-chart-pie me-2"></i>
+                                        Phân bố người dùng theo gói
+                                    </h5>
+                                    <p class="text-muted small mb-0">Số lượng người dùng đang sử dụng từng gói dịch vụ</p>
+                                </div>
+                                <div class="chart-container" style="position: relative; height: 400px;">
+                                    <canvas id="usersByPackagePieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Doughnut Chart - Chi tiết gói -->
+                    <div class="row">
+                        <div class="col-md-12 mb-4">
+                            <div class="admin-card">
+                                <div class="admin-card-header">
+                                    <h5 class="admin-card-title">
+                                        <i class="fas fa-chart-pie me-2"></i>
+                                        Chi tiết phân bố gói dịch vụ
+                                    </h5>
+                                    <p class="text-muted small mb-0">Tỷ lệ phần trăm người dùng theo từng gói</p>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 offset-md-3">
+                                        <div class="chart-container" style="position: relative; height: 400px;">
+                                            <canvas id="packageDoughnutChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script th:src="@{/js/sockjs.min.js}"></script>
+    <script th:src="@{/js/stomp.min.js}"></script>
+    <script th:src="@{/js/admin-notifications.js}"></script>
+
+    <script>
+        let overviewChart, pieChart, doughnutChart;
+
+        // Load statistics on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatistics();
+        });
+
+        async function loadStatistics() {
+            try {
+                // Load system overview
+                const overviewResponse = await fetch('/admin/api/system-overview');
+                const overviewData = await overviewResponse.json();
+
+                if (overviewData.success) {
+                    // Update stats cards
+                    document.getElementById('totalUsers').textContent = overviewData.totalUsers;
+                    document.getElementById('totalProjects').textContent = overviewData.totalProjects;
+                    document.getElementById('totalDevices').textContent = overviewData.totalDevices;
+                    document.getElementById('totalAreas').textContent = overviewData.totalAreas;
+
+                    // Create overview bar chart
+                    createOverviewBarChart(overviewData);
+                }
+
+                // Load users by package
+                const packageResponse = await fetch('/admin/api/users-by-package');
+                const packageData = await packageResponse.json();
+
+                if (packageData.success) {
+                    createUsersByPackageCharts(packageData);
+                }
+
+                // Hide loading, show content
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('statsContent').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                document.getElementById('loadingSpinner').innerHTML = 
+                    '<div class="alert alert-danger">Có lỗi xảy ra khi tải dữ liệu: ' + error.message + '</div>';
+            }
+        }
+
+        function createOverviewBarChart(data) {
+            const ctx = document.getElementById('overviewBarChart').getContext('2d');
+            
+            if (overviewChart) {
+                overviewChart.destroy();
+            }
+
+            overviewChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Người dùng', 'Dự án', 'Thiết bị', 'Khu vực'],
+                    datasets: [{
+                        label: 'Số lượng',
+                        data: [data.totalUsers, data.totalProjects, data.totalDevices, data.totalAreas],
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(241, 196, 15, 0.7)',
+                            'rgba(231, 76, 60, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(241, 196, 15, 1)',
+                            'rgba(231, 76, 60, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createUsersByPackageCharts(data) {
+            // Pie Chart
+            const pieCtx = document.getElementById('usersByPackagePieChart').getContext('2d');
+            
+            if (pieChart) {
+                pieChart.destroy();
+            }
+
+            const colors = [
+                'rgba(52, 152, 219, 0.7)',
+                'rgba(46, 204, 113, 0.7)',
+                'rgba(241, 196, 15, 0.7)',
+                'rgba(231, 76, 60, 0.7)',
+                'rgba(155, 89, 182, 0.7)',
+                'rgba(26, 188, 156, 0.7)',
+                'rgba(230, 126, 34, 0.7)',
+                'rgba(149, 165, 166, 0.7)'
+            ];
+
+            pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: data.packages,
+                    datasets: [{
+                        data: data.counts,
+                        backgroundColor: colors.slice(0, data.packages.length),
+                        borderColor: colors.slice(0, data.packages.length).map(c => c.replace('0.7', '1')),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': ' + value + ' người dùng (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Doughnut Chart
+            const doughnutCtx = document.getElementById('packageDoughnutChart').getContext('2d');
+            
+            if (doughnutChart) {
+                doughnutChart.destroy();
+            }
+
+            doughnutChart = new Chart(doughnutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.packages,
+                    datasets: [{
+                        data: data.counts,
+                        backgroundColor: colors.slice(0, data.packages.length),
+                        borderColor: colors.slice(0, data.packages.length).map(c => c.replace('0.7', '1')),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 13
+                                },
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return {
+                                                text: label + ': ' + value + ' (' + percentage + '%)',
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': ' + value + ' người dùng (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Sidebar Toggle Script
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!document.querySelector('.sidebar-toggle')) {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'sidebar-toggle';
+                toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                toggleBtn.onclick = function() {
+                    document.querySelector('.admin-sidebar').classList.toggle('show');
+                };
+                document.body.appendChild(toggleBtn);
+            }
+            
+            document.addEventListener('click', function(e) {
+                const sidebar = document.querySelector('.admin-sidebar');
+                const toggleBtn = document.querySelector('.sidebar-toggle');
+                if (window.innerWidth <= 992 && sidebar && sidebar.classList.contains('show')) {
+                    if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                        sidebar.classList.remove('show');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

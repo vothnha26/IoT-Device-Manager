@@ -47,7 +47,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             || path.equals("/dashboard")
             // Do NOT skip authentication for /payment so logged-in users are recognized
             || path.startsWith("/videos/")
-            || path.startsWith("/static/") || path.startsWith("/api/payments/")) {
+            || path.startsWith("/static/") 
+            || path.startsWith("/api/payments/")
+            || path.startsWith("/api/backup/")) { // Skip JWT for backup endpoints (use session auth)
             filterChain.doFilter(request, response);
             return;
         }

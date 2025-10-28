@@ -49,15 +49,38 @@ public class DuAnController {
             List<DuAn> duAns = duAnService.findAllByNguoiDung(nguoiDung);
             System.out.println("📊 Found " + duAns.size() + " projects for user: " + nguoiDung.getEmail());
             
-            // Tạo Map để lưu quyền xóa cho từng dự án
+            // Tạo Map để lưu các quyền cho từng dự án
             Map<Long, Boolean> deletePermissions = new HashMap<>();
+            Map<Long, Boolean> managePermissions = new HashMap<>();
+            Map<Long, Boolean> editPermissions = new HashMap<>();
+            Map<Long, String> userRoles = new HashMap<>();
+            
             for (DuAn duAn : duAns) {
-                boolean coQuyen = duAnAuthorizationService.coQuyenXoaDuAn(duAn.getMaDuAn(), nguoiDung.getMaNguoiDung());
-                deletePermissions.put(duAn.getMaDuAn(), coQuyen);
+                Long maDuAn = duAn.getMaDuAn();
+                Long maNguoiDung = nguoiDung.getMaNguoiDung();
+                
+                // Quyền xóa (chỉ CHU_SO_HUU)
+                boolean coQuyenXoa = duAnAuthorizationService.coQuyenXoaDuAn(maDuAn, maNguoiDung);
+                deletePermissions.put(maDuAn, coQuyenXoa);
+                
+                // Quyền quản lý thành viên và mời thành viên (chỉ CHU_SO_HUU)
+                boolean coQuyenQuanLy = duAnAuthorizationService.laChuSoHuu(maDuAn, maNguoiDung);
+                managePermissions.put(maDuAn, coQuyenQuanLy);
+                
+                // Quyền chỉnh sửa (CHU_SO_HUU và QUAN_LY)
+                boolean coQuyenChinhSua = duAnAuthorizationService.laQuanLyTroLen(maDuAn, maNguoiDung);
+                editPermissions.put(maDuAn, coQuyenChinhSua);
+                
+                // Lấy vai trò của user trong dự án
+                com.iot.management.model.enums.DuAnRole vaiTro = duAnAuthorizationService.layVaiTroTrongDuAn(maDuAn, maNguoiDung);
+                userRoles.put(maDuAn, vaiTro != null ? vaiTro.name() : "NGUOI_DUNG");
             }
             
             model.addAttribute("duAns", duAns);
             model.addAttribute("deletePermissions", deletePermissions);
+            model.addAttribute("managePermissions", managePermissions);
+            model.addAttribute("editPermissions", editPermissions);
+            model.addAttribute("userRoles", userRoles);
             return "du-an/index";
         } catch (Exception e) {
             System.err.println("❌ Error loading projects: " + e.getMessage());

@@ -7,11 +7,13 @@ import com.iot.management.model.enums.DuAnRole;
 import com.iot.management.model.repository.DuAnRepository;
 import com.iot.management.model.repository.KhuVucRepository;
 import com.iot.management.model.repository.NguoiDungRepository;
+import com.iot.management.model.repository.ThietBiRepository;
 import com.iot.management.service.KhuVucService;
 import com.iot.management.service.KhuVucAuthorizationService;
 import com.iot.management.service.DuAnAuthorizationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +30,9 @@ public class KhuVucServiceImpl implements KhuVucService {
     
     @Autowired
     private DuAnAuthorizationService duAnAuthorizationService;
+    
+    @Autowired
+    private ThietBiRepository thietBiRepository;
 
     public KhuVucServiceImpl(KhuVucRepository khuVucRepository, 
                             NguoiDungRepository nguoiDungRepository,
@@ -106,8 +111,17 @@ public class KhuVucServiceImpl implements KhuVucService {
     }
 
     @Override
+    @Transactional
     public void deleteKhuVuc(Long id) {
         KhuVuc khuVuc = getKhuVucById(id);
+        
+        // Check if area has devices
+        long deviceCount = thietBiRepository.countByKhuVuc_MaKhuVuc(id);
+        if (deviceCount > 0) {
+            throw new RuntimeException("Không thể xóa khu vực vì còn " + deviceCount + " thiết bị. Vui lòng xóa hoặc di chuyển thiết bị trước.");
+        }
+        
+        // Delete area (cascade will automatically delete phan_quyen_khu_vuc records)
         khuVucRepository.delete(khuVuc);
     }
 }

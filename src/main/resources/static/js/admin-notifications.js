@@ -7,18 +7,47 @@
     function init() {
         const btn = document.getElementById('admin-notifications-btn');
         const dropdown = document.getElementById('admin-notifications-dropdown');
+        const container = document.getElementById('admin-notifications');
+        
+        // Only initialize if the notification elements exist on the page
+        if (!container) {
+            console.log('Admin notifications not on this page, skipping initialization');
+            return;
+        }
+        
         if (btn && dropdown) {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleDropdown();
             });
             document.addEventListener('click', (e) => {
-                if (!document.getElementById('admin-notifications').contains(e.target)) {
+                if (!container.contains(e.target)) {
                     hideDropdown();
                 }
             });
         }
+        
+        // Load initial unread count
+        loadUnreadCount();
+        
         connect();
+    }
+    
+    function loadUnreadCount() {
+        fetch('/api/notifications/unread/count', {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('admin-notifications-badge');
+            if (badge && data.count > 0) {
+                badge.textContent = data.count;
+                badge.dataset.count = data.count;
+                badge.style.display = 'inline-block';
+            }
+        })
+        .catch(err => console.error('Error loading unread count:', err));
     }
 
     function connect() {
@@ -93,12 +122,47 @@
         if (!el) return;
         if (el.style.display === 'none' || el.style.display === '') {
             el.style.display = 'block';
+            
+            // Load notifications when opening dropdown
+            loadNotifications();
+            
             // mark as read (reset badge)
             const badge = document.getElementById('admin-notifications-badge');
             if (badge) { badge.style.display = 'none'; badge.dataset.count = '0'; }
         } else {
             el.style.display = 'none';
         }
+    }
+    
+    function loadNotifications() {
+        fetch('/api/notifications/unread', {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(notifications => {
+            const list = document.getElementById('admin-notifications-list');
+            if (!list) return;
+            
+            if (notifications.length === 0) {
+                list.innerHTML = '<p class="text-muted small mb-0">Chưa có thông báo</p>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            notifications.forEach(notif => {
+                const time = new Date(notif.thoiGianTao).toLocaleString('vi-VN');
+                const li = document.createElement('div');
+                li.className = 'py-2 border-bottom';
+                li.innerHTML = `
+                    <div><strong>${notif.tieuDe || 'Thông báo'}</strong></div>
+                    <div class="small">${notif.noiDung || ''}</div>
+                    <div class="small text-muted">${time}</div>
+                `;
+                list.appendChild(li);
+            });
+        })
+        .catch(err => console.error('Error loading notifications:', err));
     }
 
     function hideDropdown() {

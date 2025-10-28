@@ -87,7 +87,7 @@ public class PackageLimitServiceImpl implements PackageLimitService {
     throw new PackageExpiredException("Dự án chưa gán người dùng hợp lệ");
     }
         return duAn.getNguoiDung().getDangKyGois().stream()
-                .filter(dkg -> "DA_THANH_TOAN".equals(dkg.getTrangThai()))
+                .filter(dkg -> "ACTIVE".equals(dkg.getTrangThai()))
                 .findFirst()
                 .orElseThrow(() -> new PackageExpiredException("Người dùng chưa đăng ký gói cước hoặc gói cước đã hết hạn"));
     }

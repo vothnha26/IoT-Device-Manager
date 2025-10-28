@@ -1,6 +1,7 @@
 package com.iot.management.service;
 
 import com.iot.management.model.dto.DashboardStatsDTO;
+import com.iot.management.model.dto.PackageUsageDTO;
 import com.iot.management.model.dto.RoomDTO;
 import java.util.List;
 
@@ -23,4 +24,9 @@ public interface DashboardService {
      * Lấy thông tin chi tiết một phòng
      */
     RoomDTO getRoomDetail(Long roomId);
+    
+    /**
+     * Lấy thông tin sử dụng gói cước
+     */
+    PackageUsageDTO getPackageUsage(Long userId);
 }

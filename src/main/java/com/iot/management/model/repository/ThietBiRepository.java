@@ -21,6 +21,9 @@ public interface ThietBiRepository extends JpaRepository<ThietBi, Long> {
     // Sửa: Truy vấn qua đối tượng khuVuc
     List<ThietBi> findByKhuVuc_MaKhuVuc(Long maKhuVuc);
     
+    // Đếm số thiết bị trong khu vực
+    long countByKhuVuc_MaKhuVuc(Long maKhuVuc);
+    
     // Truy vấn tất cả thiết bị trong dự án
     List<ThietBi> findByKhuVucDuAnMaDuAn(Long maDuAn);
 }

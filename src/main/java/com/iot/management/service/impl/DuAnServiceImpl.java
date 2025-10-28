@@ -2,11 +2,15 @@ package com.iot.management.service.impl;
 
 import com.iot.management.model.dto.request.DuAnRequest;
 import com.iot.management.model.entity.DuAn;
+import com.iot.management.model.entity.KhuVuc;
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.entity.PhanQuyenDuAn;
+import com.iot.management.model.entity.ThietBi;
 import com.iot.management.model.enums.DuAnRole;
 import com.iot.management.model.repository.DuAnRepository;
+import com.iot.management.model.repository.KhuVucRepository;
 import com.iot.management.model.repository.PhanQuyenDuAnRepository;
+import com.iot.management.model.repository.ThietBiRepository;
 import java.util.stream.Collectors;
 import com.iot.management.service.DuAnService;
 import jakarta.persistence.EntityNotFoundException;
@@ -23,11 +27,17 @@ public class DuAnServiceImpl implements DuAnService {
 
     private final DuAnRepository duAnRepository;
     private final PhanQuyenDuAnRepository phanQuyenDuAnRepository;
+    private final KhuVucRepository khuVucRepository;
+    private final ThietBiRepository thietBiRepository;
 
     public DuAnServiceImpl(DuAnRepository duAnRepository, 
-                          PhanQuyenDuAnRepository phanQuyenDuAnRepository) {
+                          PhanQuyenDuAnRepository phanQuyenDuAnRepository,
+                          KhuVucRepository khuVucRepository,
+                          ThietBiRepository thietBiRepository) {
         this.duAnRepository = duAnRepository;
         this.phanQuyenDuAnRepository = phanQuyenDuAnRepository;
+        this.khuVucRepository = khuVucRepository;
+        this.thietBiRepository = thietBiRepository;
     }
 
     @Override
@@ -93,6 +103,29 @@ public class DuAnServiceImpl implements DuAnService {
             throw new AccessDeniedException("Không có quyền xóa dự án này");
         }
 
+        // Xóa theo thứ tự để tránh foreign key constraint error
+        
+        // 1. Xóa tất cả thiết bị trong các khu vực của dự án
+        List<KhuVuc> khuVucs = khuVucRepository.findByDuAnMaDuAn(maDuAn);
+        for (KhuVuc khuVuc : khuVucs) {
+            List<ThietBi> thietBis = thietBiRepository.findByKhuVuc_MaKhuVuc(khuVuc.getMaKhuVuc());
+            if (!thietBis.isEmpty()) {
+                thietBiRepository.deleteAll(thietBis);
+            }
+        }
+        
+        // 2. Xóa tất cả khu vực của dự án
+        if (!khuVucs.isEmpty()) {
+            khuVucRepository.deleteAll(khuVucs);
+        }
+        
+        // 3. Xóa tất cả phân quyền của dự án
+        List<PhanQuyenDuAn> phanQuyens = phanQuyenDuAnRepository.findByDuAn(duAn);
+        if (!phanQuyens.isEmpty()) {
+            phanQuyenDuAnRepository.deleteAll(phanQuyens);
+        }
+        
+        // 4. Cuối cùng xóa dự án
         duAnRepository.delete(duAn);
     }
 

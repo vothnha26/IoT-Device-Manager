@@ -10,11 +10,53 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
         <h3 class="mb-0 fw-bold" th:text="${khuVuc.tenKhuVuc} + ' - Thống kê'">Thống kê</h3>
-        <small class="text-muted">Khoảng thời gian: 2 giờ gần nhất, lấy mẫu mỗi 2 phút</small>
+        <small class="text-muted" id="time-range-text">Khoảng thời gian: 2 giờ gần nhất, lấy mẫu mỗi 2 phút</small>
       </div>
       <a th:href="@{'/thiet-bi/khu-vuc/' + ${khuVuc.maKhuVuc}}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Quay lại khu vực
       </a>
+    </div>
+
+    <!-- Bộ lọc thời gian -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Từ ngày</label>
+            <input type="datetime-local" class="form-control" id="startTime" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Đến ngày</label>
+            <input type="datetime-local" class="form-control" id="endTime" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Khoảng thời gian</label>
+            <div class="d-flex flex-wrap gap-2">
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTimeRange(2)">2 giờ</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTimeRange(24)">Hôm nay</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTimeRange(168)">7 ngày</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTimeRange(720)">30 ngày</button>
+              </div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="applyFilter()">
+                <i class="bi bi-funnel"></i> Lọc
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="row g-2 mt-2">
+          <div class="col-12">
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-sm btn-success" onclick="exportRawData()">
+                <i class="bi bi-download"></i> Xuất dữ liệu Excel
+              </button>
+              <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#importDataModal">
+                <i class="bi bi-upload"></i> Import & Vẽ biểu đồ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="row g-4">
@@ -47,6 +89,17 @@
         <div class="card shadow-sm border-0">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="card-title mb-0">Độ sáng (Analog)</h5>
+              <div class="text-success fw-bold"><span id="latest-light">--</span></div>
+            </div>
+            <div id="lightChart" style="height: 320px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
               <h5 class="card-title mb-0">Tổng thời gian thiết bị hoạt động</h5>
               <div class="text-success fw-bold"><span id="total-on-hours">--</span> (Giờ)</div>
             </div>
@@ -56,18 +109,126 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal Import Dữ liệu -->
+  <div class="modal fade" id="importDataModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-upload me-2"></i>Import dữ liệu từ Excel
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <!-- Left side: File upload -->
+            <div class="col-md-4">
+              <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Hướng dẫn:</strong>
+                <ol class="mb-0 mt-2 small">
+                  <li>Xuất dữ liệu Excel</li>
+                  <li>Chọn file Excel</li>
+                  <li>Xem preview biểu đồ</li>
+                  <li>Nhấn "Áp dụng"</li>
+                </ol>
+              </div>
+              
+              <div class="mb-3">
+                <label for="importFileInput" class="form-label fw-semibold">
+                  <i class="bi bi-file-earmark-excel me-2"></i>Chọn file Excel
+                </label>
+                <input type="file" 
+                       class="form-control" 
+                       id="importFileInput" 
+                       accept=".xlsx,.xls"
+                       onchange="handleFileSelect(event)">
+                <div class="form-text">
+                  Chấp nhận: .xlsx, .xls (Max 10MB)
+                </div>
+              </div>
+              
+              <div id="fileInfo" class="alert alert-success d-none">
+                <i class="bi bi-check-circle me-2"></i>
+                <strong id="fileName"></strong>
+                <hr class="my-2">
+                <small class="text-muted d-block">
+                  <i class="bi bi-hdd me-1"></i><span id="fileSize"></span>
+                </small>
+                <small class="text-muted d-block">
+                  <i class="bi bi-bar-chart me-1"></i><span id="recordCount"></span>
+                </small>
+              </div>
+              
+              <div id="importProgress" class="d-none">
+                <div class="progress">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                       role="progressbar" 
+                       style="width: 100%">
+                    Đang xử lý...
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Right side: Preview chart -->
+            <div class="col-md-8">
+              <div class="card border-info">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Preview - Dữ liệu cảm biến
+                  </h6>
+                  <select class="form-select form-select-sm" id="previewSensorSelect" style="width: 200px;" onchange="updatePreviewChart()" disabled>
+                    <option value="temp">Nhiệt độ (°C)</option>
+                    <option value="hum">Độ ẩm (%RH)</option>
+                    <option value="light">Độ sáng</option>
+                  </select>
+                </div>
+                <div class="card-body" style="min-height: 400px;">
+                  <div id="previewChart" style="height: 380px;"></div>
+                  <div id="previewPlaceholder" class="text-center text-muted py-5">
+                    <i class="bi bi-graph-up" style="font-size: 3rem;"></i>
+                    <p class="mt-3">Chọn file Excel để xem preview</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-2"></i>Đóng
+          </button>
+          <button type="button" 
+                  class="btn btn-info" 
+                  id="btnImportDraw" 
+                  onclick="applyImportedData()" 
+                  disabled>
+            <i class="bi bi-check2-circle me-2"></i>Áp dụng vào biểu đồ chính
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
 
 <th:block th:fragment="scripts">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script th:inline="javascript">
 (function(){
   // Config
   const SENSOR_DEVICE_ID = /*[[${sensorDeviceId}]]*/ 4;
+  const LIGHT_SENSOR_ID = /*[[${lightSensorDeviceId}]]*/ 18; // Light sensor device ID
   const SWITCH_DEVICE_IDS = /*[[${switchDeviceIds}]]*/ [2,3];
-  const STEP_MINUTES = 2; // sample every 2 minutes
-  const now = new Date();
-  const endISO = new Date(now.getTime()).toISOString();
-  const startISO = new Date(now.getTime() - 2*60*60*1000).toISOString(); // last 2 hours
+  const KHU_VUC_ID = /*[[${khuVuc.maKhuVuc}]]*/ 1;
+  let STEP_MINUTES = 2; // sample every 2 minutes (default)
+  
+  // Global charts để có thể destroy và re-render
+  let tempChart, humChart, lightChart, switchDonutChart;
+
+  // Initialize date pickers with default 2 hours range
+  initializeDatePickers();
 
   // Utils
   function bucket2min(ts){
@@ -80,65 +241,716 @@
   function fmtTime(d){
     return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
   }
-
-  // Fetch sensor time-series (2-minute buckets) using backend aggregation
-  fetch(`/api/data-logs/device/${SENSOR_DEVICE_ID}/timeseries?startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}&bucketMinutes=2&fields=nhiet_do,do_am`)
-   .then(r=>r.ok?r.json():null)
-   .then(res=>{
-      if(!res || !res.series){
-        renderTimeChart('tempChart','Nhiệt độ (°C)', [], '#1e90ff');
-        renderTimeChart('humChart','Độ ẩm (%RH)', [], '#00b894');
+  
+  function initializeDatePickers() {
+    const now = new Date();
+    const twoHoursAgo = new Date(now.getTime() - 2*60*60*1000);
+    
+    // Format to datetime-local input format
+    document.getElementById('endTime').value = formatDateTimeLocal(now);
+    document.getElementById('startTime').value = formatDateTimeLocal(twoHoursAgo);
+    
+    // Load initial data
+    loadData();
+  }
+  
+  function formatDateTimeLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+  
+  // Set time range (in hours)
+  window.setTimeRange = function(hours) {
+    const now = new Date();
+    const start = new Date(now.getTime() - hours*60*60*1000);
+    document.getElementById('endTime').value = formatDateTimeLocal(now);
+    document.getElementById('startTime').value = formatDateTimeLocal(start);
+  }
+  
+  // Apply filter
+  window.applyFilter = function() {
+    loadData();
+  }
+  
+  // Export report
+  window.exportReport = function() {
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    
+    if (!startTime || !endTime) {
+      alert('Vui lòng chọn khoảng thời gian');
+      return;
+    }
+    
+    const startISO = new Date(startTime).toISOString();
+    const endISO = new Date(endTime).toISOString();
+    
+    const url = `/api/data-logs/export-report?khuVucId=${KHU_VUC_ID}&startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}`;
+    window.open(url, '_blank');
+  }
+  
+  // Export raw data
+  window.exportRawData = function() {
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    
+    if (!startTime || !endTime) {
+      alert('Vui lòng chọn khoảng thời gian');
+      return;
+    }
+    
+    const startISO = new Date(startTime).toISOString();
+    const endISO = new Date(endTime).toISOString();
+    
+    const url = `/api/data-logs/export-raw-data?khuVucId=${KHU_VUC_ID}&startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}`;
+    window.open(url, '_blank');
+  }
+  
+  // Import Excel file and draw charts
+  let importedFileData = null;
+  let previewChart = null;
+  let cachedPreviewData = { temp: [], hum: [], light: [] };
+  
+  window.handleFileSelect = function(event) {
+    const file = event.target.files[0];
+    if (!file) {
+      document.getElementById('btnImportDraw').disabled = true;
+      document.getElementById('fileInfo').classList.add('d-none');
+      document.getElementById('previewPlaceholder').classList.remove('d-none');
+      document.getElementById('previewChart').innerHTML = '';
+      document.getElementById('previewSensorSelect').disabled = true;
+      return;
+    }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File quá lớn! Vui lòng chọn file nhỏ hơn 10MB');
+      event.target.value = '';
+      return;
+    }
+    
+    // Show file info
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatFileSize(file.size);
+    document.getElementById('fileInfo').classList.remove('d-none');
+    
+    // Read file
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Đọc sheet đầu tiên
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        if (jsonData.length === 0) {
+          alert('File không có dữ liệu');
+          document.getElementById('btnImportDraw').disabled = true;
+          return;
+        }
+        
+        // Store data
+        importedFileData = jsonData;
+        
+        // Update record count
+        document.getElementById('recordCount').textContent = jsonData.length + ' bản ghi';
+        
+        // Enable draw button
+        document.getElementById('btnImportDraw').disabled = false;
+        
+        // Draw preview chart
+        drawPreviewChart(jsonData);
+        
+      } catch (error) {
+        console.error('Lỗi khi đọc file:', error);
+        alert('Lỗi khi đọc file Excel: ' + error.message);
+        document.getElementById('btnImportDraw').disabled = true;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  
+  // Draw preview chart with filter dropdown
+  function drawPreviewChart(jsonData) {
+    // Hide placeholder
+    document.getElementById('previewPlaceholder').classList.add('d-none');
+    
+    // Parse data by sensor type
+    const tempData = [];
+    const humData = [];
+    const lightData = [];
+    
+    jsonData.forEach(row => {
+      const timestamp = parseExcelDate(row['Thời gian']);
+      const field = (row['Trường dữ liệu'] || '').toLowerCase();
+      const numValue = row['Giá trị số'];
+      
+      if (!timestamp || numValue == null || isNaN(numValue)) return;
+      
+      if (field === 'nhiet_do') {
+        tempData.push([timestamp, Number(numValue)]);
+      } else if (field === 'do_am') {
+        humData.push([timestamp, Number(numValue)]);
+      } else if (field === 'do_sang_analog') {
+        lightData.push([timestamp, Number(numValue)]);
+      }
+    });
+    
+    // Sort by time
+    tempData.sort((a, b) => a[0] - b[0]);
+    humData.sort((a, b) => a[0] - b[0]);
+    lightData.sort((a, b) => a[0] - b[0]);
+    
+    // Cache data
+    cachedPreviewData = { temp: tempData, hum: humData, light: lightData };
+    
+    // Enable dropdown
+    document.getElementById('previewSensorSelect').disabled = false;
+    
+    // Draw initial chart (temperature)
+    updatePreviewChart();
+  }
+  
+  window.updatePreviewChart = function() {
+    const sensorType = document.getElementById('previewSensorSelect').value;
+    
+    // Destroy existing chart
+    if (previewChart) {
+      previewChart.destroy();
+    }
+    
+    let data = [];
+    let title = '';
+    let color = '';
+    let yAxisTitle = '';
+    let decimals = 1;
+    let unit = '';
+    
+    if (sensorType === 'temp') {
+      data = cachedPreviewData.temp;
+      title = 'Nhiệt độ';
+      color = '#1e90ff';
+      yAxisTitle = 'Nhiệt độ (°C)';
+      unit = '°C';
+    } else if (sensorType === 'hum') {
+      data = cachedPreviewData.hum;
+      title = 'Độ ẩm';
+      color = '#00b894';
+      yAxisTitle = 'Độ ẩm (%RH)';
+      unit = '%';
+    } else if (sensorType === 'light') {
+      data = cachedPreviewData.light;
+      title = 'Độ sáng';
+      color = '#ffa502';
+      yAxisTitle = 'Độ sáng (0-4095)';
+      decimals = 0;
+      unit = '';
+    }
+    
+    const options = {
+      chart: { 
+        type: 'line', 
+        height: 380, 
+        toolbar: { show: true },
+        animations: {
+          enabled: true,
+          speed: 500
+        },
+        zoom: { enabled: true }
+      },
+      stroke: { 
+        curve: 'smooth', 
+        width: 2.5
+      },
+      series: [{ name: title, data: data }],
+      colors: [color],
+      xaxis: { 
+        type: 'datetime',
+        labels: { 
+          datetimeUTC: false,
+          format: 'HH:mm',
+          style: { 
+            fontSize: '12px'
+          },
+          offsetY: 5  // Tăng khoảng cách với trục X
+        },
+        axisBorder: {
+          show: true,
+          offsetY: 5  // Đẩy trục xuống
+        },
+        axisTicks: {
+          show: true
+        }
+      },
+      yaxis: {
+        title: { 
+          text: yAxisTitle,
+          style: { 
+            fontSize: '13px', 
+            fontWeight: 500,
+            color: color
+          }
+        },
+        decimalsInFloat: decimals,
+        labels: {
+          style: { 
+            fontSize: '13px',
+            colors: color,
+            fontWeight: 500
+          },
+          formatter: function(val) { 
+            return val != null ? val.toFixed(decimals) : ''; 
+          },
+          offsetX: -10,  // Tăng khoảng cách với trục Y
+          minWidth: 45   // Đảm bảo đủ không gian cho số
+        },
+        forceNiceScale: true,
+        tickAmount: 6  // Hiển thị 6 mốc trên trục Y
+      },
+      grid: {
+        borderColor: '#e0e0e0',
+        strokeDashArray: 3,
+        padding: {
+          top: 10,
+          right: 10,
+          bottom: 10,
+          left: 10
+        },
+        xaxis: { lines: { show: true } },
+        yaxis: { lines: { show: true } }
+      },
+      tooltip: {
+        x: {
+          format: 'dd/MM/yyyy HH:mm:ss'
+        },
+        y: {
+          formatter: function(val) {
+            return val != null ? val.toFixed(decimals) + ' ' + unit : '';
+          }
+        }
+      },
+      noData: { 
+        text: 'Không có dữ liệu ' + title.toLowerCase(),
+        style: {
+          fontSize: '14px'
+        }
+      }
+    };
+    
+    previewChart = new ApexCharts(document.querySelector('#previewChart'), options);
+    previewChart.render();
+  }
+  
+  // Apply imported data to main charts
+  window.applyImportedData = function() {
+    if (!importedFileData) {
+      alert('Vui lòng chọn file Excel');
+      return;
+    }
+    
+    // Show progress
+    document.getElementById('importProgress').classList.remove('d-none');
+    document.getElementById('btnImportDraw').disabled = true;
+    
+    setTimeout(() => {
+      try {
+        // Parse và vẽ biểu đồ chính
+        parseAndDrawCharts(importedFileData);
+        
+        // Hide progress
+        document.getElementById('importProgress').classList.add('d-none');
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('importDataModal'));
+        if (modal) {
+          modal.hide();
+        }
+        
+        // Reset form
+        document.getElementById('importFileInput').value = '';
+        document.getElementById('fileInfo').classList.add('d-none');
+        document.getElementById('previewPlaceholder').classList.remove('d-none');
+        document.getElementById('previewChart').innerHTML = '';
+        document.getElementById('previewSensorSelect').disabled = true;
+        document.getElementById('previewSensorSelect').value = 'temp';
+        document.getElementById('btnImportDraw').disabled = true;
+        importedFileData = null;
+        cachedPreviewData = { temp: [], hum: [], light: [] };
+        if (previewChart) {
+          previewChart.destroy();
+          previewChart = null;
+        }
+        
+        // Show success message
+        alert('Đã áp dụng dữ liệu vào biểu đồ chính thành công!');
+        
+      } catch (error) {
+        console.error('Lỗi khi vẽ biểu đồ:', error);
+        alert('Lỗi khi vẽ biểu đồ: ' + error.message);
+        document.getElementById('importProgress').classList.add('d-none');
+        document.getElementById('btnImportDraw').disabled = false;
+      }
+    }, 100);
+  }
+  
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+  
+  function parseAndDrawCharts(jsonData) {
+    // Phân loại dữ liệu theo trường
+    const tempData = [];
+    const humData = [];
+    const lightData = [];
+    const switchData = {};
+    
+    jsonData.forEach(row => {
+      const timestamp = parseExcelDate(row['Thời gian']);
+      const field = (row['Trường dữ liệu'] || '').toLowerCase();
+      const deviceName = row['Thiết bị'] || '';
+      const numValue = parseFloat(row['Giá trị số']);
+      const logicValue = row['Giá trị logic'];
+      
+      if (!timestamp) return;
+      
+      // Nhiệt độ
+      if (field === 'nhiet_do' && !isNaN(numValue)) {
+        tempData.push([timestamp, numValue]);
+      }
+      // Độ ẩm
+      else if (field === 'do_am' && !isNaN(numValue)) {
+        humData.push([timestamp, numValue]);
+      }
+      // Độ sáng
+      else if (field === 'do_sang_analog' && !isNaN(numValue)) {
+        lightData.push([timestamp, numValue]);
+      }
+      // Thiết bị switch (logic)
+      else if (logicValue === 'TRUE' || logicValue === 'FALSE') {
+        if (!switchData[deviceName]) {
+          switchData[deviceName] = [];
+        }
+        switchData[deviceName].push({
+          timestamp: timestamp,
+          state: logicValue === 'TRUE'
+        });
+      }
+    });
+    
+    // Sắp xếp theo thời gian
+    tempData.sort((a, b) => a[0] - b[0]);
+    humData.sort((a, b) => a[0] - b[0]);
+    lightData.sort((a, b) => a[0] - b[0]);
+    
+    // Cập nhật giá trị mới nhất
+    if (tempData.length > 0) {
+      const lastTemp = tempData[tempData.length - 1][1];
+      document.getElementById('latest-temp').textContent = lastTemp.toFixed(1);
+    }
+    if (humData.length > 0) {
+      const lastHum = humData[humData.length - 1][1];
+      document.getElementById('latest-hum').textContent = lastHum.toFixed(1);
+    }
+    if (lightData.length > 0) {
+      const lastLight = lightData[lightData.length - 1][1];
+      document.getElementById('latest-light').textContent = lastLight.toFixed(0);
+    }
+    
+    // Vẽ biểu đồ
+    renderTimeChart('tempChart', 'Nhiệt độ (°C)', tempData, '#1e90ff');
+    renderTimeChart('humChart', 'Độ ẩm (%RH)', humData, '#00b894');
+    renderTimeChart('lightChart', 'Độ sáng (0-4095)', lightData, '#ffa502');
+    
+    // Tính thời gian hoạt động switch
+    const switchOperatingTime = calculateSwitchOperatingTime(switchData);
+    const labels = Object.keys(switchOperatingTime);
+    const series = Object.values(switchOperatingTime);
+    const total = series.reduce((a, b) => a + b, 0);
+    document.getElementById('total-on-hours').textContent = total.toFixed(2);
+    renderDonut('switchDonut', labels, series);
+    
+    // Cập nhật text khoảng thời gian
+    if (tempData.length > 0 || humData.length > 0 || lightData.length > 0) {
+      const allTimestamps = [...tempData.map(d => d[0]), ...humData.map(d => d[0]), ...lightData.map(d => d[0])];
+      const minTime = Math.min(...allTimestamps);
+      const maxTime = Math.max(...allTimestamps);
+      const startStr = new Date(minTime).toLocaleString('vi-VN');
+      const endStr = new Date(maxTime).toLocaleString('vi-VN');
+      document.getElementById('time-range-text').textContent = 
+        `Khoảng thời gian: ${startStr} - ${endStr} (Từ file Excel)`;
+    }
+  }
+  
+  function parseExcelDate(dateStr) {
+    if (!dateStr) return null;
+    
+    // Nếu là số (Excel serial date)
+    if (typeof dateStr === 'number') {
+      // Excel serial date (days since 1900-01-01)
+      const excelEpoch = new Date(1900, 0, 1);
+      const daysOffset = dateStr - 2; // Excel bug: treats 1900 as leap year
+      const date = new Date(excelEpoch.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+      return date.getTime();
+    }
+    
+    // Nếu là string
+    dateStr = String(dateStr).trim();
+    
+    // Format: dd/MM/yyyy HH:mm:ss
+    let parts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/);
+    if (parts) {
+      const [_, day, month, year, hour, minute, second] = parts;
+      return new Date(year, month - 1, day, hour, minute, second).getTime();
+    }
+    
+    // Format: dd/MM/yyyy HH:mm (without seconds)
+    parts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})/);
+    if (parts) {
+      const [_, day, month, year, hour, minute] = parts;
+      return new Date(year, month - 1, day, hour, minute, 0).getTime();
+    }
+    
+    // Format: yyyy-MM-dd HH:mm:ss
+    parts = dateStr.match(/(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/);
+    if (parts) {
+      const [_, year, month, day, hour, minute, second] = parts;
+      return new Date(year, month - 1, day, hour, minute, second).getTime();
+    }
+    
+    // Fallback: thử parse trực tiếp
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? null : date.getTime();
+  }
+  
+  function calculateSwitchOperatingTime(switchData) {
+    const result = {};
+    
+    Object.keys(switchData).forEach(deviceName => {
+      const logs = switchData[deviceName].sort((a, b) => a.timestamp - b.timestamp);
+      
+      if (logs.length === 0) {
+        result[deviceName] = 0;
         return;
       }
-      let tempSeries = [];
-      let humSeries = [];
-      res.series.forEach(s=>{
-        if((s.field||'').toLowerCase()==='nhiet_do') tempSeries = s.data || [];
-        if((s.field||'').toLowerCase()==='do_am') humSeries = s.data || [];
+      
+      let totalOnMs = 0;
+      let currentState = false;
+      let lastTimestamp = logs[0].timestamp;
+      
+      logs.forEach(log => {
+        if (currentState) {
+          totalOnMs += (log.timestamp - lastTimestamp);
+        }
+        currentState = log.state;
+        lastTimestamp = log.timestamp;
       });
-      // Latest values
-      const lastTemp = [...tempSeries].reverse().find(p=>p[1]!==null);
-      const lastHum  = [...humSeries].reverse().find(p=>p[1]!==null);
-      if(lastTemp) document.getElementById('latest-temp').textContent = Number(lastTemp[1]).toFixed(1);
-      if(lastHum) document.getElementById('latest-hum').textContent = Number(lastHum[1]).toFixed(1);
-      renderTimeChart('tempChart','Nhiệt độ (°C)', tempSeries, '#1e90ff');
-      renderTimeChart('humChart','Độ ẩm (%RH)', humSeries, '#00b894');
-   })
-   .catch(()=>{
-      renderTimeChart('tempChart','Nhiệt độ (°C)', [], '#1e90ff');
-      renderTimeChart('humChart','Độ ẩm (%RH)', [], '#00b894');
-   });
-
-  // Fetch operating time for switches using new API
-  const deviceIdsParam = SWITCH_DEVICE_IDS.join(',');
-  fetch(`/api/data-logs/devices/operating-time?deviceIds=${deviceIdsParam}&startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}`)
-    .then(r=>r.ok?r.json():[])
-    .then(results=>{
-      const labels = results.map(d=>d.deviceName||`Thiết bị ${d.deviceId}`);
-      const series = results.map(d=>d.totalOnHours||0);
-      const total = series.reduce((a,b)=>a+b,0);
-      document.getElementById('total-on-hours').textContent = total.toFixed(2);
-      renderDonut('switchDonut', labels, series);
-    })
-    .catch(()=>{
-      renderDonut('switchDonut', [], []);
+      
+      result[deviceName] = totalOnMs / 3600000.0; // Convert to hours
     });
+    
+    return result;
+  }
+  
+  function loadData() {
+    const startTimeInput = document.getElementById('startTime').value;
+    const endTimeInput = document.getElementById('endTime').value;
+    
+    if (!startTimeInput || !endTimeInput) {
+      alert('Vui lòng chọn khoảng thời gian');
+      return;
+    }
+    
+    const startDate = new Date(startTimeInput);
+    const endDate = new Date(endTimeInput);
+    const startISO = startDate.toISOString();
+    const endISO = endDate.toISOString();
+    
+    // Calculate appropriate bucket size based on time range
+    const hoursDiff = (endDate - startDate) / (1000 * 60 * 60);
+    if (hoursDiff <= 6) {
+      STEP_MINUTES = 2; // 2 minutes for up to 6 hours
+    } else if (hoursDiff <= 24) {
+      STEP_MINUTES = 10; // 10 minutes for up to 1 day
+    } else if (hoursDiff <= 168) {
+      STEP_MINUTES = 60; // 1 hour for up to 7 days
+    } else {
+      STEP_MINUTES = 360; // 6 hours for 30 days
+    }
+    
+    // Update time range text
+    const startStr = startDate.toLocaleString('vi-VN');
+    const endStr = endDate.toLocaleString('vi-VN');
+    document.getElementById('time-range-text').textContent = 
+      `Khoảng thời gian: ${startStr} - ${endStr}, lấy mẫu mỗi ${STEP_MINUTES} phút`;
+
+    // Fetch sensor time-series
+    fetch(`/api/data-logs/device/${SENSOR_DEVICE_ID}/timeseries?startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}&bucketMinutes=${STEP_MINUTES}&fields=nhiet_do,do_am`)
+     .then(r=>r.ok?r.json():null)
+     .then(res=>{
+        if(!res || !res.series){
+          renderTimeChart('tempChart','Nhiệt độ (°C)', [], '#1e90ff');
+          renderTimeChart('humChart','Độ ẩm (%RH)', [], '#00b894');
+          return;
+        }
+        let tempSeries = [];
+        let humSeries = [];
+        res.series.forEach(s=>{
+          if((s.field||'').toLowerCase()==='nhiet_do') tempSeries = s.data || [];
+          if((s.field||'').toLowerCase()==='do_am') humSeries = s.data || [];
+        });
+        // Latest values
+        const lastTemp = [...tempSeries].reverse().find(p=>p[1]!==null);
+        const lastHum  = [...humSeries].reverse().find(p=>p[1]!==null);
+        if(lastTemp) document.getElementById('latest-temp').textContent = Number(lastTemp[1]).toFixed(1);
+        if(lastHum) document.getElementById('latest-hum').textContent = Number(lastHum[1]).toFixed(1);
+        renderTimeChart('tempChart','Nhiệt độ (°C)', tempSeries, '#1e90ff');
+        renderTimeChart('humChart','Độ ẩm (%RH)', humSeries, '#00b894');
+     })
+     .catch(()=>{
+        renderTimeChart('tempChart','Nhiệt độ (°C)', [], '#1e90ff');
+        renderTimeChart('humChart','Độ ẩm (%RH)', [], '#00b894');
+     });
+
+    // Fetch light sensor time-series
+    if (LIGHT_SENSOR_ID && LIGHT_SENSOR_ID > 0) {
+      fetch(`/api/data-logs/device/${LIGHT_SENSOR_ID}/timeseries?startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}&bucketMinutes=${STEP_MINUTES}&fields=do_sang_analog`)
+       .then(r=>r.ok?r.json():null)
+       .then(res=>{
+          if(!res || !res.series){
+            renderTimeChart('lightChart','Độ sáng (0-4095)', [], '#ffa502');
+            return;
+          }
+          let lightSeries = [];
+          res.series.forEach(s=>{
+            if((s.field||'').toLowerCase()==='do_sang_analog') lightSeries = s.data || [];
+          });
+          // Latest value
+          const lastLight = [...lightSeries].reverse().find(p=>p[1]!==null);
+          if(lastLight) document.getElementById('latest-light').textContent = Number(lastLight[1]).toFixed(0);
+          renderTimeChart('lightChart','Độ sáng (0-4095)', lightSeries, '#ffa502');
+       })
+       .catch(()=>{
+          renderTimeChart('lightChart','Độ sáng (0-4095)', [], '#ffa502');
+       });
+    } else {
+      renderTimeChart('lightChart','Độ sáng (0-4095)', [], '#ffa502');
+    }
+
+    // Fetch operating time for switches
+    const deviceIdsParam = SWITCH_DEVICE_IDS.join(',');
+    fetch(`/api/data-logs/devices/operating-time?deviceIds=${deviceIdsParam}&startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}`)
+      .then(r=>r.ok?r.json():[])
+      .then(results=>{
+        const labels = results.map(d=>d.deviceName||`Thiết bị ${d.deviceId}`);
+        const series = results.map(d=>d.totalOnHours||0);
+        const total = series.reduce((a,b)=>a+b,0);
+        document.getElementById('total-on-hours').textContent = total.toFixed(2);
+        renderDonut('switchDonut', labels, series);
+      })
+      .catch(()=>{
+        renderDonut('switchDonut', [], []);
+      });
+  }
 
   // Charts
   function renderTimeChart(elId, name, seriesData, color){
+    // Destroy existing chart if exists
+    if (elId === 'tempChart' && tempChart) {
+      tempChart.destroy();
+    } else if (elId === 'humChart' && humChart) {
+      humChart.destroy();
+    } else if (elId === 'lightChart' && lightChart) {
+      lightChart.destroy();
+    }
+    
+    // Lấy khoảng thời gian từ date pickers
+    const startTimeInput = document.getElementById('startTime').value;
+    const endTimeInput = document.getElementById('endTime').value;
+    const startMs = startTimeInput ? new Date(startTimeInput).getTime() : null;
+    const endMs = endTimeInput ? new Date(endTimeInput).getTime() : null;
+    
     const options = {
-      chart: { type: 'line', height: 320, toolbar: {show:false}},
+      chart: { 
+        type: 'line', 
+        height: 320, 
+        toolbar: {show:false},
+        animations: {
+          enabled: true,
+          speed: 800
+        }
+      },
       stroke: { curve: 'straight', width: 2 },
       series: [{ name, data: seriesData }],
-      xaxis: { type: 'datetime', labels: { datetimeUTC: false } },
-      yaxis: { decimalsInFloat: 1 },
+      xaxis: { 
+        type: 'datetime',
+        labels: { 
+          datetimeUTC: false,
+          format: 'HH:mm'
+        },
+        // Thiết lập min/max để hiển thị đúng khoảng thời gian
+        min: startMs,
+        max: endMs
+      },
+      yaxis: { 
+        decimalsInFloat: 1,
+        labels: {
+          formatter: function(value) {
+            return value != null ? value.toFixed(1) : '';
+          },
+          style: {
+            fontSize: '13px',
+            fontWeight: 500
+          },
+          offsetX: -10,   // Đẩy số ra ngoài để hiển thị đủ
+          minWidth: 60    // Tăng không gian cho số
+        },
+        forceNiceScale: true,
+        tickAmount: 6  // Hiển thị 6 mốc trên trục Y
+      },
+      grid: {
+        borderColor: '#e7e7e7',
+        strokeDashArray: 3,
+        padding: {
+          top: 10,
+          right: 15,
+          bottom: 10,
+          left: 25  // Tăng padding trái để số hiển thị đủ
+        }
+      },
       colors: [color],
-      noData: { text: 'Không có dữ liệu' }
+      noData: { text: 'Không có dữ liệu' },
+      tooltip: {
+        x: {
+          format: 'dd/MM/yyyy HH:mm:ss'
+        }
+      }
     };
     const chart = new ApexCharts(document.querySelector('#'+elId), options);
     chart.render();
+    
+    // Store chart reference
+    if (elId === 'tempChart') tempChart = chart;
+    else if (elId === 'humChart') humChart = chart;
+    else if (elId === 'lightChart') lightChart = chart;
   }
+  
   function renderDonut(elId, labels, data){
+    // Destroy existing chart if exists
+    if (switchDonutChart) {
+      switchDonutChart.destroy();
+    }
+    
     const options = {
       chart: { type: 'donut', height: 340 },
       labels: labels,
@@ -148,6 +960,7 @@
     };
     const chart = new ApexCharts(document.querySelector('#'+elId), options);
     chart.render();
+    switchDonutChart = chart;
   }
 })();
 </script>

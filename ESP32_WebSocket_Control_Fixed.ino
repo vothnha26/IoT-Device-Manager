@@ -18,6 +18,8 @@ const char* HTTP_HOST = "http://10.21.39.39:8080";
 const int LED1_PIN = 2;   // GPIO2 cho Device ID 2
 const int LED2_PIN = 4;   // GPIO4 cho Device ID 3
 const int DHT_PIN = 15;   // GPIO15 cho DHT11 (Device ID 4)
+const int DO_PIN = 32;    // GPIO32 cho Light Sensor Digital Out (Device ID 18)
+const int AO_PIN = 34;    // GPIO34 cho Light Sensor Analog Out (Device ID 18)
 const bool LED_ACTIVE_HIGH = true;
 
 // ====== DHT11 Setup ======
@@ -191,11 +193,16 @@ void setup() {
   setLed(LED1_PIN, false);
   setLed(LED2_PIN, false);
   
+  // Khởi tạo Light Sensor pins
+  pinMode(DO_PIN, INPUT);   // Digital output từ cảm biến
+  pinMode(AO_PIN, INPUT);   // Analog output từ cảm biến
+  
   // Khởi tạo DHT11
   dht.begin();
   
   Serial.printf("📌 Device 2 → GPIO%d, Device 3 → GPIO%d\n", LED1_PIN, LED2_PIN);
-  Serial.printf("🌡️  DHT11 Sensor (Device 4) → GPIO%d\n\n", DHT_PIN);
+  Serial.printf("🌡️  DHT11 Sensor (Device 4) → GPIO%d\n", DHT_PIN);
+  Serial.printf("💡 Light Sensor (Device 18) → DO:GPIO%d, AO:GPIO%d\n\n", DO_PIN, AO_PIN);
 
   connectWiFi();
   Serial.println();
@@ -236,5 +243,19 @@ void loop() {
     sendSensorData(4, "nhiet_do", temperature);
     delay(200);  // Chờ ngắn giữa 2 request
     sendSensorData(4, "do_am", humidity);
+    
+    // Đọc dữ liệu từ Light Sensor
+    int digitalValue = digitalRead(DO_PIN);  // 0 = sáng, 1 = tối
+    int analogValue = analogRead(AO_PIN);    // 0-4095 (12-bit ADC)
+    
+    Serial.println("\n💡 Light Sensor Reading:");
+    Serial.printf("   Digital: %d (%s)\n", digitalValue, digitalValue == 0 ? "Bright" : "Dark");
+    Serial.printf("   Analog: %d (0-4095)\n", analogValue);
+    
+    // Gửi dữ liệu lên server (Device ID 18)
+    delay(200);
+    sendSensorData(18, "do_sang_digital", digitalValue);
+    delay(200);
+    sendSensorData(18, "do_sang_analog", analogValue);
   }
 }

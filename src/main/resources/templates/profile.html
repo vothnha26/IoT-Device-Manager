@@ -212,6 +212,55 @@
             font-size: 18px;
             margin-right: 8px;
         }
+
+        .backup-action-card {
+            background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+            border: 2px solid #e3e6f0;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .backup-action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(78, 115, 223, 0.15);
+            border-color: #4e73df;
+        }
+
+        .backup-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 32px;
+            color: white;
+        }
+
+        .backup-action-card h6 {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .backup-action-card .form-control {
+            border-radius: 8px;
+            border: 2px solid #e3e6f0;
+        }
+
+        .backup-action-card .form-control:focus {
+            border-color: #4e73df;
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+
+        #restoreMessage {
+            font-size: 14px;
+            font-weight: 500;
+        }
         
         .action-btn {
             padding: 12px 24px;
@@ -708,6 +757,16 @@
                         </div>
                     </div>
                     </div>
+                    
+                    <!-- Upgrade Package Button -->
+                    <div class="card-footer bg-light p-3 text-center">
+                        <a th:href="@{/payment}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-arrow-up-circle"></i> Nâng cấp gói
+                        </a>
+                        <p class="text-muted mb-0 mt-2 small">
+                            <i class="bi bi-info-circle"></i> Nâng cấp để mở rộng giới hạn thiết bị, khu vực và tính năng
+                        </p>
+                    </div>
 
                     </div>
                 </div>
@@ -718,12 +777,144 @@
                         <div class="alert alert-warning mb-0">
                             <i class="bi bi-exclamation-triangle"></i>
                             <strong>Chưa có gói cước!</strong>
-                            <p class="mb-0 mt-2">Bạn chưa đăng ký gói cước nào. Vui lòng liên hệ quản trị viên để đăng ký gói phù hợp.</p>
+                            <p class="mb-0 mt-2">Bạn chưa đăng ký gói cước nào. Vui lòng đăng ký gói phù hợp để sử dụng hệ thống.</p>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light p-3 text-center">
+                        <a th:href="@{/payment}" class="btn btn-success btn-lg">
+                            <i class="bi bi-box-seam"></i> Đăng ký gói cước
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Row 3: Payment History -->
+        <div class="row g-4 mt-2" th:if="${paymentHistory != null && !paymentHistory.isEmpty()}">
+            <div class="col-12">
+                <div class="info-card fade-in delay-2">
+                    <div class="card-header-custom">
+                        <h6><i class="bi bi-credit-card"></i> Lịch sử thanh toán</h6>
+                    </div>
+                    <div class="card-body-custom">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Mã GD</th>
+                                        <th>Gói cước</th>
+                                        <th>Số tiền</th>
+                                        <th>Ngày thanh toán</th>
+                                        <th>Phương thức</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="payment : ${paymentHistory}">
+                                        <td><code th:text="${payment.maThanhToan}">TT001</code></td>
+                                        <td>
+                                            <strong th:text="${payment.dangKyGoi?.goiCuoc?.tenGoi}">Gói Pro</strong>
+                                        </td>
+                                        <td>
+                                            <span class="text-primary fw-bold" 
+                                                  th:text="${#numbers.formatDecimal(payment.soTien, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                                                100,000 VNĐ
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${payment.ngayThanhToan != null}" 
+                                                  th:text="${#temporals.format(payment.ngayThanhToan, 'dd/MM/yyyy HH:mm')}">
+                                                29/10/2025 14:30
+                                            </span>
+                                            <span th:if="${payment.ngayThanhToan == null}" class="text-muted">
+                                                <i>Chưa thanh toán</i>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${payment.phuongThuc != null}" class="badge bg-info" th:text="${payment.phuongThuc}">
+                                                Banking
+                                            </span>
+                                            <span th:if="${payment.phuongThuc == null}" class="badge bg-secondary">
+                                                Chưa xác định
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${payment.trangThai == 'DA_THANH_TOAN'} ? 'bg-success' : 
+                                                                 (${payment.trangThai == 'PENDING'} ? 'bg-warning text-dark' : 'bg-danger')"
+                                                  th:text="${payment.trangThai == 'DA_THANH_TOAN'} ? 'Thành công' : 
+                                                           (${payment.trangThai == 'PENDING'} ? 'Đang xử lý' : 'Thất bại')">
+                                                Thành công
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Row 4: Backup & Restore -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <div class="info-card fade-in delay-3">
+                    <div class="card-header-custom">
+                        <h6><i class="bi bi-cloud-arrow-down"></i> Sao lưu & Khôi phục dữ liệu</h6>
+                    </div>
+                    <div class="card-body-custom">
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Tính năng này cho phép bạn tải xuống bản sao lưu các dự án và khu vực của mình, 
+                            hoặc khôi phục từ file backup đã lưu trước đó.
+                        </div>
+                        <div class="row g-3">
+                            <!-- Backup Card -->
+                            <div class="col-md-6">
+                                <div class="backup-action-card">
+                                    <div class="backup-icon bg-primary">
+                                        <i class="bi bi-cloud-download"></i>
+                                    </div>
+                                    <h6 class="mt-3">Sao lưu dữ liệu</h6>
+                                    <p class="text-muted small">
+                                        Tải xuống file JSON chứa toàn bộ dự án và khu vực của bạn
+                                    </p>
+                                    <button id="exportButton" class="btn btn-primary w-100">
+                                        <i class="bi bi-cloud-download me-2"></i> Tải xuống bản sao lưu
+                                    </button>
+                                    <div id="exportMessage" class="mt-2"></div>
+                                </div>
+                            </div>
+
+                            <!-- Restore Card -->
+                            <div class="col-md-6">
+                                <div class="backup-action-card">
+                                    <div class="backup-icon bg-success">
+                                        <i class="bi bi-cloud-upload"></i>
+                                    </div>
+                                    <h6 class="mt-3">Khôi phục dữ liệu</h6>
+                                    <p class="text-muted small">
+                                        Upload file backup để khôi phục dữ liệu (các dự án sẽ được thêm với hậu tố "(Restored)")
+                                    </p>
+                                    <form id="restoreForm" enctype="multipart/form-data">
+                                        <div class="mb-3">
+                                            <input type="file" class="form-control" id="backupFile" 
+                                                   accept=".json" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="bi bi-cloud-upload me-2"></i> Khôi phục dữ liệu
+                                        </button>
+                                    </form>
+                                    <div id="restoreMessage" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         </div>
     </div>
 
@@ -888,6 +1079,157 @@
 
         // Scroll to top when modal opens
         document.addEventListener('DOMContentLoaded', function() {
+            // Existing modal listeners...
+            
+            // Handle restore form submission
+            const restoreForm = document.getElementById('restoreForm');
+            if (restoreForm) {
+                // Check if listener already attached
+                if (restoreForm.dataset.listenerAttached === 'true') {
+                    console.log('Restore form listener already attached, skipping');
+                    return;
+                }
+                restoreForm.dataset.listenerAttached = 'true';
+                
+                let isRestoring = false; // Prevent double submit
+                
+                restoreForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    console.log('=== RESTORE FORM SUBMIT ===');
+                    console.log('isRestoring flag:', isRestoring);
+                    
+                    // Prevent double submit
+                    if (isRestoring) {
+                        console.log('Already restoring, ignoring duplicate request');
+                        return;
+                    }
+                    
+                    const fileInput = document.getElementById('backupFile');
+                    const messageDiv = document.getElementById('restoreMessage');
+                    const submitButton = restoreForm.querySelector('button[type="submit"]');
+                    const file = fileInput.files[0];
+                    
+                    if (!file) {
+                        messageDiv.innerHTML = '<div class="alert alert-warning">Vui lòng chọn file backup</div>';
+                        return;
+                    }
+                    
+                    // Set flag and disable button
+                    isRestoring = true;
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Đang khôi phục...';
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    messageDiv.innerHTML = '<div class="alert alert-info"><i class="spinner-border spinner-border-sm me-2"></i>Đang khôi phục dữ liệu...</div>';
+                    
+                    try {
+                        const response = await fetch('/api/backup/import', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            messageDiv.innerHTML = '<div class="alert alert-success">' +
+                                '<i class="bi bi-check-circle me-2"></i>' + result.message +
+                                '</div>';
+                            fileInput.value = '';
+                            
+                            // Reload page after 2 seconds
+                            setTimeout(() => {
+                                location.reload();
+                            }, 2000);
+                        } else {
+                            messageDiv.innerHTML = '<div class="alert alert-danger">' +
+                                '<i class="bi bi-exclamation-triangle me-2"></i>' + result.message +
+                                '</div>';
+                            
+                            // Re-enable button on error
+                            isRestoring = false;
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.innerHTML = '<i class="bi bi-cloud-upload me-2"></i> Khôi phục dữ liệu';
+                            }
+                        }
+                    } catch (error) {
+                        messageDiv.innerHTML = '<div class="alert alert-danger">' +
+                            '<i class="bi bi-exclamation-triangle me-2"></i>Lỗi kết nối: ' + error.message +
+                            '</div>';
+                        
+                        // Re-enable button on error
+                        isRestoring = false;
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = '<i class="bi bi-cloud-upload me-2"></i> Khôi phục dữ liệu';
+                        }
+                    }
+                });
+            }
+            
+            // Handle export button
+            const exportButton = document.getElementById('exportButton');
+            if (exportButton) {
+                exportButton.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    
+                    const messageDiv = document.getElementById('exportMessage');
+                    messageDiv.innerHTML = '<div class="alert alert-info"><i class="spinner-border spinner-border-sm me-2"></i>Đang tạo file backup...</div>';
+                    
+                    try {
+                        const response = await fetch('/api/backup/export', {
+                            method: 'GET',
+                            credentials: 'same-origin' // Gửi cookie session
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Không thể tạo backup: ' + response.statusText);
+                        }
+                        
+                        // Get filename from Content-Disposition header
+                        const contentDisposition = response.headers.get('Content-Disposition');
+                        let filename = 'backup_du_an.json';
+                        if (contentDisposition) {
+                            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                            if (filenameMatch) {
+                                filename = filenameMatch[1];
+                            }
+                        }
+                        
+                        // Download the file
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        messageDiv.innerHTML = '<div class="alert alert-success">' +
+                            '<i class="bi bi-check-circle me-2"></i>Tải xuống backup thành công!' +
+                            '</div>';
+                        
+                        // Clear message after 3 seconds
+                        setTimeout(() => {
+                            messageDiv.innerHTML = '';
+                        }, 3000);
+                        
+                    } catch (error) {
+                        messageDiv.innerHTML = '<div class="alert alert-danger">' +
+                            '<i class="bi bi-exclamation-triangle me-2"></i>Lỗi: ' + error.message +
+                            '</div>';
+                    }
+                });
+            }
+            
+            // Existing modal listeners
             const modals = ['editProfileModal', 'changePasswordModal'];
             
             modals.forEach(function(modalId) {

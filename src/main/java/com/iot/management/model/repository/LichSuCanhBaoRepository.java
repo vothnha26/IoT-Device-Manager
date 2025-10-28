@@ -15,6 +15,9 @@ public interface LichSuCanhBaoRepository extends JpaRepository<LichSuCanhBao, Lo
     // Lấy log theo luật (có phân trang)
     Page<LichSuCanhBao> findByLuat_MaLuatOrderByThoiGianDesc(Long maLuat, Pageable pageable);
     
+    // Xóa tất cả log của một luật (dùng khi xóa luật)
+    void deleteByLuat_MaLuat(Long maLuat);
+    
     // Lấy log theo thiết bị
     List<LichSuCanhBao> findByThietBi_MaThietBiOrderByThoiGianDesc(Long maThietBi);
     

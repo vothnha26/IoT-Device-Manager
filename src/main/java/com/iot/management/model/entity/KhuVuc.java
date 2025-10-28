@@ -33,6 +33,12 @@ public class KhuVuc {
     @OneToMany(mappedBy = "khuVuc")
     private Set<ThietBi> thietBis;
 
+    @OneToMany(mappedBy = "khuVuc", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PhanQuyenKhuVuc> phanQuyenKhuVucs;
+
+    @OneToMany(mappedBy = "khuVuc", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ThongBao> thongBaos;
+
     @Column(name = "mo_ta", length = 500)
     private String moTa;
     
@@ -97,5 +103,21 @@ public class KhuVuc {
 
     public void setMoTa(String moTa) {
         this.moTa = moTa;
+    }
+
+    public Set<PhanQuyenKhuVuc> getPhanQuyenKhuVucs() {
+        return phanQuyenKhuVucs;
+    }
+
+    public void setPhanQuyenKhuVucs(Set<PhanQuyenKhuVuc> phanQuyenKhuVucs) {
+        this.phanQuyenKhuVucs = phanQuyenKhuVucs;
+    }
+
+    public Set<ThongBao> getThongBaos() {
+        return thongBaos;
+    }
+
+    public void setThongBaos(Set<ThongBao> thongBaos) {
+        this.thongBaos = thongBaos;
     }
 }

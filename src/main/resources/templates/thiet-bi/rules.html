@@ -1,31 +1,34 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="fragments/layout :: layout(~{::title}, ~{::main}, ~{::script})">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <title>Quản lý Luật - [[${thietBi.tenThietBi}]]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script th:src="@{/js/sockjs.min.js}"></script>
-    <script th:src="@{/js/stomp.min.js}"></script>
+    <title>Quản lý Luật - IoT Manager</title>
+</head>
+
+<body>
+<main>
     <style>
-        body { background: #f5f5f5; padding: 20px; }
+        .rules-page {
+            padding: 20px 0;
+            min-height: calc(100vh - 250px);
+        }
         .rule-card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 5px; border-left: 4px solid #007bff; }
         .rule-card.inactive { opacity: 0.6; border-left-color: #ccc; }
         .condition-row { background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
         .logic-operator { background: #e9ecef; padding: 5px 15px; border-radius: 3px; margin: 5px 0; display: inline-block; }
         .expression-preview { background: #e7f3ff; border: 1px solid #b8daff; padding: 10px; border-radius: 5px; margin-top: 10px; font-family: 'Courier New', monospace; }
     </style>
-</head>
-<body>
-    <div class="container">
+    <div class="rules-page">
+        <div class="container">
         <div class="d-flex justify-content-between mb-4">
             <div>
                 <h3>⚙️ Quản Lý Luật Tự Động</h3>
                 <p class="text-muted">Thiết bị: <strong th:text="${thietBi.tenThietBi}">-</strong></p>
             </div>
             <div>
-                <a th:href="@{/thiet-bi/khu-vuc/{id}(id=${thietBi.khuVuc.maKhuVuc})}" class="btn btn-secondary">← Quay lại</a>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ruleModal" onclick="openCreateModal()">+ Tạo Luật</button>
             </div>
         </div>
@@ -189,7 +192,11 @@
                 options.headers = {};
             }
             options.headers[csrfHeader] = csrfToken;
-            options.headers['Content-Type'] = 'application/json';
+            
+            // Chỉ set Content-Type cho POST/PUT, không set cho DELETE
+            if (options.method === 'POST' || options.method === 'PUT') {
+                options.headers['Content-Type'] = 'application/json';
+            }
             
             // Đảm bảo gửi credentials (cookies) để hỗ trợ session-based auth
             options.credentials = 'same-origin';
@@ -348,12 +355,56 @@
                 document.getElementById('modalTitle').textContent = 'Sửa Luật';
                 document.getElementById('ruleId').value = rule.maLuat;
                 document.getElementById('expressionSection').style.display = 'block';
-                // Parse biểu thức thành các điều kiện (đơn giản hóa): chỉ show toàn bộ expr để chỉnh
+                
+                // Parse biểu thức thành các điều kiện
                 conditions = [];
                 conditionCounter = 0;
-                addCondition();
-                document.getElementById('bieuThucLogic').value = rule.bieuThucLogic || '';
-                document.getElementById('expressionPreview').textContent = rule.bieuThucLogic || '-';
+                
+                const expr = rule.bieuThucLogic || '';
+                if (expr.trim()) {
+                    // Parse expression: split by AND/OR operators
+                    const parts = expr.split(/\s+(AND|OR)\s+/i);
+                    
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i].trim();
+                        
+                        // Skip logic operators (they're in odd indices)
+                        if (part === 'AND' || part === 'OR') continue;
+                        
+                        // Parse condition: field operator value
+                        const match = part.match(/^(\w+)\s*(>=|<=|!=|>|<|=)\s*(.+)$/);
+                        if (match) {
+                            const [, field, operator, value] = match;
+                            const id = conditionCounter++;
+                            
+                            // Find logic operator (it's before this condition in parts array)
+                            let logicOp = null;
+                            if (conditions.length > 0) {
+                                // Get the operator that comes before this condition
+                                const opIndex = parts.indexOf(part) - 1;
+                                if (opIndex >= 0 && (parts[opIndex] === 'AND' || parts[opIndex] === 'OR')) {
+                                    logicOp = parts[opIndex];
+                                }
+                            }
+                            
+                            conditions.push({
+                                id: id,
+                                field: field.trim(),
+                                operator: operator,
+                                value: value.trim(),
+                                logicOperator: logicOp
+                            });
+                        }
+                    }
+                }
+                
+                // Nếu không parse được gì, add 1 điều kiện rỗng
+                if (conditions.length === 0) {
+                    addCondition();
+                } else {
+                    renderConditions();
+                }
+                
                 document.getElementById('thoiGianDuyTriDieuKien').value = rule.thoiGianDuyTriDieuKien || 0;
                 document.getElementById('lenhHanhDong').value = rule.lenhHanhDong || 'hoat_dong';
                 document.getElementById('kichHoat').checked = rule.kichHoat;
@@ -639,5 +690,10 @@
             };
         }
     </script>
+    </div>
+</main>
+
+<script th:inline="javascript">
+</script>
 </body>
 </html>

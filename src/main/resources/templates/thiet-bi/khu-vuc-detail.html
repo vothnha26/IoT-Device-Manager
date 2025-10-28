@@ -495,8 +495,16 @@
                 if (response.ok) {
                     location.reload();
                 } else {
-                    alert('Có lỗi xảy ra khi thêm thiết bị');
+                    return response.json().then(errorData => {
+                        // Display specific error message from backend
+                        const errorMessage = errorData.message || 'Có lỗi xảy ra khi thêm thiết bị';
+                        alert(errorMessage);
+                    });
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi thêm thiết bị');
             });
         }
 

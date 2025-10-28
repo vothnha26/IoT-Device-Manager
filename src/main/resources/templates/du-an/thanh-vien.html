@@ -205,13 +205,23 @@
                     <h6 class="mb-3">
                         <i class="bi bi-geo-alt me-2"></i>Quyền truy cập khu vực
                     </h6>
+                    
+                    <!-- Tìm kiếm khu vực -->
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="areaSearchInput" 
+                                   placeholder="Tìm kiếm khu vực theo tên...">
+                        </div>
+                    </div>
+                    
                     <div class="mb-4" id="areaPermissionsContainer">
                         <div class="list-group" id="areaPermissionsList">
                             <!-- Will be populated by JavaScript -->
                         </div>
                         <div class="text-center text-muted py-3" id="noAreasMessage" style="display: none;">
                             <i class="bi bi-inbox fs-4"></i>
-                            <p class="mb-0 mt-2">Chưa có khu vực nào trong dự án</p>
+                            <p class="mb-0 mt-2">Không tìm thấy khu vực nào</p>
                         </div>
                     </div>
 
@@ -471,13 +481,14 @@
                 
                 if (data.areas && data.areas.length > 0) {
                     areasList.innerHTML = data.areas.map(area => `
-                        <div class="list-group-item permission-item d-flex align-items-center justify-content-between">
+                        <div class="list-group-item permission-item d-flex align-items-center justify-content-between" 
+                             data-area-name="${area.tenKhuVuc.toLowerCase()}">
                             <div class="d-flex align-items-center">
                                 <input type="checkbox" class="form-check-input permission-checkbox me-3" 
                                        id="area_${area.maKhuVuc}" 
                                        ${area.hasPermission ? 'checked' : ''}
                                        ${area.inheritedFromProject ? 'disabled' : ''}
-                                       onchange="toggleAreaRole(${area.maKhuVuc}, this.checked)">
+                                       onchange="toggleAreaPermissions(${area.maKhuVuc}, this.checked)">
                                 <label for="area_${area.maKhuVuc}" class="mb-0">
                                     <strong>${area.tenKhuVuc}</strong>
                                     ${area.inheritedFromProject ? '<span class="badge bg-info ms-2">Từ dự án</span>' : ''}
@@ -485,20 +496,39 @@
                                     <small class="text-muted">${area.moTa || 'Không có mô tả'}</small>
                                 </label>
                             </div>
-                            <select class="form-select form-select-sm role-select" 
-                                    id="areaRole_${area.maKhuVuc}" 
-                                    ${!area.hasPermission || area.inheritedFromProject ? 'disabled' : ''}
-                                    onchange="filterDevicesByArea()">
-                                <option value="XEM" ${area.vaiTro === 'XEM' ? 'selected' : ''}>
-                                    <i class="bi bi-eye"></i> Xem
-                                </option>
-                                <option value="QUAN_LY_KHU_VUC" ${area.vaiTro === 'QUAN_LY_KHU_VUC' ? 'selected' : ''}>
-                                    <i class="bi bi-gear"></i> Quản lý
-                                </option>
-                            </select>
+                            <div id="areaPerms_${area.maKhuVuc}" ${!area.hasPermission ? 'style="display:none;"' : ''}>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input area-view-checkbox" type="checkbox" 
+                                           id="areaView_${area.maKhuVuc}" 
+                                           ${area.vaiTro === 'XEM' || area.vaiTro === 'QUAN_LY_KHU_VUC' ? 'checked' : ''}
+                                           ${area.inheritedFromProject ? 'disabled' : ''}>
+                                    <label class="form-check-label" for="areaView_${area.maKhuVuc}">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input area-control-checkbox" type="checkbox" 
+                                           id="areaControl_${area.maKhuVuc}" 
+                                           ${area.vaiTro === 'QUAN_LY_KHU_VUC' ? 'checked' : ''}
+                                           ${area.inheritedFromProject ? 'disabled' : ''}
+                                           onchange="handleAreaControlCheckbox(${area.maKhuVuc}, this.checked)">
+                                    <label class="form-check-label" for="areaControl_${area.maKhuVuc}">
+                                        <i class="bi bi-sliders"></i> Điều khiển
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     `).join('');
                     noAreasMessage.style.display = 'none';
+                    
+                    // Gắn event listener cho tìm kiếm khu vực
+                    setTimeout(() => {
+                        const areaSearchInput = document.getElementById('areaSearchInput');
+                        if (areaSearchInput) {
+                            areaSearchInput.removeEventListener('input', filterAreas);
+                            areaSearchInput.addEventListener('input', filterAreas);
+                        }
+                    }, 100);
                 } else {
                     areasList.innerHTML = '';
                     noAreasMessage.style.display = 'block';
@@ -597,12 +627,46 @@
             }
         }
 
-        function toggleAreaRole(maKhuVuc, enabled) {
-            const roleSelect = document.getElementById(`areaRole_${maKhuVuc}`);
-            roleSelect.disabled = !enabled;
+        function toggleAreaPermissions(maKhuVuc, enabled) {
+            const permsDiv = document.getElementById(`areaPerms_${maKhuVuc}`);
+            permsDiv.style.display = enabled ? 'block' : 'none';
             
-            // Lọc thiết bị khi chọn/bỏ chọn khu vực
-            filterDevicesByArea();
+            if (!enabled) {
+                document.getElementById(`areaView_${maKhuVuc}`).checked = false;
+                document.getElementById(`areaControl_${maKhuVuc}`).checked = false;
+            }
+        }
+        
+        // Tìm kiếm khu vực
+        function filterAreas() {
+            const searchTerm = document.getElementById('areaSearchInput').value.toLowerCase();
+            const areaItems = document.querySelectorAll('#areaPermissionsList .permission-item');
+            const noAreasMessage = document.getElementById('noAreasMessage');
+            
+            let visibleCount = 0;
+            
+            areaItems.forEach(item => {
+                const areaName = item.dataset.areaName || '';
+                
+                if (!searchTerm || areaName.includes(searchTerm)) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            noAreasMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+        
+        // Xử lý khi tick "Điều khiển" ở khu vực thì tự động tick "Xem"
+        function handleAreaControlCheckbox(maKhuVuc, checked) {
+            if (checked) {
+                const viewCheckbox = document.getElementById(`areaView_${maKhuVuc}`);
+                if (viewCheckbox && !viewCheckbox.disabled) {
+                    viewCheckbox.checked = true;
+                }
+            }
         }
         
         function filterDevicesByArea() {
@@ -760,7 +824,15 @@
                 // Bỏ qua các checkbox bị disabled (quyền từ dự án)
                 if (checkbox.checked && !checkbox.disabled) {
                     const maKhuVuc = checkbox.id.replace('area_', '');
-                    const vaiTro = document.getElementById(`areaRole_${maKhuVuc}`).value;
+                    const coQuyenXem = document.getElementById(`areaView_${maKhuVuc}`).checked;
+                    const coQuyenDieuKhien = document.getElementById(`areaControl_${maKhuVuc}`).checked;
+                    
+                    // Xác định vai trò dựa trên checkbox
+                    let vaiTro = 'XEM'; // Mặc định chỉ xem
+                    if (coQuyenDieuKhien) {
+                        vaiTro = 'QUAN_LY_KHU_VUC'; // Nếu có điều khiển thì là quản lý
+                    }
+                    
                     areaPermissions.push({ maKhuVuc: parseInt(maKhuVuc), vaiTro });
                 }
             });

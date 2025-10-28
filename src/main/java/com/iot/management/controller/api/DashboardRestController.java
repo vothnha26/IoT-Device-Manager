@@ -40,6 +40,9 @@ public class DashboardRestController {
     private PhanQuyenDuAnRepository phanQuyenDuAnRepository;
 
     @Autowired
+    private DuAnRepository duAnRepository;
+
+    @Autowired
     private NguoiDungRepository nguoiDungRepository;
 
     @Autowired
@@ -61,7 +64,9 @@ public class DashboardRestController {
         List<ThietBi> devices = thietBiRepository.findByChuSoHuu_MaNguoiDung(user.getMaNguoiDung());
         
         long total = devices.size();
-        long active = devices.stream().filter(d -> "ONLINE".equalsIgnoreCase(d.getTrangThai())).count();
+        long active = devices.stream()
+                .filter(d -> d.getTrangThai() != null && "hoat_dong".equalsIgnoreCase(d.getTrangThai()))
+                .count();
         long offline = total - active;
 
         // Thống kê theo loại thiết bị
@@ -333,7 +338,8 @@ public class DashboardRestController {
      */
     @GetMapping("/users")
     public ResponseEntity<?> getUserStats(Authentication authentication) {
-        NguoiDung user = nguoiDungRepository.findByTenDangNhap(authentication.getName()).orElse(null);
+        // Lấy user hiện tại theo email (authentication name)
+        NguoiDung user = nguoiDungRepository.findByEmail(authentication.getName()).orElse(null);
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
@@ -348,24 +354,40 @@ public class DashboardRestController {
             userLimit = goiCuoc.getSlNguoiDungToiDa() != null ? goiCuoc.getSlNguoiDungToiDa() : 1;
         }
 
-        // Đếm số người dùng đã chia sẻ dự án
-        List<KhuVuc> areas = khuVucRepository.findByChuSoHuu_MaNguoiDung(user.getMaNguoiDung());
-        Set<Long> sharedUserIds = new HashSet<>();
+        // Lấy tất cả dự án mà user là chủ sở hữu
+        List<DuAn> ownedProjects = duAnRepository.findByNguoiDung(user);
         
-        for (KhuVuc area : areas) {
-            if (area.getDuAn() != null) {
-                List<PhanQuyenDuAn> permissions = phanQuyenDuAnRepository.findByDuAn(area.getDuAn());
-                sharedUserIds.addAll(permissions.stream()
-                        .map(p -> p.getNguoiDung().getMaNguoiDung())
-                        .filter(id -> !id.equals(user.getMaNguoiDung()))
-                        .collect(Collectors.toSet()));
+        // Lấy danh sách thành viên từ phân quyền dự án
+        List<Map<String, Object>> userHistory = new ArrayList<>();
+        
+        for (DuAn duAn : ownedProjects) {
+            List<PhanQuyenDuAn> permissions = phanQuyenDuAnRepository.findByDuAn(duAn);
+            
+            for (PhanQuyenDuAn pq : permissions) {
+                NguoiDung member = pq.getNguoiDung();
+                
+                // Bỏ qua chính user hiện tại (chủ sở hữu)
+                if (member.getMaNguoiDung().equals(user.getMaNguoiDung())) {
+                    continue;
+                }
+                
+                // Thêm thành viên vào danh sách
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("userId", member.getMaNguoiDung());
+                userData.put("username", member.getTenDangNhap());
+                userData.put("email", member.getEmail());
+                userData.put("role", pq.getVaiTro().getDescription());
+                userData.put("addedDate", pq.getNgayCapQuyen().toString());
+                userData.put("projectName", duAn.getTenDuAn());
+                userHistory.add(userData);
             }
         }
 
         Map<String, Object> result = new HashMap<>();
-        result.put("currentUsers", sharedUserIds.size());
+        result.put("currentUsers", userHistory.size());
         result.put("userLimit", userLimit);
-        result.put("sharedUsers", sharedUserIds.size());
+        result.put("sharedUsers", userHistory.size());
+        result.put("userHistory", userHistory);
 
         return ResponseEntity.ok(result);
     }

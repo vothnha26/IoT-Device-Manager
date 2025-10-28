@@ -2,6 +2,7 @@ package com.iot.management.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -162,9 +163,36 @@ public class SePayServiceImpl implements SePayService {
                 thanhToanRepository.save(thanhToan);
                 log.info("✅ ThanhToan saved successfully");
                 
-                // Kích hoạt gói cước: Update DangKyGoi từ PENDING → ACTIVE và set ngày kết thúc
-                log.info("🔄 Activating package: DangKyGoi {} from {} to ACTIVE", dk.getMaDangKy(), dk.getTrangThai());
+                // EXPIRE tất cả gói ACTIVE cũ của user trước khi kích hoạt gói mới
+                Long userId = dk.getNguoiDung().getMaNguoiDung();
+                log.info("🔍 Checking for existing ACTIVE packages for user {}", userId);
+                
+                List<DangKyGoi> activePackages = dangKyGoiRepository
+                    .findByTrangThai(DangKyGoi.TRANG_THAI_ACTIVE)
+                    .stream()
+                    .filter(d -> d.getNguoiDung().getMaNguoiDung().equals(userId))
+                    .filter(d -> !d.getMaDangKy().equals(dk.getMaDangKy())) // Không expire gói hiện tại
+                    .collect(java.util.stream.Collectors.toList());
+                
+                if (!activePackages.isEmpty()) {
+                    log.info("⚠️ Found {} existing ACTIVE package(s) for user {}, expiring them...", 
+                        activePackages.size(), userId);
+                    
+                    for (DangKyGoi oldPackage : activePackages) {
+                        log.info("🔄 Expiring old package: ID={}, Package={}", 
+                            oldPackage.getMaDangKy(), 
+                            oldPackage.getGoiCuoc().getTenGoi());
+                        oldPackage.setTrangThai("EXPIRED");
+                        oldPackage.setNgayKetThuc(LocalDateTime.now()); // Set end date to now
+                        dangKyGoiRepository.save(oldPackage);
+                    }
+                    log.info("✅ Expired {} old package(s)", activePackages.size());
+                }
+                
+                // Kích hoạt gói cước mới: Update DangKyGoi từ PENDING → ACTIVE và set ngày kết thúc
+                log.info("🔄 Activating new package: DangKyGoi {} from {} to ACTIVE", dk.getMaDangKy(), dk.getTrangThai());
                 dk.setTrangThai(DangKyGoi.TRANG_THAI_ACTIVE);
+                dk.setNgayBatDau(LocalDateTime.now());
                 dk.setNgayKetThuc(LocalDateTime.now().plusDays(30)); // 30 ngày
                 dangKyGoiRepository.save(dk);
                 log.info("✅ DangKyGoi activated successfully");

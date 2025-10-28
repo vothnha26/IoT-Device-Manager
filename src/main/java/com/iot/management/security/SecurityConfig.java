@@ -69,6 +69,8 @@ public class SecurityConfig {
                 // Allow SePay webhook to be called without authentication
                 .requestMatchers("/api/payments/webhook").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
+                // Allow unauthenticated users to view package selection page
+                .requestMatchers(HttpMethod.GET, "/payment").permitAll()
                 // Allow unauthenticated users to view the checkout page (GET)
                 .requestMatchers(HttpMethod.GET, "/payment/create-payment/**").permitAll()
                 // Allow unauthenticated redirect to SePay checkout

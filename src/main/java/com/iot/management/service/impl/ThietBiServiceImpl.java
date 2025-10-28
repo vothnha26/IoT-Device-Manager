@@ -141,10 +141,17 @@ public class ThietBiServiceImpl implements ThietBiService {
 
     @Override
     public void deleteDevice(Long deviceId) {
-        if (!thietBiRepository.existsById(deviceId)) {
-            throw new RuntimeException("Không tìm thấy thiết bị với ID: " + deviceId);
-        }
-        thietBiRepository.deleteById(deviceId);
+        ThietBi thietBi = thietBiRepository.findById(deviceId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thiết bị với ID: " + deviceId));
+        
+        logger.info("🗑️ Xóa thiết bị ID: {} - Cascade sẽ tự động xóa lịch trình và nhật ký dữ liệu", deviceId);
+        
+        // Cascade sẽ tự động xóa:
+        // - LichTrinh (cascade = CascadeType.ALL, orphanRemoval = true)
+        // - NhatKyDuLieu (cascade = CascadeType.ALL, orphanRemoval = true)
+        thietBiRepository.delete(thietBi);
+        
+        logger.info("✅ Đã xóa thiết bị ID: {} thành công", deviceId);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.iot.management.controller.ui;
 
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import com.iot.management.model.repository.DangKyGoiRepository;
 import com.iot.management.model.entity.DangKyGoi;
 import java.time.LocalDateTime;
 import com.iot.management.service.VietQRService;
+import java.util.List;
 
 @Controller
 @RequestMapping("/payment")
@@ -37,6 +39,31 @@ public class PaymentController {
         this.paymentService = paymentService;
         this.vietQRService = vietQRService;
         this.dangKyGoiRepository = dangKyGoiRepository;
+    }
+
+    // ================= DANH SÁCH GÓI CƯỚC =================
+    @GetMapping
+    public String showPackages(Model model, Authentication authentication) {
+        List<GoiCuoc> packages = goiCuocService.findAll();
+        model.addAttribute("packages", packages);
+        
+        // Lấy thông tin gói hiện tại nếu có
+        if (authentication != null && authentication.isAuthenticated()) {
+            SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+            Long maNguoiDung = securityUser.getMaNguoiDung();
+            var activePackageOpt = dangKyGoiRepository.findByNguoiDung_MaNguoiDungAndTrangThai(
+                maNguoiDung, DangKyGoi.TRANG_THAI_ACTIVE);
+            
+            if (activePackageOpt.isPresent()) {
+                DangKyGoi activePackage = activePackageOpt.get();
+                if (activePackage.getNgayKetThuc() != null && 
+                    activePackage.getNgayKetThuc().isAfter(LocalDateTime.now())) {
+                    model.addAttribute("currentPackage", activePackage.getGoiCuoc());
+                }
+            }
+        }
+        
+        return "payment/packages";
     }
 
     // ================= TẠO THANH TOÁN =================
@@ -82,13 +109,17 @@ public class PaymentController {
             throw new RuntimeException("Không lấy được ID người dùng từ session");
         }
 
-        // Nếu đã ACTIVE và còn hạn -> chuyển thẳng về profile
+        // Kiểm tra xem user đã có gói ACTIVE chưa
         var activeOpt = dangKyGoiRepository.findByNguoiDung_MaNguoiDungAndTrangThai(maNguoiDung, DangKyGoi.TRANG_THAI_ACTIVE);
         if (activeOpt.isPresent()) {
-            DangKyGoi dk = activeOpt.get();
-            if (dk.getNgayKetThuc() != null && dk.getNgayKetThuc().isAfter(LocalDateTime.now())) {
-                return "redirect:/profile";
+            DangKyGoi currentPackage = activeOpt.get();
+            // Nếu đang chọn gói giống với gói hiện tại -> về profile
+            if (currentPackage.getGoiCuoc().getMaGoiCuoc().equals(maGoiCuoc)) {
+                return "redirect:/profile?message=already_subscribed";
             }
+            // Nếu chọn gói khác -> cho phép upgrade/downgrade (gói cũ sẽ bị expire khi thanh toán thành công)
+            model.addAttribute("isUpgrade", true);
+            model.addAttribute("currentPackageName", currentPackage.getGoiCuoc().getTenGoi());
         }
         
         GoiCuoc goiCuoc = goiCuocService.findById(maGoiCuoc)

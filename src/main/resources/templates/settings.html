@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
+
+<head>
+    <title th:fragment="title">Cài đặt - IoT Manager</title>
+</head>
+
+<main th:fragment="main">
+    <style>
+        .settings-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px 15px;
+        }
+
+        .settings-header {
+            margin-bottom: 30px;
+        }
+
+        .settings-header h3 {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .settings-card h5 {
+            font-weight: 600;
+            color: #4e73df;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e3e6f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .settings-item-desc {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 12px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: not-allowed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .disabled-message {
+            display: inline-block;
+            margin-left: 12px;
+            font-size: 13px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .theme-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 2px solid #e3e6f0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: not-allowed;
+            opacity: 0.6;
+            transition: all 0.3s;
+        }
+
+        .theme-option:hover {
+            border-color: #ccc;
+        }
+
+        .theme-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .language-select {
+            max-width: 300px;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .alert-feature {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 12px;
+        }
+    </style>
+
+    <div class="settings-container">
+        <div class="settings-header">
+            <h3><i class="bi bi-gear-fill me-2"></i>Cài đặt</h3>
+            <p class="text-muted">Quản lý tùy chọn và cài đặt hệ thống của bạn</p>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i><span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-x-circle me-2"></i><span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <form id="settingsForm" method="post" th:action="@{/settings/update}">
+            <!-- CSRF Token -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <!-- Appearance Settings -->
+        <div class="settings-card">
+            <h5><i class="bi bi-palette"></i> Giao diện</h5>
+            
+            <div class="settings-item">
+                <div class="settings-item-title">Chế độ giao diện</div>
+                <div class="settings-item-desc">Chọn giao diện sáng hoặc tối cho hệ thống</div>
+                
+                <select class="form-select" name="uiTheme" style="max-width: 300px;">
+                    <option value="light" th:selected="${uiTheme == 'light'}">🌞 Chế độ sáng</option>
+                    <option value="dark" th:selected="${uiTheme == 'dark'}">🌙 Chế độ tối</option>
+                    <option value="auto" th:selected="${uiTheme == 'auto'}">🔄 Tự động</option>
+                </select>
+                <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle"></i> Chế độ tối đang được phát triển
+                </small>
+            </div>
+
+            <div class="settings-item">
+                <div class="settings-item-title">Ngôn ngữ hiển thị</div>
+                <div class="settings-item-desc">Chọn ngôn ngữ cho giao diện hệ thống</div>
+                
+                <select class="form-select language-select" name="uiLanguage" style="max-width: 300px; cursor: pointer; opacity: 1;">
+                    <option value="vi" th:selected="${uiLanguage == 'vi'}">🇻🇳 Tiếng Việt</option>
+                    <option value="en" th:selected="${uiLanguage == 'en'}">🇬🇧 English</option>
+                    <option value="ja" th:selected="${uiLanguage == 'ja'}">🇯🇵 日本語</option>
+                </select>
+                <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle"></i> Hiện tại chỉ hỗ trợ Tiếng Việt
+                </small>
+            </div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div class="settings-card">
+            <h5><i class="bi bi-bell"></i> Thông báo</h5>
+            
+            <div class="settings-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="settings-item-title">Thông báo Email</div>
+                        <div class="settings-item-desc">Nhận thông báo qua email khi có sự kiện quan trọng</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="notifEmailEnabled" value="true" 
+                               th:checked="${notifEmailEnabled}" style="cursor: pointer;">
+                        <span class="toggle-slider" style="cursor: pointer;"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="settings-item-title">Thông báo thiết bị</div>
+                        <div class="settings-item-desc">Nhận cảnh báo khi thiết bị có vấn đề hoặc ngoại lệ</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="notifDeviceEnabled" value="true" 
+                               th:checked="${notifDeviceEnabled}" style="cursor: pointer;">
+                        <span class="toggle-slider" style="cursor: pointer;"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="settings-item-title">Âm thanh thông báo</div>
+                        <div class="settings-item-desc">Phát âm thanh khi có thông báo mới</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="notifSoundEnabled" value="true" 
+                               th:checked="${notifSoundEnabled}" style="cursor: pointer;">
+                        <span class="toggle-slider" style="cursor: pointer;"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacy & Security -->
+        <div class="settings-card">
+            <h5><i class="bi bi-shield-check"></i> Bảo mật & Quyền riêng tư</h5>
+            
+            <div class="settings-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="settings-item-title">Xác thực 2 yếu tố (2FA)</div>
+                        <div class="settings-item-desc">Thêm lớp bảo mật bổ sung cho tài khoản của bạn</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="security2FAEnabled" value="true" 
+                               th:checked="${security2FAEnabled}" style="cursor: pointer;">
+                        <span class="toggle-slider" style="cursor: pointer;"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-item">
+                <div class="settings-item-title">Thời gian timeout phiên (phút)</div>
+                <div class="settings-item-desc">Tự động đăng xuất sau khoảng thời gian không hoạt động</div>
+                <div class="mt-2">
+                    <input type="number" class="form-control" name="securitySessionTimeout" 
+                           th:value="${securitySessionTimeout}" min="5" max="120" style="max-width: 200px;">
+                </div>
+            </div>
+
+            <div class="settings-item">
+                <div class="settings-item-title">Độ dài mật khẩu tối thiểu</div>
+                <div class="settings-item-desc">Số ký tự tối thiểu cho mật khẩu mới</div>
+                <div class="mt-2">
+                    <input type="number" class="form-control" name="securityPasswordMinLength" 
+                           th:value="${securityPasswordMinLength}" min="6" max="32" style="max-width: 200px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Data & Storage -->
+        <div class="settings-card">
+            <h5><i class="bi bi-database"></i> Dữ liệu & Lưu trữ</h5>
+            
+            <div class="settings-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="settings-item-title">Tự động sao lưu dữ liệu</div>
+                        <div class="settings-item-desc">Tự động sao lưu dữ liệu thiết bị định kỳ</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="dataBackupEnabled" value="true" 
+                               th:checked="${dataBackupEnabled}" style="cursor: pointer;">
+                        <span class="toggle-slider" style="cursor: pointer;"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-item">
+                <div class="settings-item-title">Khoảng thời gian sao lưu (giờ)</div>
+                <div class="settings-item-desc">Chu kỳ sao lưu dữ liệu tự động</div>
+                <div class="mt-2">
+                    <input type="number" class="form-control" name="dataBackupInterval" 
+                           th:value="${dataBackupInterval}" min="1" max="168" style="max-width: 200px;">
+                </div>
+            </div>
+
+            <div class="settings-item">
+                <div class="settings-item-title">Thời gian lưu trữ dữ liệu (ngày)</div>
+                <div class="settings-item-desc">Số ngày lưu trữ dữ liệu lịch sử</div>
+                <div class="mt-2">
+                    <input type="number" class="form-control" name="dataRetentionDays" 
+                           th:value="${dataRetentionDays}" min="7" max="365" style="max-width: 200px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- About -->
+        <div class="settings-card">
+            <h5><i class="bi bi-info-circle"></i> Thông tin hệ thống</h5>
+            
+            <div class="settings-item">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="settings-item-title">Tên ứng dụng</div>
+                        <div class="settings-item-desc" th:text="${appName}">IoT Device Manager</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="settings-item-title">Phiên bản</div>
+                        <div class="settings-item-desc" th:text="${appVersion}">v1.0.0</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="settings-item-title">Mô tả</div>
+                        <div class="settings-item-desc" th:text="${appDescription}">Hệ thống quản lý IoT</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-item">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="settings-item-title">Email hỗ trợ</div>
+                        <div class="settings-item-desc" th:text="${supportEmail}">support@iotmanager.com</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="settings-item-title">Số điện thoại</div>
+                        <div class="settings-item-desc" th:text="${supportPhone}">+84 123 456 789</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="d-flex justify-content-end gap-2 mt-4 mb-3">
+            <button type="reset" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Hủy bỏ
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Lưu cấu hình
+            </button>
+        </div>
+
+        </form>
+    </div>
+
+    <th:block th:fragment="scripts">
+        <script>
+            console.log('Settings page loaded - Configuration management enabled');
+        </script>
+    </th:block>
+</main>
+</html>

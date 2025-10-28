@@ -2,13 +2,15 @@ package com.iot.management.service.impl;
 
 import com.iot.management.model.dto.DashboardStatsDTO;
 import com.iot.management.model.dto.DeviceDTO;
+import com.iot.management.model.dto.PackageUsageDTO;
 import com.iot.management.model.dto.RoomDTO;
-import com.iot.management.model.entity.KhuVuc;
-import com.iot.management.model.entity.NhatKyDuLieu;
-import com.iot.management.model.entity.NhomThietBi;
-import com.iot.management.model.entity.ThietBi;
+import com.iot.management.model.entity.*;
+import com.iot.management.model.repository.DangKyGoiRepository;
+import com.iot.management.model.repository.DuAnRepository;
 import com.iot.management.model.repository.KhuVucRepository;
+import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.model.repository.NhatKyDuLieuRepository;
+import com.iot.management.model.repository.PhanQuyenDuAnRepository;
 import com.iot.management.model.repository.ThietBiRepository;
 import com.iot.management.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +18,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +35,18 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Autowired
     private NhatKyDuLieuRepository nhatKyDuLieuRepository;
+    
+    @Autowired
+    private DuAnRepository duAnRepository;
+    
+    @Autowired
+    private DangKyGoiRepository dangKyGoiRepository;
+    
+    @Autowired
+    private NguoiDungRepository nguoiDungRepository;
+    
+    @Autowired
+    private PhanQuyenDuAnRepository phanQuyenDuAnRepository;
 
     @Override
     public DashboardStatsDTO getDashboardStats(Long userId) {
@@ -57,8 +74,11 @@ public class DashboardServiceImpl implements DashboardService {
                 .count();
 
         // Đếm thiết bị online/offline
+        // Thiết bị được coi là "hoạt động" nếu có hoạt động trong 5 phút gần đây
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
         Long online = allDevices.stream()
-                .filter(d -> "ONLINE".equalsIgnoreCase(d.getTrangThai()))
+                .filter(d -> d.getLanHoatDongCuoi() != null && 
+                            d.getLanHoatDongCuoi().isAfter(fiveMinutesAgo))
                 .count();
         Long offline = totalThietBi - online;
 
@@ -207,5 +227,74 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         return device;
+    }
+
+    @Override
+    public PackageUsageDTO getPackageUsage(Long userId) {
+        // Lấy người dùng
+        NguoiDung nguoiDung = nguoiDungRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        
+        // Lấy gói cước hiện tại của user
+        DangKyGoi dangKyGoi = dangKyGoiRepository.findByNguoiDung_MaNguoiDungAndTrangThai(userId, "ACTIVE")
+                .orElse(null);
+        
+        if (dangKyGoi == null || dangKyGoi.getGoiCuoc() == null) {
+            // Nếu không có gói, trả về giá trị mặc định (gói free)
+            return new PackageUsageDTO(0, 10, 0, 5, 0, 1, 0, "Free");
+        }
+        
+        GoiCuoc goiCuoc = dangKyGoi.getGoiCuoc();
+        
+        // Đếm số thiết bị đang sử dụng (tất cả thiết bị của user trong tất cả dự án)
+        List<DuAn> duAns = duAnRepository.findByNguoiDung(nguoiDung);
+        int deviceUsed = 0;
+        int areaUsed = 0;
+        
+        // Đếm số người dùng duy nhất được phân quyền trong các dự án (bao gồm cả chủ dự án)
+        Set<Long> uniqueUsers = new HashSet<>();
+        uniqueUsers.add(userId); // Thêm chủ sở hữu vào danh sách
+        
+        for (DuAn duAn : duAns) {
+            // Đếm khu vực
+            areaUsed += duAn.getKhuVucs() != null ? duAn.getKhuVucs().size() : 0;
+            
+            // Đếm thiết bị trong tất cả khu vực
+            if (duAn.getKhuVucs() != null) {
+                for (KhuVuc khuVuc : duAn.getKhuVucs()) {
+                    deviceUsed += khuVuc.getThietBis() != null ? khuVuc.getThietBis().size() : 0;
+                }
+            }
+            
+            // Đếm số người dùng được phân quyền (bao gồm tất cả thành viên)
+            List<PhanQuyenDuAn> phanQuyens = phanQuyenDuAnRepository.findByDuAn(duAn);
+            for (PhanQuyenDuAn pq : phanQuyens) {
+                if (pq.getNguoiDung() != null) {
+                    uniqueUsers.add(pq.getNguoiDung().getMaNguoiDung());
+                }
+            }
+        }
+        
+        int userUsed = uniqueUsers.size();
+        
+        // Tính số ngày còn lại
+        long daysLeft = 0;
+        if (dangKyGoi.getNgayKetThuc() != null) {
+            daysLeft = ChronoUnit.DAYS.between(LocalDateTime.now(), dangKyGoi.getNgayKetThuc());
+            if (daysLeft < 0) {
+                daysLeft = 0;
+            }
+        }
+        
+        return new PackageUsageDTO(
+            deviceUsed, 
+            goiCuoc.getSlThietBiToiDa(), 
+            areaUsed, 
+            goiCuoc.getSlKhuVucToiDa(),
+            userUsed,
+            goiCuoc.getSlNguoiDungToiDa() != null ? goiCuoc.getSlNguoiDungToiDa() : 1,
+            daysLeft, 
+            goiCuoc.getTenGoi()
+        );
     }
 }

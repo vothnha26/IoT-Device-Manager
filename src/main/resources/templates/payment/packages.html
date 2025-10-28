@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chọn gói cước - IoT Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .pricing-section {
+            padding: 60px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .section-title p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+        }
+
+        .pricing-card.featured {
+            border: 3px solid #667eea;
+        }
+
+        .pricing-card .badge-featured {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .pricing-card .package-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .pricing-card .package-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .pricing-card .package-price small {
+            font-size: 1rem;
+            color: #6c757d;
+            font-weight: 400;
+        }
+
+        .pricing-card .package-duration {
+            color: #6c757d;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .pricing-card .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .pricing-card .features-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+
+        .pricing-card .features-list li:last-child {
+            border-bottom: none;
+        }
+
+        .pricing-card .features-list li i {
+            color: #667eea;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        .pricing-card .btn-select {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card .btn-select:not(.btn-success) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .pricing-card .btn-select:not(.btn-success):hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .current-package-badge {
+            background: #28a745;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .btn-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: #f8f9fa;
+            color: #764ba2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pricing-section">
+        <div class="container">
+            <a th:href="@{/profile}" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Quay lại Profile
+            </a>
+
+            <div class="section-title">
+                <h2>Chọn gói cước phù hợp</h2>
+                <p>Nâng cấp để mở khóa nhiều tính năng và giới hạn cao hơn</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4 col-md-6" th:each="goi : ${packages}">
+                    <div class="pricing-card" 
+                         th:classappend="${currentPackage != null and currentPackage.maGoiCuoc == goi.maGoiCuoc} ? 'featured' : ''">
+                        <span class="badge-featured" 
+                              th:if="${#strings.contains(goi.tenGoi, 'Pro') or #strings.contains(goi.tenGoi, 'Premium')}">
+                            Phổ biến
+                        </span>
+                        
+                        <h3 class="package-name" th:text="${goi.tenGoi}">Gói cơ bản</h3>
+                        
+                        <div class="package-price">
+                            <span th:text="${#numbers.formatDecimal(goi.giaTien, 0, 'COMMA', 0, 'POINT')}">100,000</span>
+                            <small>VNĐ</small>
+                        </div>
+                        
+                        <p class="package-duration">
+                            <i class="bi bi-clock"></i> 
+                            <span th:text="${goi.soNgayLuuDuLieu} + ' ngày lưu dữ liệu'">30 ngày lưu dữ liệu</span>
+                        </p>
+
+                        <ul class="features-list">
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span th:text="'Tối đa ' + ${goi.slThietBiToiDa} + ' thiết bị'">Tối đa 10 thiết bị</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span th:text="'Tối đa ' + ${goi.slKhuVucToiDa} + ' khu vực'">Tối đa 5 khu vực</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span th:text="'Tối đa ' + ${goi.slNguoiDungToiDa} + ' người dùng'">Tối đa 3 người dùng</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span th:text="'Tối đa ' + ${goi.slLuatToiDa} + ' luật tự động'">Tối đa 20 luật</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span th:text="'Lưu trữ ' + ${goi.soNgayLuuDuLieu} + ' ngày'">Lưu trữ 30 ngày</span>
+                            </li>
+                        </ul>
+
+                        <div th:if="${currentPackage != null and currentPackage.maGoiCuoc == goi.maGoiCuoc}">
+                            <span class="current-package-badge">
+                                <i class="bi bi-check-circle"></i> Gói hiện tại
+                            </span>
+                        </div>
+
+                        <!-- Chỉ hiển thị nút chọn nếu: không có gói hiện tại HOẶC gói mới đắt hơn/bằng gói hiện tại -->
+                        <form th:if="${(currentPackage == null or currentPackage.maGoiCuoc != goi.maGoiCuoc) and 
+                                       (currentPackage == null or goi.giaTien >= currentPackage.giaTien)}"
+                              th:action="@{'/payment/create-payment/' + ${goi.maGoiCuoc}}" method="get">
+                            <button type="submit" class="btn btn-select">
+                                <i class="bi bi-cart-check"></i> Chọn gói này
+                            </button>
+                        </form>
+
+                        <!-- Hiển thị thông báo nếu gói rẻ hơn gói hiện tại -->
+                        <div th:if="${currentPackage != null and currentPackage.maGoiCuoc != goi.maGoiCuoc and 
+                                     goi.giaTien < currentPackage.giaTien}" 
+                             class="text-muted text-center mt-3">
+                            <small>
+                                <i class="bi bi-info-circle"></i> Không thể hạ cấp xuống gói rẻ hơn
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        console.log('Payment packages page loaded');
+    </script>
+</body>
+</html>

@@ -72,6 +72,14 @@ public class KhuVucController {
             boolean coQuyenXoaKhuVuc = duAnAuthorizationService.coQuyenXoaKhuVuc(maDuAn, nguoiDung.getMaNguoiDung());
             System.out.println("🔑 Can delete zone: " + coQuyenXoaKhuVuc);
             
+            // Kiểm tra quyền chỉnh sửa khu vực (CHU_SO_HUU và QUAN_LY)
+            boolean coQuyenChinhSuaKhuVuc = duAnAuthorizationService.laQuanLyTroLen(maDuAn, nguoiDung.getMaNguoiDung());
+            System.out.println("🔑 Can edit zone: " + coQuyenChinhSuaKhuVuc);
+            
+            // Kiểm tra quyền thêm khu vực (CHU_SO_HUU và QUAN_LY)
+            boolean coQuyenThemKhuVuc = duAnAuthorizationService.laQuanLyTroLen(maDuAn, nguoiDung.getMaNguoiDung());
+            System.out.println("🔑 Can add zone: " + coQuyenThemKhuVuc);
+            
             // Force load thietBis để tránh lazy loading exception
             khuVucs.forEach(kv -> {
                 if (kv.getThietBis() != null) {
@@ -90,6 +98,8 @@ public class KhuVucController {
             model.addAttribute("maDuAn", maDuAn);
             model.addAttribute("coQuyenXoaDuAn", coQuyenXoaDuAn);
             model.addAttribute("coQuyenXoaKhuVuc", coQuyenXoaKhuVuc);
+            model.addAttribute("coQuyenChinhSuaKhuVuc", coQuyenChinhSuaKhuVuc);
+            model.addAttribute("coQuyenThemKhuVuc", coQuyenThemKhuVuc);
             
             return "khu-vuc/index";
         } catch (Exception e) {

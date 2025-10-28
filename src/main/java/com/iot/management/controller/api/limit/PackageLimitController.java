@@ -88,7 +88,7 @@ public class PackageLimitController {
             NguoiDung nguoiDung = getNguoiDungFromToken(request);
 
             DangKyGoi dangKyGoi = nguoiDung.getDangKyGois().stream()
-                    .filter(dkg -> "DA_THANH_TOAN".equals(dkg.getTrangThai()))
+                    .filter(dkg -> "ACTIVE".equals(dkg.getTrangThai()))
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Người dùng chưa đăng ký gói cước hoặc không có gói đang hoạt động"));
 
