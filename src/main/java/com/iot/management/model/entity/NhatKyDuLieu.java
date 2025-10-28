@@ -118,4 +118,18 @@ public class NhatKyDuLieu {
     public void setMaThietBi(Long maThietBi) {
         this.maThietBi = maThietBi;
     }
+    
+    /**
+     * Helper method để lấy giá trị dựa trên kiểu dữ liệu
+     */
+    public String getGiaTri() {
+        if (kieuGiaTri == 0 && giaTriChuoi != null) {
+            return giaTriChuoi;
+        } else if (kieuGiaTri == 1 && giaTriSo != null) {
+            return giaTriSo.toString();
+        } else if (kieuGiaTri == 2 && giaTriLogic != null) {
+            return giaTriLogic.toString();
+        }
+        return null;
+    }
 }

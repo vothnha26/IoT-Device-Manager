@@ -25,49 +25,63 @@ public class LuatNguongController {
 
     @PostMapping
     public ResponseEntity<?> createRule(@RequestBody RuleRequest request, Principal principal) {
-        // validate required fields
-        if (request.getMaThietBi() == null) {
-            return ResponseEntity.badRequest().body("maThietBi is required");
-        }
-        if (request.getTenTruong() == null || request.getTenTruong().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("tenTruong is required");
-        }
-        if (request.getPhepToan() == null || request.getPhepToan().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("phepToan is required");
-        }
-        if (request.getGiaTriNguong() == null || request.getGiaTriNguong().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("giaTriNguong is required");
-        }
+        try {
+            // validate required fields: expression-only mode
+            if (request.getMaThietBi() == null) {
+                return ResponseEntity.badRequest().body("maThietBi is required");
+            }
+            if (request.getBieuThucLogic() == null || request.getBieuThucLogic().isBlank()) {
+                return ResponseEntity.badRequest().body("bieuThucLogic is required");
+            }
 
-        // map to entity
-        LuatNguong luat = new LuatNguong();
-        luat.setTenTruong(request.getTenTruong());
-        luat.setPhepToan(request.getPhepToan());
-        // support numeric "giaTri" from clients or string giaTriNguong
-        if (request.getGiaTri() != null) {
-            luat.setGiaTriNguong(String.valueOf(request.getGiaTri()));
-        } else {
-            luat.setGiaTriNguong(request.getGiaTriNguong());
-        }
+            // map to entity (expression only)
+            LuatNguong luat = new LuatNguong();
+            luat.setBieuThucLogic(request.getBieuThucLogic());
+            
+            // Set ten_truong to avoid NULL constraint (use expression as default)
+            if (request.getTenTruong() != null && !request.getTenTruong().isBlank()) {
+                luat.setTenTruong(request.getTenTruong());
+            } else {
+                // Set a default value to satisfy NOT NULL constraint
+                luat.setTenTruong("bieu_thuc");
+            }
 
-        // support alias fields
-        if (request.getHanhDong() != null && !request.getHanhDong().isBlank()) {
-            luat.setLenhHanhDong(request.getHanhDong());
-        } else {
-            luat.setLenhHanhDong(request.getLenhHanhDong());
-        }
-        luat.setKichHoat(request.getKichHoat() != null ? request.getKichHoat() : true);
+            // support alias fields - ensure lenhHanhDong is never null
+            String action = null;
+            if (request.getHanhDong() != null && !request.getHanhDong().isBlank()) {
+                action = request.getHanhDong();
+            } else if (request.getLenhHanhDong() != null && !request.getLenhHanhDong().isBlank()) {
+                action = request.getLenhHanhDong();
+            }
+            
+            // Set default action if not provided
+            if (action == null || action.isBlank()) {
+                action = "hoat_dong"; // Default action
+            }
+            luat.setLenhHanhDong(action);
+            
+            luat.setKichHoat(request.getKichHoat() != null ? request.getKichHoat() : true);
+            if (request.getThoiGianDuyTriDieuKien() != null) {
+                luat.setThoiGianDuyTriDieuKien(request.getThoiGianDuyTriDieuKien());
+            }
 
-        // find device and set relation
-        java.util.Optional<ThietBi> maybeDevice = thietBiService.findDeviceById(request.getMaThietBi());
-        if (maybeDevice.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Device with id " + request.getMaThietBi() + " not found");
-        }
-        luat.setThietBi(maybeDevice.get());
+            // find device and set relation
+            java.util.Optional<ThietBi> maybeDevice = thietBiService.findDeviceById(request.getMaThietBi());
+            if (maybeDevice.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Device with id " + request.getMaThietBi() + " not found");
+            }
+            luat.setThietBi(maybeDevice.get());
 
-        // TODO: verify user permission on device
-        LuatNguong savedRule = tuDongHoaService.saveRule(luat);
-        return new ResponseEntity<>(savedRule, HttpStatus.CREATED);
+            // TODO: verify user permission on device
+            LuatNguong savedRule = tuDongHoaService.saveRule(luat);
+            return new ResponseEntity<>(savedRule, HttpStatus.CREATED);
+        } catch (Exception e) {
+            // Log the full error for debugging
+            System.err.println("Error creating rule: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error creating rule: " + e.getMessage());
+        }
     }
 
     @GetMapping("/device/{deviceId}")
@@ -75,6 +89,16 @@ public class LuatNguongController {
         // TODO: check permissions
         java.util.List<LuatNguong> rules = tuDongHoaService.findRulesByDevice(deviceId);
         return ResponseEntity.ok(rules);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getRuleById(@PathVariable Long id, Principal principal) {
+        // TODO: check permissions
+        java.util.Optional<LuatNguong> rule = tuDongHoaService.findRuleById(id);
+        if (rule.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rule not found");
+        }
+        return ResponseEntity.ok(rule.get());
     }
 
     @DeleteMapping("/{id}")
@@ -86,43 +110,52 @@ public class LuatNguongController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateRule(@PathVariable Long id, @RequestBody RuleRequest request, Principal principal) {
-        java.util.Optional<LuatNguong> maybe = tuDongHoaService.findRuleById(id);
-        if (maybe.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rule not found");
-        }
-
-        LuatNguong luat = maybe.get();
-
-        // update fields if provided
-        if (request.getTenTruong() != null && !request.getTenTruong().isBlank()) {
-            luat.setTenTruong(request.getTenTruong());
-        }
-        if (request.getPhepToan() != null && !request.getPhepToan().isBlank()) {
-            luat.setPhepToan(request.getPhepToan());
-        }
-        if (request.getGiaTri() != null) {
-            luat.setGiaTriNguong(String.valueOf(request.getGiaTri()));
-        } else if (request.getGiaTriNguong() != null && !request.getGiaTriNguong().isBlank()) {
-            luat.setGiaTriNguong(request.getGiaTriNguong());
-        }
-        if (request.getHanhDong() != null && !request.getHanhDong().isBlank()) {
-            luat.setLenhHanhDong(request.getHanhDong());
-        } else if (request.getLenhHanhDong() != null && !request.getLenhHanhDong().isBlank()) {
-            luat.setLenhHanhDong(request.getLenhHanhDong());
-        }
-        if (request.getKichHoat() != null) {
-            luat.setKichHoat(request.getKichHoat());
-        }
-
-        if (request.getMaThietBi() != null) {
-            java.util.Optional<ThietBi> maybeDevice = thietBiService.findDeviceById(request.getMaThietBi());
-            if (maybeDevice.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Device with id " + request.getMaThietBi() + " not found");
+        try {
+            java.util.Optional<LuatNguong> maybe = tuDongHoaService.findRuleById(id);
+            if (maybe.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rule not found");
             }
-            luat.setThietBi(maybeDevice.get());
-        }
 
-        LuatNguong saved = tuDongHoaService.saveRule(luat);
-        return ResponseEntity.ok(saved);
+            LuatNguong luat = maybe.get();
+
+            // update fields if provided (expression-only)
+            if (request.getTenTruong() != null && !request.getTenTruong().isBlank()) {
+                luat.setTenTruong(request.getTenTruong());
+            } else if (luat.getTenTruong() == null || luat.getTenTruong().isBlank()) {
+                // Ensure ten_truong is never null (database constraint)
+                luat.setTenTruong("bieu_thuc");
+            }
+            if (request.getBieuThucLogic() != null) {
+                luat.setBieuThucLogic(request.getBieuThucLogic());
+            }
+            if (request.getThoiGianDuyTriDieuKien() != null) {
+                luat.setThoiGianDuyTriDieuKien(request.getThoiGianDuyTriDieuKien());
+            }
+            if (request.getHanhDong() != null && !request.getHanhDong().isBlank()) {
+                luat.setLenhHanhDong(request.getHanhDong());
+            } else if (request.getLenhHanhDong() != null && !request.getLenhHanhDong().isBlank()) {
+                luat.setLenhHanhDong(request.getLenhHanhDong());
+            }
+            if (request.getKichHoat() != null) {
+                luat.setKichHoat(request.getKichHoat());
+            }
+
+            if (request.getMaThietBi() != null) {
+                java.util.Optional<ThietBi> maybeDevice = thietBiService.findDeviceById(request.getMaThietBi());
+                if (maybeDevice.isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Device with id " + request.getMaThietBi() + " not found");
+                }
+                luat.setThietBi(maybeDevice.get());
+            }
+
+            LuatNguong saved = tuDongHoaService.saveRule(luat);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            // Log the full error for debugging
+            System.err.println("Error updating rule: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error updating rule: " + e.getMessage());
+        }
     }
 }

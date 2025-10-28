@@ -1,0 +1,43 @@
+/* Responsive layout fixes for khu-vuc page */
+@media (max-width: 768px) {
+    .project-sidebar {
+        position: fixed;
+        left: -280px;
+        top: 60px;
+        z-index: 1020;
+        transition: left 0.3s ease;
+        background: white;
+    }
+    
+    .project-sidebar.show {
+        left: 0;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+    }
+    
+    /* Toggle button for mobile */
+    .sidebar-toggle {
+        display: block !important;
+    }
+}
+
+/* Hide toggle by default on desktop */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    left: 1rem;
+    top: 70px;
+    z-index: 1021;
+    padding: 0.5rem;
+    border-radius: 50%;
+    background: var(--primary-500);
+    color: white;
+    box-shadow: 0 2px 8px rgba(108,92,231,0.2);
+}
+
+/* Ensure content doesn't overflow */
+.flex-grow-1 {
+    min-height: calc(100vh - 60px);
+}

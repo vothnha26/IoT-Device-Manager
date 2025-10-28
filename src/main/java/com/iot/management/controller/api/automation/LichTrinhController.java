@@ -96,6 +96,20 @@ public class LichTrinhController {
         return ResponseEntity.ok(schedules);
     }
 
+    // Lấy một lịch trình theo ID
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getScheduleById(@PathVariable Long id, Principal principal) {
+        try {
+            java.util.Optional<LichTrinh> opt = tuDongHoaService.findScheduleById(id);
+            if (opt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(opt.get());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Không thể lấy thông tin lịch trình: " + e.getMessage());
+        }
+    }
+
     // Cập nhật một lịch trình (cập nhật một số trường được cung cấp)
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSchedule(@PathVariable Long id, @RequestBody ScheduleRequest req, Principal principal) {

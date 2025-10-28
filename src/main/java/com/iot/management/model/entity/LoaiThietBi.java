@@ -17,6 +17,10 @@ public class LoaiThietBi {
     @Column(name = "mo_ta", length = 500)
     private String moTa;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "nhom_thiet_bi", length = 50)
+    private NhomThietBi nhomThietBi;
+
     // Getters/Setters
     public Long getMaLoaiThietBi() { return maLoaiThietBi; }
     public void setMaLoaiThietBi(Long maLoaiThietBi) { this.maLoaiThietBi = maLoaiThietBi; }
@@ -26,4 +30,7 @@ public class LoaiThietBi {
 
     public String getMoTa() { return moTa; }
     public void setMoTa(String moTa) { this.moTa = moTa; }
+
+    public NhomThietBi getNhomThietBi() { return nhomThietBi; }
+    public void setNhomThietBi(NhomThietBi nhomThietBi) { this.nhomThietBi = nhomThietBi; }
 }

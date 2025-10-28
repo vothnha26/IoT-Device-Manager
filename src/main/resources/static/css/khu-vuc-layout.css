@@ -1,0 +1,93 @@
+/* Layout styles for khu-vuc page */
+:root {
+    --navbar-height: 56px;
+    --project-header-height: 56px;
+    --sidebar-width: 280px;
+}
+
+/* Layout structure */
+.project-header {
+    height: var(--project-header-height);
+    background: white;
+    border-bottom: 1px solid rgba(0,0,0,.1);
+}
+
+.project-sidebar {
+    background: white;
+    width: var(--sidebar-width);
+    position: fixed;
+    top: calc(var(--navbar-height) + var(--project-header-height));
+    bottom: 0;
+    overflow-y: auto;
+    z-index: 1010;
+    transition: transform .3s ease-in-out;
+}
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    margin-top: calc(var(--navbar-height) + var(--project-header-height));
+    min-height: calc(100vh - var(--navbar-height) - var(--project-header-height));
+    transition: margin-left .3s ease-in-out;
+}
+
+/* Responsive styles */
+@media (max-width: 991.98px) {
+    .project-sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .project-sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
+
+/* Sidebar content */
+.project-sidebar .nav-item {
+    margin-bottom: 0.25rem;
+}
+
+.project-sidebar .nav-link {
+    color: var(--bs-body-color);
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+}
+
+.project-sidebar .nav-link:hover {
+    background-color: rgba(0,0,0,.05);
+}
+
+.project-sidebar .nav-link.active {
+    background-color: var(--primary-500);
+    color: white;
+}
+
+/* Cards and content */
+.area-card {
+    transition: transform .2s ease-in-out;
+}
+
+.area-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Scrollbar styling */
+.project-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.project-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.project-sidebar::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 3px;
+}
+
+.project-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #ccc;
+}

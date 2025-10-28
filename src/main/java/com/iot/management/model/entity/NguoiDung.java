@@ -1,11 +1,25 @@
 package com.iot.management.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
-import jakarta.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 @Entity
 @Table(name = "NguoiDung")
 public class NguoiDung {
@@ -19,7 +33,9 @@ public class NguoiDung {
 	private String tenDangNhap;
 
 	@Column(name = "mat_khau_bam", nullable = false)
+	@JsonIgnore
 	private String matKhauBam;
+	
 	@Column(name = "email", unique = true)
 	private String email;
 
@@ -30,9 +46,11 @@ public class NguoiDung {
 	private LocalDateTime ngayTao = LocalDateTime.now();
 
 	@Column(name = "verification_code")
+	@JsonIgnore
 	private String verificationCode;
 
 	@Column(name = "verification_code_expiry")
+	@JsonIgnore
 	private LocalDateTime verificationCodeExpiry;
 
 	@ManyToMany(fetch = FetchType.EAGER)
@@ -45,7 +63,12 @@ public class NguoiDung {
 
 	@JsonManagedReference("owner-regions")
 	@OneToMany(mappedBy = "chuSoHuu")
+	@JsonIgnore
 	private Set<KhuVuc> khuVucs;
+
+	@OneToMany(mappedBy = "nguoiDung", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@JsonIgnore
+	private List<DangKyGoi> dangKyGois = new ArrayList<>();
 
 	// Getters and Setters
 	public Long getMaNguoiDung() {
@@ -126,5 +149,13 @@ public class NguoiDung {
 
 	public void setVerificationCodeExpiry(LocalDateTime verificationCodeExpiry) {
 		this.verificationCodeExpiry = verificationCodeExpiry;
+	}
+
+	public List<DangKyGoi> getDangKyGois() {
+		return dangKyGois;
+	}
+
+	public void setDangKyGois(List<DangKyGoi> dangKyGois) {
+		this.dangKyGois = dangKyGois;
 	}
 }

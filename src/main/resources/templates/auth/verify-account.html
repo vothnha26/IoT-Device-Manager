@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Xác thực tài khoản - IoT Manager</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom Auth CSS -->
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-container">
+            <div class="auth-card">
+                <!-- Logo & Title -->
+                <div class="auth-logo">
+                    <i class="fas fa-envelope-open-text"></i>
+                    <h2>Xác thực tài khoản</h2>
+                    <p>Nhập mã xác thực đã được gửi đến email của bạn</p>
+                </div>
+
+                <!-- Info Alert -->
+                <div class="auth-alert auth-alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Mã xác thực gồm 6 chữ số và có hiệu lực trong 15 phút</span>
+                </div>
+
+                <!-- Verify Form -->
+                <form id="verifyForm" class="auth-form">
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i> Email
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email"
+                                   th:value="${email}"
+                                   placeholder="email@example.com" 
+                                   required>
+                        </div>
+                    </div>
+
+                    <!-- Verification Code -->
+                    <div class="mb-3">
+                        <label class="form-label text-center d-block">
+                            <i class="fas fa-shield-alt me-1"></i> Mã xác thực
+                        </label>
+                        <div class="code-input-group">
+                            <input type="text" class="code-input" maxlength="1" data-index="0">
+                            <input type="text" class="code-input" maxlength="1" data-index="1">
+                            <input type="text" class="code-input" maxlength="1" data-index="2">
+                            <input type="text" class="code-input" maxlength="1" data-index="3">
+                            <input type="text" class="code-input" maxlength="1" data-index="4">
+                            <input type="text" class="code-input" maxlength="1" data-index="5">
+                        </div>
+                        <input type="hidden" id="verificationCode" name="code">
+                    </div>
+
+                    <!-- Resend Code -->
+                    <div class="text-center mb-3">
+                        <p class="mb-0">
+                            <small class="text-muted">Không nhận được mã? </small>
+                            <button type="button" class="resend-code" id="resendBtn">
+                                Gửi lại
+                            </button>
+                            <span class="resend-timer ms-2" id="resendTimer" style="display: none;"></span>
+                        </p>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-auth-primary">
+                        <i class="fas fa-check-circle me-2"></i> Xác thực
+                    </button>
+
+                    <!-- Loading Spinner -->
+                    <div class="auth-loading" id="loadingSpinner">
+                        <div class="spinner-border text-primary spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>Đang xác thực...</span>
+                    </div>
+                </form>
+
+                <!-- Back to Login -->
+                <div class="auth-links mt-3">
+                    <a th:href="@{/auth/login}">
+                        <i class="fas fa-arrow-left me-1"></i> Quay lại đăng nhập
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="auth-footer">
+                <p class="mb-0">&copy; 2025 IoT Manager. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Custom Script -->
+    <script>
+        $(document).ready(function() {
+            let resendTimeout = 60; // 60 seconds
+            let resendInterval;
+
+            // Auto-focus first input
+            $('.code-input').first().focus();
+
+            // Handle code input
+            $('.code-input').on('input', function() {
+                const value = $(this).val();
+                
+                // Only allow numbers
+                if (!/^\d*$/.test(value)) {
+                    $(this).val('');
+                    return;
+                }
+
+                // Move to next input
+                if (value.length === 1) {
+                    const nextInput = $(this).next('.code-input');
+                    if (nextInput.length) {
+                        nextInput.focus();
+                    }
+                }
+
+                // Update hidden input
+                updateVerificationCode();
+            });
+
+            // Handle backspace
+            $('.code-input').on('keydown', function(e) {
+                if (e.key === 'Backspace' && $(this).val() === '') {
+                    const prevInput = $(this).prev('.code-input');
+                    if (prevInput.length) {
+                        prevInput.focus();
+                    }
+                }
+            });
+
+            // Handle paste
+            $('.code-input').first().on('paste', function(e) {
+                e.preventDefault();
+                const pastedData = e.originalEvent.clipboardData.getData('text');
+                const digits = pastedData.replace(/\D/g, '').slice(0, 6);
+                
+                $('.code-input').each(function(index) {
+                    if (digits[index]) {
+                        $(this).val(digits[index]);
+                    }
+                });
+                
+                updateVerificationCode();
+                
+                // Focus last filled input
+                const lastIndex = Math.min(digits.length - 1, 5);
+                $('.code-input').eq(lastIndex).focus();
+            });
+
+            // Update verification code hidden input
+            function updateVerificationCode() {
+                let code = '';
+                $('.code-input').each(function() {
+                    code += $(this).val();
+                });
+                $('#verificationCode').val(code);
+            }
+
+            // Resend code functionality
+            $('#resendBtn').click(function() {
+                const email = $('#email').val();
+                
+                if (!email) {
+                    showAlert('Vui lòng nhập email!', 'error');
+                    return;
+                }
+
+                // Disable button and start countdown
+                $(this).prop('disabled', true);
+                startResendTimer();
+
+                // Call API to resend code (reuse forgot-password endpoint)
+                $.ajax({
+                    url: '/api/auth/forgot-password',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ email: email }),
+                    success: function() {
+                        showAlert('Mã xác thực mới đã được gửi đến email của bạn!', 'success');
+                    },
+                    error: function(xhr) {
+                        showAlert('Không thể gửi lại mã. Vui lòng thử lại sau!', 'error');
+                        $('#resendBtn').prop('disabled', false);
+                        clearInterval(resendInterval);
+                        $('#resendTimer').hide();
+                    }
+                });
+            });
+
+            function startResendTimer() {
+                let timeLeft = resendTimeout;
+                $('#resendTimer').show().text(`(${timeLeft}s)`);
+                
+                resendInterval = setInterval(function() {
+                    timeLeft--;
+                    $('#resendTimer').text(`(${timeLeft}s)`);
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(resendInterval);
+                        $('#resendBtn').prop('disabled', false);
+                        $('#resendTimer').hide();
+                    }
+                }, 1000);
+            }
+
+            // Handle form submission
+            $('#verifyForm').submit(function(e) {
+                e.preventDefault();
+                
+                const email = $('#email').val();
+                const code = $('#verificationCode').val();
+                
+                // Validation
+                if (!email) {
+                    showAlert('Vui lòng nhập email!', 'error');
+                    return;
+                }
+                
+                if (code.length !== 6) {
+                    showAlert('Vui lòng nhập đầy đủ mã xác thực 6 chữ số!', 'error');
+                    return;
+                }
+                
+                // Show loading
+                $('#loadingSpinner').addClass('active');
+                $(this).find('button[type="submit"]').prop('disabled', true);
+                
+                // Call API
+                $.ajax({
+                    url: '/api/auth/verify-account',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        email: email,
+                        code: code
+                    }),
+                    success: function(response) {
+                        showAlert('Xác thực tài khoản thành công! Đang chuyển đến trang đăng nhập...', 'success');
+                        
+                        // Redirect to login after 2 seconds
+                        setTimeout(function() {
+                            window.location.href = '/auth/login';
+                        }, 2000);
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Xác thực thất bại!';
+                        
+                        if (xhr.responseText) {
+                            errorMessage = xhr.responseText;
+                        } else if (xhr.status === 400) {
+                            errorMessage = 'Mã xác thực không đúng hoặc đã hết hạn!';
+                        }
+                        
+                        showAlert(errorMessage, 'error');
+                        
+                        // Clear code inputs
+                        $('.code-input').val('');
+                        $('.code-input').first().focus();
+                    },
+                    complete: function() {
+                        $('#loadingSpinner').removeClass('active');
+                        $('#verifyForm button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            });
+
+            // Helper function to show alerts
+            function showAlert(message, type) {
+                const alertClass = type === 'success' ? 'auth-alert-success' : 'auth-alert-error';
+                const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+                
+                const alertHtml = `
+                    <div class="auth-alert ${alertClass}">
+                        <i class="fas ${iconClass}"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                // Remove existing alerts (except info)
+                $('.auth-alert:not(.auth-alert-info)').remove();
+                
+                // Add new alert
+                $('.auth-alert-info').after(alertHtml);
+            }
+        });
+    </script>
+</body>
+</html>

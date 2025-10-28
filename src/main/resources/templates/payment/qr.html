@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thanh toán - IoT Manager</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .payment-container {
+      max-width: 600px;
+      width: 100%;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .payment-card {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .payment-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 32px;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .payment-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.5;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+      }
+    }
+
+    .payment-header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .payment-header p {
+      font-size: 1rem;
+      opacity: 0.95;
+      position: relative;
+      z-index: 1;
+      margin: 0;
+    }
+
+    .payment-body {
+      padding: 32px;
+    }
+
+    .package-info {
+      background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 2px solid #e0e7ff;
+    }
+
+    .package-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .package-name i {
+      color: #667eea;
+      font-size: 1.75rem;
+    }
+
+    .package-price {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 16px;
+    }
+
+    .package-price .currency {
+      font-size: 1.25rem;
+      vertical-align: super;
+    }
+
+    .package-features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #475569;
+      font-size: 0.95rem;
+    }
+
+    .feature-item i {
+      color: #10b981;
+      font-size: 1.1rem;
+    }
+
+    .qr-section {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      border: 2px dashed #cbd5e1;
+      margin-bottom: 24px;
+    }
+
+    .qr-section h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .qr-code-wrapper {
+      display: inline-block;
+      padding: 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      margin-bottom: 16px;
+      animation: qrPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes qrPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+      }
+    }
+
+    .qr-code-wrapper img {
+      max-width: 280px;
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      display: block;
+    }
+
+    .payment-status {
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 24px;
+      font-weight: 600;
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .payment-status.pending {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+      border: 2px solid #fbbf24;
+    }
+
+    .payment-status.success {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #065f46;
+      border: 2px solid #10b981;
+    }
+
+    .payment-status i {
+      font-size: 1.5rem;
+      margin-right: 8px;
+      animation: spin 2s linear infinite;
+    }
+
+    .payment-status.success i {
+      animation: none;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .instructions {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .instructions h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .instruction-steps {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .instruction-steps li {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 12px;
+      color: #475569;
+      font-size: 0.95rem;
+    }
+
+    .instruction-steps .step-number {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .action-buttons .btn {
+      flex: 1;
+      min-width: 150px;
+      padding: 12px 24px;
+      font-weight: 600;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-outline-secondary {
+      border: 2px solid #cbd5e1;
+      color: #475569;
+      background: white;
+    }
+
+    .btn-outline-secondary:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+      transform: translateY(-2px);
+    }
+
+    .order-info {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .order-info strong {
+      color: #1e293b;
+    }
+
+    @media (max-width: 576px) {
+      .payment-header {
+        padding: 24px;
+      }
+
+      .payment-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .payment-body {
+        padding: 24px;
+      }
+
+      .package-price {
+        font-size: 2rem;
+      }
+
+      .qr-code-wrapper img {
+        max-width: 240px;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .action-buttons .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="payment-container">
+    <div class="payment-card">
+      <!-- Header -->
+      <div class="payment-header">
+        <h1><i class="bi bi-credit-card-2-front"></i> Thanh toán gói cước</h1>
+        <p>Quét mã QR để hoàn tất thanh toán</p>
+      </div>
+
+      <!-- Body -->
+      <div class="payment-body">
+        <!-- Upgrade Notice -->
+        <div th:if="${isUpgrade}" class="alert alert-info" style="border-radius: 12px; margin-bottom: 20px;">
+          <i class="bi bi-info-circle"></i>
+          <strong>Thông báo nâng cấp:</strong> Bạn đang nâng cấp từ gói <strong th:text="${currentPackageName}"></strong>. 
+          Gói cũ sẽ tự động hết hạn khi thanh toán thành công.
+        </div>
+        
+        <!-- Package Info -->
+        <div class="package-info">
+          <div class="package-name">
+            <i class="bi bi-box-seam"></i>
+            <span th:text="${goiCuoc.tenGoi}">Gói Premium</span>
+          </div>
+          <div class="package-price">
+            <span class="currency">₫</span>
+            <span th:text="${#numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT')}">500,000</span>
+          </div>
+          <div class="package-features">
+            <div class="feature-item">
+              <i class="bi bi-check-circle-fill"></i>
+              <span th:text="${goiCuoc.slThietBiToiDa + ' thiết bị'}">10 thiết bị</span>
+            </div>
+            <div class="feature-item">
+              <i class="bi bi-check-circle-fill"></i>
+              <span th:text="${goiCuoc.slLuatToiDa + ' luật'}">5 luật</span>
+            </div>
+            <div class="feature-item">
+              <i class="bi bi-check-circle-fill"></i>
+              <span th:text="${goiCuoc.soNgayLuuDuLieu + ' ngày lưu'}">30 ngày lưu</span>
+            </div>
+            <div class="feature-item">
+              <i class="bi bi-check-circle-fill"></i>
+              <span th:text="${goiCuoc.slKhuVucToiDa + ' khu vực'}">3 khu vực</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Status -->
+        <div id="paymentStatus" class="payment-status pending">
+          <i class="bi bi-hourglass-split"></i>
+          <span>Đang chờ thanh toán...</span>
+        </div>
+
+        <!-- QR Code Section -->
+        <div class="qr-section">
+          <h3>
+            <i class="bi bi-qr-code-scan"></i>
+            Quét mã QR để thanh toán
+          </h3>
+          <div class="qr-code-wrapper">
+            <img th:src="${qrImageUrl}" alt="QR Code thanh toán" />
+          </div>
+          <div class="order-info">
+            <span>Mã đơn hàng:</span>
+            <strong th:text="${orderId}">ORD123456</strong>
+          </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+          <h4>
+            <i class="bi bi-info-circle"></i>
+            Hướng dẫn thanh toán
+          </h4>
+          <ul class="instruction-steps">
+            <li>
+              <span class="step-number">1</span>
+              <span>Mở ứng dụng ngân hàng hoặc ví điện tử trên điện thoại</span>
+            </li>
+            <li>
+              <span class="step-number">2</span>
+              <span>Chọn chức năng "Quét mã QR" hoặc "Chuyển khoản"</span>
+            </li>
+            <li>
+              <span class="step-number">3</span>
+              <span>Quét mã QR phía trên hoặc nhập thông tin chuyển khoản</span>
+            </li>
+            <li>
+              <span class="step-number">4</span>
+              <span>Xác nhận thông tin và hoàn tất thanh toán</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <a th:href="${qrImageUrl}" target="_blank" class="btn btn-primary">
+            <i class="bi bi-download"></i> Tải mã QR
+          </a>
+          <a th:href="@{/}" class="btn btn-outline-secondary">
+            <i class="bi bi-house"></i> Về trang chủ
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script th:inline="javascript">
+    const orderId = /*[[${orderId}]]*/ '0';
+    console.log('Payment page loaded. Order ID:', orderId);
+    const statusDiv = document.getElementById('paymentStatus');
+    statusDiv.style.display = 'block';
+
+    let attempts = 0;
+    const maxAttempts = 400; // ~20 minutes at 3s interval
+    const intervalMs = 3000;
+
+    async function pollStatus() {
+      attempts++;
+      try {
+        const res = await fetch(`/api/payments/status/${orderId}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        console.log('Status:', data);
+
+        if (data.active === true) {
+          statusDiv.className = 'payment-status success';
+          statusDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i> <strong>Thanh toán thành công!</strong> Đang chuyển tới trang người dùng...';
+          setTimeout(() => { window.location.href = data.redirect || '/profile'; }, 900);
+          return true;
+        }
+      } catch (e) {
+        console.warn('Polling error:', e);
+      }
+      return false;
+    }
+
+    // Start polling
+    const timer = setInterval(async () => {
+      if (attempts >= maxAttempts) {
+        clearInterval(timer);
+        statusDiv.className = 'payment-status pending';
+        statusDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Hết thời gian chờ. Vui lòng thử lại hoặc liên hệ hỗ trợ.';
+        return;
+      }
+      const done = await pollStatus();
+      if (done) clearInterval(timer);
+    }, intervalMs);
+  </script>
+</body>
+
+</html>

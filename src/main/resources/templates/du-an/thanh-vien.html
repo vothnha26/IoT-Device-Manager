@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
+
+<head>
+    <title th:fragment="title">Quản lý Thành viên</title>
+</head>
+<body>
+
+<main th:fragment="main">
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">Quản lý Thành viên</h2>
+                <p class="text-muted mb-0" th:text="${duAn.tenDuAn}"></p>
+            </div>
+            <div>
+                <button class="btn btn-secondary me-2" onclick="window.history.back()">
+                    <i class="bi bi-arrow-left me-2"></i>Quay lại
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inviteModal" 
+                        th:if="${coQuyenCapQuyen}">
+                    <i class="bi bi-person-plus me-2"></i>Mời thành viên
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h6 class="text-muted">Chủ sở hữu</h6>
+                        <h2 class="mb-0" th:text="${stats.chuSoHuu}">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <h6 class="text-muted">Quản lý</h6>
+                        <h2 class="mb-0" th:text="${stats.quanLy}">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <h6 class="text-muted">Người dùng</h6>
+                        <h2 class="mb-0" th:text="${stats.nguoiDung}">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Table -->
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Thành viên</th>
+                            <th>Vai trò</th>
+                            <th>Ngày tham gia</th>
+                            <th th:if="${coQuyenCapQuyen}">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="member : ${members}">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-primary text-white me-3">
+                                        <span th:text="${#strings.substring(member.nguoiDung.tenDangNhap, 0, 1)}">U</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold" th:text="${member.nguoiDung.tenDangNhap}"></div>
+                                        <small class="text-muted" th:text="${member.nguoiDung.email}"></small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <!-- CHU_SO_HUU: không đổi được vai trò -->
+                                <span th:if="${member.vaiTro.name() == 'CHU_SO_HUU'}" 
+                                      class="badge bg-warning text-dark"
+                                      th:text="${member.vaiTro.getDescription()}">
+                                </span>
+                                
+                                <!-- QUAN_LY và NGUOI_DUNG: dropdown để chuyển đổi -->
+                                <select th:if="${member.vaiTro.name() != 'CHU_SO_HUU' && coQuyenCapQuyen}" 
+                                        class="form-select form-select-sm role-select"
+                                        th:attr="data-permission-id=${member.maPhanQuyen}"
+                                        onchange="changeRole(this)"
+                                        th:classappend="${member.vaiTro.name() == 'QUAN_LY' ? 'role-select-manager' : 'role-select-user'}">
+                                    <option value="QUAN_LY" th:selected="${member.vaiTro.name() == 'QUAN_LY'}">Quản lý</option>
+                                    <option value="NGUOI_DUNG" th:selected="${member.vaiTro.name() == 'NGUOI_DUNG'}">Người dùng</option>
+                                </select>
+                                
+                                <!-- Nếu không có quyền, chỉ hiện badge -->
+                                <span th:if="${member.vaiTro.name() != 'CHU_SO_HUU' && !coQuyenCapQuyen}" 
+                                      class="badge"
+                                      th:classappend="${member.vaiTro.name() == 'QUAN_LY' ? 'bg-primary' : 'bg-success'}"
+                                      th:text="${member.vaiTro.getDescription()}">
+                                </span>
+                            </td>
+                            <td th:text="${#temporals.format(member.ngayCapQuyen, 'dd/MM/yyyy')}"></td>
+                            <td th:if="${coQuyenCapQuyen}">
+                                <div class="btn-group" role="group">
+                                    <!-- Chỉ NGUOI_DUNG mới có nút phân quyền chi tiết -->
+                                    <button class="btn btn-sm btn-primary" 
+                                            th:if="${member.vaiTro.name() == 'NGUOI_DUNG'}"
+                                            th:attr="data-permission-id=${member.maPhanQuyen}, data-user-id=${member.nguoiDung.maNguoiDung}, data-username=${member.nguoiDung.tenDangNhap}"
+                                            onclick="openDetailPermissionModal(this.getAttribute('data-permission-id'), this.getAttribute('data-user-id'), this.getAttribute('data-username'))"
+                                            title="Phân quyền chi tiết khu vực và thiết bị">
+                                        <i class="bi bi-shield-lock"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" 
+                                            th:if="${member.vaiTro.name() != 'CHU_SO_HUU'}"
+                                            th:onclick="|removeMember(${member.maPhanQuyen})|"
+                                            title="Xóa thành viên">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div th:if="${#lists.isEmpty(members)}" class="text-center py-5">
+                    <i class="bi bi-people display-1 text-muted"></i>
+                    <p class="text-muted mt-3">Chưa có thành viên nào</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite Modal -->
+    <div class="modal fade" id="inviteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Mời thành viên mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="inviteForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Email<span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="inviteEmail" 
+                                   placeholder="Nhập email người dùng" required>
+                            <div class="form-text">Người dùng phải đã đăng ký tài khoản</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Vai trò<span class="text-danger">*</span></label>
+                            <div class="row g-3">
+                                <div class="col-6" th:if="${laChuSoHuu}">
+                                    <input type="radio" class="btn-check" name="vaiTro" id="roleQuanLy" value="QUAN_LY" autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100 py-3" for="roleQuanLy">
+                                        <i class="bi bi-briefcase d-block fs-4 mb-2"></i>
+                                        <strong class="d-block">Quản lý</strong>
+                                        <small class="text-muted d-block mt-1">Quản lý dự án và thành viên</small>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="vaiTro" id="roleNguoiDung" value="NGUOI_DUNG" checked autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100 py-3" for="roleNguoiDung">
+                                        <i class="bi bi-person d-block fs-4 mb-2"></i>
+                                        <strong class="d-block">Người dùng</strong>
+                                        <small class="text-muted d-block mt-1">Xem và điều khiển thiết bị</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuiLoiMoi">
+                            <i class="bi bi-send me-2"></i>Gửi lời mời
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal phân quyền chi tiết -->
+    <div class="modal fade" id="detailPermissionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-shield-check me-2"></i>Phân quyền chi tiết
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Người dùng:</strong> <span id="detailUserName"></span>
+                    </div>
+
+                    <!-- Phân quyền khu vực -->
+                    <h6 class="mb-3">
+                        <i class="bi bi-geo-alt me-2"></i>Quyền truy cập khu vực
+                    </h6>
+                    
+                    <!-- Tìm kiếm khu vực -->
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="areaSearchInput" 
+                                   placeholder="Tìm kiếm khu vực theo tên...">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4" id="areaPermissionsContainer">
+                        <div class="list-group" id="areaPermissionsList">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <div class="text-center text-muted py-3" id="noAreasMessage" style="display: none;">
+                            <i class="bi bi-inbox fs-4"></i>
+                            <p class="mb-0 mt-2">Không tìm thấy khu vực nào</p>
+                        </div>
+                    </div>
+
+                    <!-- Phân quyền thiết bị -->
+                    <h6 class="mb-3">
+                        <i class="bi bi-cpu me-2"></i>Quyền truy cập thiết bị
+                    </h6>
+                    
+                    <!-- Bộ lọc và tìm kiếm -->
+                    <div class="mb-3">
+                        <div class="row g-2">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="deviceSearchInput" 
+                                           placeholder="Tìm kiếm thiết bị theo tên...">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" id="deviceAreaFilter">
+                                    <option value="">Tất cả khu vực</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="devicePermissionsContainer">
+                        <div class="list-group" id="devicePermissionsList">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <div class="text-center text-muted py-3" id="noDevicesMessage" style="display: none;">
+                            <i class="bi bi-inbox fs-4"></i>
+                            <p class="mb-0 mt-2">Không tìm thấy thiết bị nào</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveDetailPermissions">
+                        <i class="bi bi-check-lg me-2"></i>Lưu phân quyền
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .role-select {
+            width: auto;
+            min-width: 140px;
+            border: 2px solid;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .role-select-manager {
+            color: #0d6efd;
+            border-color: #0d6efd !important;
+            background-color: rgba(13, 110, 253, 0.1);
+        }
+        
+        .role-select-user {
+            color: #198754;
+            border-color: #198754 !important;
+            background-color: rgba(25, 135, 84, 0.1);
+        }
+        
+        .role-select:hover {
+            opacity: 0.8;
+        }
+        
+        .permission-item {
+            padding: 12px 16px;
+        }
+        
+        .permission-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .permission-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .role-select {
+            min-width: 180px;
+        }
+    </style>
+</main>
+
+<th:block th:fragment="scripts">
+    <script th:inline="javascript">
+        // Move modal to body to avoid z-index conflicts
+        document.addEventListener('DOMContentLoaded', function() {
+            const inviteModal = document.getElementById('inviteModal');
+            if (inviteModal && inviteModal.parentElement.tagName !== 'BODY') {
+                document.body.appendChild(inviteModal);
+            }
+            
+            const detailModal = document.getElementById('detailPermissionModal');
+            if (detailModal && detailModal.parentElement.tagName !== 'BODY') {
+                document.body.appendChild(detailModal);
+            }
+        });
+
+        // Invite form submit
+        document.getElementById('inviteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnGuiLoiMoi');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang gửi...';
+            
+            const duAnId = /*[[${duAn.maDuAn}]]*/ 0;
+            const formData = {
+                email: document.getElementById('inviteEmail').value,
+                vaiTro: document.querySelector('input[name="vaiTro"]:checked').value
+            };
+
+            try {
+                const response = await fetch(`/du-an/${duAnId}/thanh-vien/moi`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Đã mời thành viên thành công!');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                alert('Có lỗi xảy ra: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // Change member role
+        async function changeRole(selectElement) {
+            const permissionId = selectElement.getAttribute('data-permission-id');
+            const newRole = selectElement.value;
+            const duAnId = window.location.pathname.split('/')[2];
+            
+            // Lưu giá trị cũ để có thể revert nếu lỗi
+            const oldValue = selectElement.options[selectElement.selectedIndex === 0 ? 1 : 0].value;
+            
+            if (!confirm(`Bạn có chắc muốn đổi vai trò thành "${newRole === 'QUAN_LY' ? 'Quản lý' : 'Người dùng'}"?`)) {
+                selectElement.value = oldValue;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/du-an/${duAnId}/thanh-vien/${permissionId}/vai-tro`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    },
+                    body: JSON.stringify({ vaiTro: newRole })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    // Cập nhật màu select
+                    selectElement.classList.remove('role-select-manager', 'role-select-user');
+                    selectElement.classList.add(newRole === 'QUAN_LY' ? 'role-select-manager' : 'role-select-user');
+                    
+                    alert('Đã cập nhật vai trò thành công!');
+                    location.reload(); // Reload để cập nhật nút phân quyền
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra');
+                    selectElement.value = oldValue;
+                }
+            } catch (error) {
+                alert('Có lỗi xảy ra: ' + error.message);
+                selectElement.value = oldValue;
+            }
+        }
+
+        // Remove member
+        async function removeMember(id) {
+            if (!confirm('Bạn có chắc muốn xóa thành viên này?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/du-an/thanh-vien/xoa/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Đã xóa thành viên thành công!');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                alert('Có lỗi xảy ra: ' + error.message);
+            }
+        }
+
+        // Open detail permission modal
+        let currentPermissionUserId = null;
+        let currentPermissionId = null;
+
+        async function openDetailPermissionModal(maPhanQuyen, maNguoiDung, tenDangNhap) {
+            currentPermissionUserId = maNguoiDung;
+            currentPermissionId = maPhanQuyen;
+            
+            // Set user name in modal
+            document.getElementById('detailUserName').textContent = tenDangNhap;
+            
+            // Load permissions
+            await loadDetailPermissions();
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('detailPermissionModal'));
+            modal.show();
+        }
+
+        async function loadDetailPermissions() {
+            const duAnId = /*[[${duAn.maDuAn}]]*/ 0;
+            
+            try {
+                const response = await fetch(`/du-an/${duAnId}/thanh-vien/${currentPermissionUserId}/permissions`);
+                const data = await response.json();
+                
+                // Populate areas
+                const areasList = document.getElementById('areaPermissionsList');
+                const noAreasMessage = document.getElementById('noAreasMessage');
+                
+                if (data.areas && data.areas.length > 0) {
+                    areasList.innerHTML = data.areas.map(area => `
+                        <div class="list-group-item permission-item d-flex align-items-center justify-content-between" 
+                             data-area-name="${area.tenKhuVuc.toLowerCase()}">
+                            <div class="d-flex align-items-center">
+                                <input type="checkbox" class="form-check-input permission-checkbox me-3" 
+                                       id="area_${area.maKhuVuc}" 
+                                       ${area.hasPermission ? 'checked' : ''}
+                                       ${area.inheritedFromProject ? 'disabled' : ''}
+                                       onchange="toggleAreaPermissions(${area.maKhuVuc}, this.checked)">
+                                <label for="area_${area.maKhuVuc}" class="mb-0">
+                                    <strong>${area.tenKhuVuc}</strong>
+                                    ${area.inheritedFromProject ? '<span class="badge bg-info ms-2">Từ dự án</span>' : ''}
+                                    <br>
+                                    <small class="text-muted">${area.moTa || 'Không có mô tả'}</small>
+                                </label>
+                            </div>
+                            <div id="areaPerms_${area.maKhuVuc}" ${!area.hasPermission ? 'style="display:none;"' : ''}>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input area-view-checkbox" type="checkbox" 
+                                           id="areaView_${area.maKhuVuc}" 
+                                           ${area.vaiTro === 'XEM' || area.vaiTro === 'QUAN_LY_KHU_VUC' ? 'checked' : ''}
+                                           ${area.inheritedFromProject ? 'disabled' : ''}>
+                                    <label class="form-check-label" for="areaView_${area.maKhuVuc}">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input area-control-checkbox" type="checkbox" 
+                                           id="areaControl_${area.maKhuVuc}" 
+                                           ${area.vaiTro === 'QUAN_LY_KHU_VUC' ? 'checked' : ''}
+                                           ${area.inheritedFromProject ? 'disabled' : ''}
+                                           onchange="handleAreaControlCheckbox(${area.maKhuVuc}, this.checked)">
+                                    <label class="form-check-label" for="areaControl_${area.maKhuVuc}">
+                                        <i class="bi bi-sliders"></i> Điều khiển
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    noAreasMessage.style.display = 'none';
+                    
+                    // Gắn event listener cho tìm kiếm khu vực
+                    setTimeout(() => {
+                        const areaSearchInput = document.getElementById('areaSearchInput');
+                        if (areaSearchInput) {
+                            areaSearchInput.removeEventListener('input', filterAreas);
+                            areaSearchInput.addEventListener('input', filterAreas);
+                        }
+                    }, 100);
+                } else {
+                    areasList.innerHTML = '';
+                    noAreasMessage.style.display = 'block';
+                }
+                
+                // Populate devices
+                const devicesList = document.getElementById('devicePermissionsList');
+                const noDevicesMessage = document.getElementById('noDevicesMessage');
+                
+                // Store all devices for filtering
+                window.allDevicesData = data.devices || [];
+                
+                // Populate area filter dropdown
+                const areaFilterSelect = document.getElementById('deviceAreaFilter');
+                if (data.areas && data.areas.length > 0) {
+                    areaFilterSelect.innerHTML = '<option value="">Tất cả khu vực</option>' + 
+                        data.areas.map(area => `<option value="${area.maKhuVuc}">${area.tenKhuVuc}</option>`).join('');
+                }
+                
+                // Gắn event listeners cho tìm kiếm và lọc SAU KHI đã render xong
+                setTimeout(() => {
+                    const searchInput = document.getElementById('deviceSearchInput');
+                    const areaFilter = document.getElementById('deviceAreaFilter');
+                    
+                    if (searchInput) {
+                        searchInput.removeEventListener('input', filterAndSearchDevices);
+                        searchInput.addEventListener('input', filterAndSearchDevices);
+                    }
+                    
+                    if (areaFilter) {
+                        areaFilter.removeEventListener('change', filterAndSearchDevices);
+                        areaFilter.addEventListener('change', filterAndSearchDevices);
+                    }
+                }, 100);
+                
+                if (data.devices && data.devices.length > 0) {
+                    devicesList.innerHTML = data.devices.map(device => `
+                        <div class="list-group-item permission-item d-flex align-items-center justify-content-between" 
+                             data-area-id="${device.maKhuVuc}"
+                             data-device-name="${device.tenThietBi.toLowerCase()}">
+                            <div class="d-flex align-items-center">
+                                <input type="checkbox" class="form-check-input permission-checkbox me-3" 
+                                       id="device_${device.maThietBi}" 
+                                       ${device.hasPermission ? 'checked' : ''}
+                                       ${device.inheritedFromProject ? 'disabled' : ''}
+                                       onchange="toggleDevicePermissions(${device.maThietBi}, this.checked)">
+                                <label for="device_${device.maThietBi}" class="mb-0">
+                                    <strong>${device.tenThietBi}</strong>
+                                    ${device.inheritedFromProject ? '<span class="badge bg-info ms-2">Từ dự án</span>' : ''}
+                                    <br>
+                                    <small class="text-muted">Khu vực: ${device.tenKhuVuc}</small>
+                                </label>
+                            </div>
+                            <div id="devicePerms_${device.maThietBi}" ${!device.hasPermission ? 'style="display:none;"' : ''}>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input device-view-checkbox" type="checkbox" 
+                                           id="deviceView_${device.maThietBi}" 
+                                           ${device.coQuyenXemDuLieu ? 'checked' : ''}
+                                           ${device.inheritedFromProject ? 'disabled' : ''}>
+                                    <label class="form-check-label" for="deviceView_${device.maThietBi}">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input device-control-checkbox" type="checkbox" 
+                                           id="deviceControl_${device.maThietBi}" 
+                                           ${device.coQuyenDieuKhien ? 'checked' : ''}
+                                           ${device.inheritedFromProject ? 'disabled' : ''}
+                                           onchange="handleControlCheckbox(${device.maThietBi}, this.checked)">
+                                    <label class="form-check-label" for="deviceControl_${device.maThietBi}">
+                                        <i class="bi bi-sliders"></i> Điều khiển
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input device-edit-checkbox" type="checkbox" 
+                                           id="deviceEdit_${device.maThietBi}" 
+                                           ${device.coQuyenChinhSua ? 'checked' : ''}
+                                           ${device.inheritedFromProject ? 'disabled' : ''}
+                                           onchange="handleEditCheckbox(${device.maThietBi}, this.checked)">
+                                    <label class="form-check-label" for="deviceEdit_${device.maThietBi}">
+                                        <i class="bi bi-pencil"></i> Chỉnh sửa
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    noDevicesMessage.style.display = 'none';
+                } else {
+                    devicesList.innerHTML = '';
+                    noDevicesMessage.style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('Error loading permissions:', error);
+                alert('Có lỗi khi tải thông tin phân quyền');
+            }
+        }
+
+        function toggleAreaPermissions(maKhuVuc, enabled) {
+            const permsDiv = document.getElementById(`areaPerms_${maKhuVuc}`);
+            permsDiv.style.display = enabled ? 'block' : 'none';
+            
+            if (!enabled) {
+                document.getElementById(`areaView_${maKhuVuc}`).checked = false;
+                document.getElementById(`areaControl_${maKhuVuc}`).checked = false;
+            }
+        }
+        
+        // Tìm kiếm khu vực
+        function filterAreas() {
+            const searchTerm = document.getElementById('areaSearchInput').value.toLowerCase();
+            const areaItems = document.querySelectorAll('#areaPermissionsList .permission-item');
+            const noAreasMessage = document.getElementById('noAreasMessage');
+            
+            let visibleCount = 0;
+            
+            areaItems.forEach(item => {
+                const areaName = item.dataset.areaName || '';
+                
+                if (!searchTerm || areaName.includes(searchTerm)) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            noAreasMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+        
+        // Xử lý khi tick "Điều khiển" ở khu vực thì tự động tick "Xem"
+        function handleAreaControlCheckbox(maKhuVuc, checked) {
+            if (checked) {
+                const viewCheckbox = document.getElementById(`areaView_${maKhuVuc}`);
+                if (viewCheckbox && !viewCheckbox.disabled) {
+                    viewCheckbox.checked = true;
+                }
+            }
+        }
+        
+        function filterDevicesByArea() {
+            // Lấy tất cả các khu vực được chọn
+            const selectedAreas = [];
+            document.querySelectorAll('[id^="area_"]').forEach(checkbox => {
+                if (checkbox.checked) {
+                    const maKhuVuc = parseInt(checkbox.id.replace('area_', ''));
+                    selectedAreas.push(maKhuVuc);
+                }
+            });
+            
+            // Lọc và hiển thị thiết bị
+            const devicesList = document.getElementById('devicePermissionsList');
+            const noDevicesMessage = document.getElementById('noDevicesMessage');
+            
+            if (!window.allDevicesData || window.allDevicesData.length === 0) {
+                devicesList.innerHTML = '';
+                noDevicesMessage.style.display = 'block';
+                return;
+            }
+            
+            // Nếu không có khu vực nào được chọn, hiện tất cả
+            const filteredDevices = selectedAreas.length === 0 
+                ? window.allDevicesData 
+                : window.allDevicesData.filter(device => selectedAreas.includes(device.maKhuVuc));
+            
+            if (filteredDevices.length > 0) {
+                devicesList.innerHTML = filteredDevices.map(device => `
+                    <div class="list-group-item permission-item d-flex align-items-center justify-content-between" data-area-id="${device.maKhuVuc}">
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox" class="form-check-input permission-checkbox me-3" 
+                                   id="device_${device.maThietBi}" 
+                                   ${device.hasPermission ? 'checked' : ''}
+                                   ${device.inheritedFromProject ? 'disabled' : ''}
+                                   onchange="toggleDevicePermissions(${device.maThietBi}, this.checked)">
+                            <label for="device_${device.maThietBi}" class="mb-0">
+                                <strong>${device.tenThietBi}</strong>
+                                ${device.inheritedFromProject ? '<span class="badge bg-info ms-2">Từ dự án</span>' : ''}
+                                <br>
+                                <small class="text-muted">Khu vực: ${device.tenKhuVuc}</small>
+                            </label>
+                        </div>
+                        <div id="devicePerms_${device.maThietBi}" ${!device.hasPermission ? 'style="display:none;"' : ''}>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="deviceView_${device.maThietBi}" 
+                                       ${device.coQuyenXemDuLieu ? 'checked' : ''}
+                                       ${device.inheritedFromProject ? 'disabled' : ''}>
+                                <label class="form-check-label" for="deviceView_${device.maThietBi}">
+                                    <i class="bi bi-eye"></i> Xem
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="deviceControl_${device.maThietBi}" 
+                                       ${device.coQuyenDieuKhien ? 'checked' : ''}
+                                       ${device.inheritedFromProject ? 'disabled' : ''}>
+                                <label class="form-check-label" for="deviceControl_${device.maThietBi}">
+                                    <i class="bi bi-sliders"></i> Điều khiển
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                noDevicesMessage.style.display = 'none';
+            } else {
+                devicesList.innerHTML = '';
+                noDevicesMessage.style.display = 'block';
+            }
+        }
+
+        function toggleDevicePermissions(maThietBi, enabled) {
+            const permsDiv = document.getElementById(`devicePerms_${maThietBi}`);
+            permsDiv.style.display = enabled ? 'block' : 'none';
+            
+            if (!enabled) {
+                document.getElementById(`deviceView_${maThietBi}`).checked = false;
+                document.getElementById(`deviceControl_${maThietBi}`).checked = false;
+                document.getElementById(`deviceEdit_${maThietBi}`).checked = false;
+            }
+        }
+        
+        // Xử lý khi tick "Điều khiển" thì tự động tick "Xem" và "Chỉnh sửa"
+        function handleControlCheckbox(maThietBi, checked) {
+            if (checked) {
+                // Nếu tick Điều khiển thì tự động tick Xem và Chỉnh sửa
+                const viewCheckbox = document.getElementById(`deviceView_${maThietBi}`);
+                const editCheckbox = document.getElementById(`deviceEdit_${maThietBi}`);
+                
+                if (viewCheckbox && !viewCheckbox.disabled) {
+                    viewCheckbox.checked = true;
+                }
+                if (editCheckbox && !editCheckbox.disabled) {
+                    editCheckbox.checked = true;
+                }
+            }
+        }
+        
+        // Xử lý khi tick "Chỉnh sửa" thì tự động tick "Điều khiển" và "Xem"
+        function handleEditCheckbox(maThietBi, checked) {
+            if (checked) {
+                // Nếu tick Chỉnh sửa thì tự động tick Điều khiển và Xem
+                const controlCheckbox = document.getElementById(`deviceControl_${maThietBi}`);
+                const viewCheckbox = document.getElementById(`deviceView_${maThietBi}`);
+                
+                if (controlCheckbox && !controlCheckbox.disabled) {
+                    controlCheckbox.checked = true;
+                }
+                if (viewCheckbox && !viewCheckbox.disabled) {
+                    viewCheckbox.checked = true;
+                }
+            }
+        }
+        
+        // Tìm kiếm và lọc thiết bị
+        function filterAndSearchDevices() {
+            const searchTerm = document.getElementById('deviceSearchInput').value.toLowerCase();
+            const selectedAreaId = document.getElementById('deviceAreaFilter').value;
+            const deviceItems = document.querySelectorAll('#devicePermissionsList .permission-item');
+            const noDevicesMessage = document.getElementById('noDevicesMessage');
+            
+            let visibleCount = 0;
+            
+            deviceItems.forEach(item => {
+                const deviceName = item.dataset.deviceName || '';
+                const areaId = item.dataset.areaId || '';
+                
+                const matchesSearch = !searchTerm || deviceName.includes(searchTerm);
+                const matchesArea = !selectedAreaId || areaId === selectedAreaId;
+                
+                if (matchesSearch && matchesArea) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            noDevicesMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
+        // Save detail permissions
+        document.getElementById('btnSaveDetailPermissions').addEventListener('click', async function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
+            
+            const duAnId = /*[[${duAn.maDuAn}]]*/ 0;
+            
+            // Collect area permissions
+            const areaPermissions = [];
+            document.querySelectorAll('[id^="area_"]').forEach(checkbox => {
+                // Bỏ qua các checkbox bị disabled (quyền từ dự án)
+                if (checkbox.checked && !checkbox.disabled) {
+                    const maKhuVuc = checkbox.id.replace('area_', '');
+                    const coQuyenXem = document.getElementById(`areaView_${maKhuVuc}`).checked;
+                    const coQuyenDieuKhien = document.getElementById(`areaControl_${maKhuVuc}`).checked;
+                    
+                    // Xác định vai trò dựa trên checkbox
+                    let vaiTro = 'XEM'; // Mặc định chỉ xem
+                    if (coQuyenDieuKhien) {
+                        vaiTro = 'QUAN_LY_KHU_VUC'; // Nếu có điều khiển thì là quản lý
+                    }
+                    
+                    areaPermissions.push({ maKhuVuc: parseInt(maKhuVuc), vaiTro });
+                }
+            });
+            
+            // Collect device permissions
+            const devicePermissions = [];
+            document.querySelectorAll('[id^="device_"]').forEach(checkbox => {
+                // Bỏ qua các checkbox bị disabled (quyền từ dự án)
+                if (checkbox.checked && !checkbox.disabled) {
+                    const maThietBi = checkbox.id.replace('device_', '');
+                    const coQuyenXemDuLieu = document.getElementById(`deviceView_${maThietBi}`).checked;
+                    const coQuyenDieuKhien = document.getElementById(`deviceControl_${maThietBi}`).checked;
+                    const coQuyenChinhSua = document.getElementById(`deviceEdit_${maThietBi}`).checked;
+                    devicePermissions.push({ 
+                        maThietBi: parseInt(maThietBi), 
+                        coQuyenXemDuLieu, 
+                        coQuyenDieuKhien,
+                        coQuyenChinhSua
+                    });
+                }
+            });
+            
+            try {
+                const response = await fetch(`/du-an/${duAnId}/thanh-vien/${currentPermissionUserId}/permissions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    },
+                    body: JSON.stringify({
+                        areaPermissions,
+                        devicePermissions
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Đã lưu phân quyền thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('detailPermissionModal')).hide();
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                alert('Có lỗi xảy ra: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

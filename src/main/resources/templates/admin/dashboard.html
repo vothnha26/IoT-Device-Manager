@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="vi" 
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:replace="~{admin/layout :: admin-head('Admin Dashboard')}"></head>
+
+<body>
+    <!-- Navbar -->
+    <nav th:replace="~{admin/layout :: admin-navbar}"></nav>
+    
+    <!-- Admin Layout Container -->
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside th:replace="~{admin/layout :: admin-sidebar}"></aside>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <div class="container-fluid">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="admin-card-title mb-1">Dashboard</h1>
+                    <p class="text-muted">Tổng quan hệ thống IoT Manager</p>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="admin-stats-grid">
+                <!-- Users Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: var(--admin-accent)">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 id="totalUsers" th:text="${totalUsers}">0</h4>
+                        <p>Người dùng</p>
+                    </div>
+                </div>
+                
+                <!-- Devices Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: var(--admin-success)">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 id="totalDevices" th:text="${totalDevices}">0</h4>
+                        <p>Thiết bị</p>
+                    </div>
+                </div>
+                
+                <!-- Areas Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: var(--admin-warning)">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 id="totalAreas" th:text="${totalAreas}">0</h4>
+                        <p>Khu vực</p>
+                    </div>
+                </div>
+                
+                <!-- Projects Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: var(--admin-danger)">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 id="totalProjects" th:text="${totalProjects}">0</h4>
+                        <p>Dự án</p>
+                    </div>
+                </div>
+                
+                <!-- Notifications Today Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: #9b59b6">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 id="todayNotifications" th:text="${todayNotifications}">0</h4>
+                        <p>Thông báo hôm nay</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row mt-4">
+                <!-- Pie Chart - Gói cước -->
+                <div class="col-md-6 mb-4">
+                    <div class="admin-card h-100">
+                        <div class="admin-card-header">
+                            <h5 class="admin-card-title">
+                                <i class="fas fa-chart-pie"></i>
+                                Tỉ lệ gói đang hoạt động / hết hạn
+                            </h5>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="packagePieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Chart - Doanh thu -->
+                <div class="col-md-6 mb-4">
+                    <div class="admin-card h-100">
+                        <div class="admin-card-header">
+                            <h5 class="admin-card-title">
+                                <i class="fas fa-chart-line"></i>
+                                Doanh thu theo tháng
+                            </h5>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueLineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{admin/layout :: admin-footer}"></footer>
+    
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Dashboard Charts Script -->
+    <script th:inline="javascript">
+        // Function to update stats with animation
+        function updateStats() {
+            fetch('/api/admin/stats/overview')
+                .then(response => response.json())
+                .then(data => {
+                    // Update each stat with smooth animation
+                    animateValue('totalUsers', parseInt(document.getElementById('totalUsers').textContent), data.totalUsers, 500);
+                    animateValue('totalDevices', parseInt(document.getElementById('totalDevices').textContent), data.totalDevices, 500);
+                    animateValue('totalAreas', parseInt(document.getElementById('totalAreas').textContent), data.totalAreas, 500);
+                    animateValue('totalProjects', parseInt(document.getElementById('totalProjects').textContent), data.totalProjects, 500);
+                    animateValue('todayNotifications', parseInt(document.getElementById('todayNotifications').textContent), data.todayNotifications, 500);
+                })
+                .catch(error => console.error('Error fetching stats:', error));
+        }
+
+        // Animate number changes
+        function animateValue(id, start, end, duration) {
+            const element = document.getElementById(id);
+            if (!element) return;
+            
+            if (start === end) return;
+            
+            // Add update animation class
+            element.classList.add('updated');
+            setTimeout(() => element.classList.remove('updated'), 500);
+            
+            const range = end - start;
+            const increment = range / (duration / 16); // 60 FPS
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    element.textContent = end;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.round(current);
+                }
+            }, 16);
+        }
+
+        // Update stats every 10 seconds
+        setInterval(updateStats, 10000);
+        
+        // Also update when window gains focus (user comes back to tab)
+        window.addEventListener('focus', updateStats);
+
+        // Pie Chart - Package Status
+        const pieCtx = document.getElementById('packagePieChart');
+        let packageChart;
+        if (pieCtx) {
+            packageChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Đang hoạt động', 'Hết hạn', 'Đã hủy'],
+                    datasets: [{
+                        data: [0, 0, 0], // Will be updated from API
+                        backgroundColor: [
+                            '#43a047', // Green for active
+                            '#e53935', // Red for expired
+                            '#9e9e9e'  // Grey for cancelled
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const value = context.parsed;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    label += value + ' gói (' + percentage + '%)';
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Load package stats from API
+            fetch('/admin/api/package-stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        packageChart.data.datasets[0].data = [
+                            data.active,
+                            data.expired,
+                            data.cancelled
+                        ];
+                        packageChart.update();
+                    }
+                })
+                .catch(error => console.error('Error loading package stats:', error));
+        }
+
+        // Line Chart - Revenue
+        const lineCtx = document.getElementById('revenueLineChart');
+        let revenueChart;
+        if (lineCtx) {
+            revenueChart = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: [], // Will be updated from API
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: [], // Will be updated from API
+                        borderColor: '#3949ab',
+                        backgroundColor: 'rgba(57, 73, 171, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#3949ab',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += new Intl.NumberFormat('vi-VN', {
+                                        style: 'currency',
+                                        currency: 'VND'
+                                    }).format(context.parsed.y);
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return new Intl.NumberFormat('vi-VN', {
+                                        notation: 'compact',
+                                        compactDisplay: 'short'
+                                    }).format(value);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+            
+            // Load revenue data from API
+            fetch('/admin/api/revenue-by-month')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        revenueChart.data.labels = data.months;
+                        revenueChart.data.datasets[0].data = data.revenues;
+                        revenueChart.update();
+                    }
+                })
+                .catch(error => console.error('Error loading revenue data:', error));
+        }
+    </script>
+        </div>
+    </div>
+</body>
+</html>

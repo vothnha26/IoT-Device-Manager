@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "d:/Fullit/Final/IoT-Device-Manager",
-      "program": "d:/Fullit/Final/IoT-Device-Manager/build/Debug/outDebug",
+      "cwd": "d:/Fullit/projects/Web3/IoT-Device-Manager",
+      "program": "d:/Fullit/projects/Web3/IoT-Device-Manager/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

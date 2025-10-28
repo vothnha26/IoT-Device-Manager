@@ -31,6 +31,9 @@ public class ThietBi {
     @Column(name = "ngay_lap_dat")
     private LocalDate ngayLapDat;
 
+    @Column(name = "mo_ta", length = 500)
+    private String moTa;
+
     @JsonBackReference("owner-devices")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_chu_so_huu", nullable = false)
@@ -46,12 +49,16 @@ public class ThietBi {
     private KhuVuc khuVuc;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "thietBi")
+    @OneToMany(mappedBy = "thietBi", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<NhatKyDuLieu> nhatKyDuLieus;
 
     @JsonIgnore
     @OneToMany(mappedBy = "thietBi", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LichTrinh> lichTrinhs;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "thietBi", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ThongBao> thongBaos;
 
     public ThietBi() {
     }
@@ -142,5 +149,21 @@ public class ThietBi {
 
     public void setLichTrinhs(Set<LichTrinh> lichTrinhs) {
         this.lichTrinhs = lichTrinhs;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
+
+    public Set<ThongBao> getThongBaos() {
+        return thongBaos;
+    }
+
+    public void setThongBaos(Set<ThongBao> thongBaos) {
+        this.thongBaos = thongBaos;
     }
 }

@@ -3,8 +3,12 @@ package com.iot.management.service;
 import com.iot.management.model.entity.LuatNguong;
 import com.iot.management.model.entity.NhatKyDuLieu;
 import com.iot.management.model.entity.LichTrinh;
+import java.util.List;
 
 public interface TuDongHoaService {
+    List<LichTrinh> getLichTrinhByThietBi(Long maThietBi);
+    boolean existsById(Long id);
+    LichTrinh toggleSchedule(Long id, boolean kichHoat);
     // Tạo hoặc cập nhật một luật ngưỡng
     LuatNguong saveRule(LuatNguong luatNguong);
     

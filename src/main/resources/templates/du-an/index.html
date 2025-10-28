@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
+
+<head>
+    <title th:fragment="title">Quản lý dự án</title>
+</head>
+<body>
+
+<main th:fragment="main">
+    <!-- Header Section with Gradient Background -->
+    <div class="project-header py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="display-5 fw-bold text-white mb-2">Dự án của bạn</h1>
+                    <p class="text-white-50 mb-0">Quản lý và theo dõi các dự án IoT</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <button type="button" class="btn btn-light btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#themDuAnModal">
+                        <i class="bi bi-plus-lg me-2"></i>Thêm dự án mới
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(duAns)}" class="text-center py-5 empty-state-container">
+            <div class="empty-state-content">
+                <div class="mb-4">
+                    <i class="bi bi-building-add display-1"></i>
+                </div>
+                <h2 class="fw-bold mb-3">Bắt đầu hành trình IoT của bạn</h2>
+                <p class="text-muted mb-4">Tạo dự án đầu tiên và bắt đầu quản lý thiết bị IoT của bạn ngay hôm nay</p>
+                <button type="button" class="btn btn-gradient btn-lg" data-bs-toggle="modal" data-bs-target="#themDuAnModal">
+                    <i class="bi bi-plus-lg me-2"></i>Tạo dự án đầu tiên
+                </button>
+            </div>
+        </div>
+
+        <!-- Project List -->
+        <div class="row g-4" th:unless="${#lists.isEmpty(duAns)}">
+            <div class="col-md-4" th:each="duAn : ${duAns}">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="card-title fw-bold mb-0" th:text="${duAn.tenDuAn}">Tên dự án</h4>
+                            <div class="dropdown">
+                                <button class="btn btn-link text-dark p-0" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <!-- Quản lý thành viên - chỉ CHU_SO_HUU -->
+                                    <li th:if="${managePermissions[duAn.maDuAn]}">
+                                        <a class="dropdown-item" 
+                                           th:href="@{/du-an/{id}/thanh-vien(id=${duAn.maDuAn})}">
+                                            <i class="bi bi-people me-2"></i>Quản lý thành viên
+                                        </a>
+                                    </li>
+                                    <!-- Mời thành viên - chỉ CHU_SO_HUU -->
+                                    <li th:if="${managePermissions[duAn.maDuAn]}">
+                                        <a class="dropdown-item invite-member-link" href="#" 
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#moiThanhVienModal"
+                                           th:data-du-an-id="${duAn.maDuAn}"
+                                           th:data-du-an-ten="${duAn.tenDuAn}">
+                                            <i class="bi bi-person-plus me-2"></i>Mời thành viên
+                                        </a>
+                                    </li>
+                                    <li th:if="${managePermissions[duAn.maDuAn]}"><hr class="dropdown-divider"></li>
+                                    <!-- Chỉnh sửa - CHU_SO_HUU và QUAN_LY -->
+                                    <li th:if="${editPermissions[duAn.maDuAn]}">
+                                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                           data-bs-target="#chinhSuaDuAnModal"
+                                           th:data-id="${duAn.maDuAn}"
+                                           th:data-ten="${duAn.tenDuAn}"
+                                           th:data-mota="${duAn.moTa}">
+                                            <i class="bi bi-pencil me-2"></i>Chỉnh sửa
+                                        </a>
+                                    </li>
+                                    <!-- Xóa - chỉ CHU_SO_HUU -->
+                                    <li th:if="${deletePermissions[duAn.maDuAn]}"><hr class="dropdown-divider"></li>
+                                    <li th:if="${deletePermissions[duAn.maDuAn]}">
+                                        <a class="dropdown-item text-danger" href="#" 
+                                           th:onclick="'return xoaDuAn(' + ${duAn.maDuAn} + ')'">
+                                            <i class="bi bi-trash me-2"></i>Xóa
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="card-text text-muted mb-4" th:text="${duAn.moTa}">Mô tả dự án</p>
+                        
+                        <!-- Vai trò người dùng -->
+                        <div class="mb-3">
+                            <span class="badge" 
+                                  th:classappend="${userRoles[duAn.maDuAn] == 'CHU_SO_HUU' ? 'bg-danger' : (userRoles[duAn.maDuAn] == 'QUAN_LY' ? 'bg-warning text-dark' : 'bg-info')}">
+                                <i class="bi" 
+                                   th:classappend="${userRoles[duAn.maDuAn] == 'CHU_SO_HUU' ? 'bi-crown-fill' : (userRoles[duAn.maDuAn] == 'QUAN_LY' ? 'bi-briefcase-fill' : 'bi-person-fill')}"></i>
+                                <span th:text="${userRoles[duAn.maDuAn] == 'CHU_SO_HUU' ? 'Chủ sở hữu' : (userRoles[duAn.maDuAn] == 'QUAN_LY' ? 'Quản lý' : 'Người dùng')}">Vai trò</span>
+                            </span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <a th:href="@{/du-an/{id}/khu-vuc(id=${duAn.maDuAn})}" 
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-diagram-3 me-2"></i>Xem khu vực
+                            </a>
+                            <button type="button" class="btn btn-outline-success" 
+                                    th:onclick="'exportProjectReport(' + ${duAn.maDuAn} + ')'">
+                                <i class="bi bi-file-earmark-excel me-2"></i>Xuất báo cáo
+                            </button>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div></div>
+                            <div>
+                                <span class="badge bg-light text-primary me-2">
+                                    <i class="bi bi-diagram-3 me-1"></i>
+                                    <span th:text="${#lists.size(duAn.khuVucs)}">0</span> khu vực
+                                </span>
+                                <span class="badge bg-light text-primary">
+                                    <i class="bi bi-cpu me-1"></i>
+                                    <span th:text="${#aggregates.sum(duAn.khuVucs.![thietBis.size()])}">0</span> thiết bị
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm Dự Án Mới -->
+    <div class="modal fade" id="themDuAnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm dự án mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="themDuAnForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="tenDuAn" class="form-label">Tên dự án<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="tenDuAn" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="moTa" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="moTa" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="btnTaoDuAn">Tạo dự án</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chỉnh Sửa Dự Án -->
+    <div class="modal fade" id="chinhSuaDuAnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa dự án</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="chinhSuaDuAnForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="maDuAnEdit">
+                        <div class="mb-3">
+                            <label for="tenDuAnEdit" class="form-label">Tên dự án<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="tenDuAnEdit" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="moTaEdit" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="moTaEdit" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="btnLuuDuAn">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Mời Thành Viên -->
+    <div class="modal fade" id="moiThanhVienModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Mời thành viên</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="moiThanhVienForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="maDuAnInvite">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Dự án</label>
+                            <p class="form-control-plaintext" id="tenDuAnInvite"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label for="emailInvite" class="form-label">Email thành viên<span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="emailInvite" 
+                                   placeholder="Nhập email người dùng" required>
+                            <div class="form-text">Người dùng phải đã đăng ký tài khoản</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Vai trò<span class="text-danger">*</span></label>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="vaiTroInvite" 
+                                           id="vaiTroQuanLy" value="QUAN_LY" autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100 py-3" for="vaiTroQuanLy">
+                                        <i class="bi bi-briefcase d-block fs-3 mb-2"></i>
+                                        <strong class="d-block">Quản lý</strong>
+                                        <small class="text-muted d-block mt-1">Quản lý dự án và thành viên</small>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="vaiTroInvite" 
+                                           id="vaiTroNguoiDung" value="NGUOI_DUNG" checked autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100 py-3" for="vaiTroNguoiDung">
+                                        <i class="bi bi-person d-block fs-3 mb-2"></i>
+                                        <strong class="d-block">Người dùng</strong>
+                                        <small class="text-muted d-block mt-1">Xem và điều khiển thiết bị</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuiLoiMoi">
+                            <i class="bi bi-send me-2"></i>Gửi lời mời
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Xuất Báo Cáo -->
+    <div class="modal fade" id="xuatBaoCaoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xuất báo cáo dự án</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="maDuAnExport">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn khu vực</label>
+                        <select class="form-select" id="khuVucSelect" required>
+                            <option value="">-- Chọn khu vực --</option>
+                        </select>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Từ ngày</label>
+                            <input type="datetime-local" class="form-control" id="startTimeExport" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Đến ngày</label>
+                            <input type="datetime-local" class="form-control" id="endTimeExport" required />
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Lọc nhanh</label>
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setExportTimeRange(2)">2 giờ</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setExportTimeRange(24)">Hôm nay</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setExportTimeRange(168)">7 ngày</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setExportTimeRange(720)">30 ngày</button>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Báo cáo bao gồm: Thông tin khu vực, dữ liệu cảm biến, và thời gian hoạt động thiết bị
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-success" onclick="downloadReport()">
+                        <i class="bi bi-download me-2"></i>Tải báo cáo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+
+<th:block th:fragment="scripts">
+    <script th:inline="javascript">
+        // Toast notification function - Hiển thị thông báo đẹp mắt
+        function showToast(message, type = 'success') {
+            // Remove existing toasts
+            const existingToasts = document.querySelectorAll('.custom-toast');
+            existingToasts.forEach(toast => toast.remove());
+            
+            // Create toast container if it doesn't exist
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container position-fixed end-0 p-3';
+                container.style.top = '80px'; // Đặt xuống dưới header
+                container.style.zIndex = '99999';
+                document.body.appendChild(container);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast custom-toast align-items-center border-0 shadow-lg';
+            toast.setAttribute('role', 'alert');
+            toast.style.minWidth = '300px';
+            
+            // Set color based on type
+            if (type === 'success') {
+                toast.style.backgroundColor = '#28a745';
+            } else {
+                toast.style.backgroundColor = '#dc3545';
+            }
+            
+            const body = document.createElement('div');
+            body.className = 'd-flex align-items-center';
+            
+            // Add icon
+            const icon = document.createElement('i');
+            icon.className = type === 'success' ? 'bi bi-check-circle-fill text-white ms-3 me-2' : 'bi bi-x-circle-fill text-white ms-3 me-2';
+            icon.style.fontSize = '1.25rem';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'toast-body text-white fw-bold py-3 flex-grow-1';
+            messageDiv.textContent = message;
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'btn-close btn-close-white me-2';
+            closeBtn.type = 'button';
+            closeBtn.onclick = () => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            };
+            
+            body.appendChild(icon);
+            body.appendChild(messageDiv);
+            body.appendChild(closeBtn);
+            toast.appendChild(body);
+            container.appendChild(toast);
+            
+            // Show toast with animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // CSS styles
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            .project-header {
+                background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            }
+            .btn-gradient {
+                background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+                color: white;
+            }
+            .shadow-hover {
+                transition: all 0.3s ease;
+            }
+            .shadow-hover:hover {
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+            }
+            .empty-state-container {
+                background-color: #fff;
+                border-radius: .375rem;
+                box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+            }
+            
+            /* Toast Animation */
+            .custom-toast {
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease-in-out;
+            }
+            .custom-toast.show {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+        // Di chuyển modals ra body để tránh z-index conflicts với main container
+        const themModalEl = document.getElementById('themDuAnModal');
+        const suaModalEl = document.getElementById('chinhSuaDuAnModal');
+        const moiModalEl = document.getElementById('moiThanhVienModal');
+        const xuatBaoCaoModalEl = document.getElementById('xuatBaoCaoModal');
+        
+        if (themModalEl && themModalEl.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(themModalEl);
+        }
+        if (suaModalEl && suaModalEl.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(suaModalEl);
+        }
+        if (moiModalEl && moiModalEl.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(moiModalEl);
+        }
+        if (xuatBaoCaoModalEl && xuatBaoCaoModalEl.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(xuatBaoCaoModalEl);
+        }
+
+        // Initialize modals after moving to body
+        const themDuAnModal = new bootstrap.Modal(themModalEl);
+        const chinhSuaDuAnModal = new bootstrap.Modal(suaModalEl);
+        const moiThanhVienModal = new bootstrap.Modal(moiModalEl);
+        const xuatBaoCaoModal = new bootstrap.Modal(xuatBaoCaoModalEl);
+
+        // Form handling for create
+        document.getElementById('themDuAnForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnTaoDuAn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+
+            try {
+                const formData = {
+                    tenDuAn: document.getElementById('tenDuAn').value,
+                    moTa: document.getElementById('moTa').value
+                };
+
+                const response = await fetch('/du-an/them-moi', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Đóng modal ngay
+                    themDuAnModal.hide();
+                    
+                    // Hiển thị thông báo thành công
+                    showToast('✓ ' + (data.message || 'Thêm dự án thành công!'), 'success');
+                    
+                    // Reload sau 2 giây
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                showToast('✗ Lỗi thêm dự án: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // Form handling for edit
+        document.getElementById('chinhSuaDuAnForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnLuuDuAn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+
+            try {
+                const maDuAn = document.getElementById('maDuAnEdit').value;
+                const formData = {
+                    tenDuAn: document.getElementById('tenDuAnEdit').value,
+                    moTa: document.getElementById('moTaEdit').value
+                };
+
+                const response = await fetch(`/du-an/${maDuAn}/cap-nhat`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Đóng modal ngay
+                    chinhSuaDuAnModal.hide();
+                    
+                    // Hiển thị thông báo thành công
+                    showToast('✓ ' + (data.message || 'Cập nhật dự án thành công!'), 'success');
+                    
+                    // Reload sau 2 giây
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                showToast('✗ Lỗi cập nhật dự án: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // Handle edit modal data population
+        document.getElementById('chinhSuaDuAnModal').addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const maDuAn = button.getAttribute('data-id');
+            const tenDuAn = button.getAttribute('data-ten');
+            const moTa = button.getAttribute('data-mota');
+
+            document.getElementById('maDuAnEdit').value = maDuAn;
+            document.getElementById('tenDuAnEdit').value = tenDuAn;
+            document.getElementById('moTaEdit').value = moTa;
+        });
+
+        // Handle invite modal data population
+        document.getElementById('moiThanhVienModal').addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            if (button && button.classList.contains('invite-member-link')) {
+                const maDuAn = button.getAttribute('data-du-an-id');
+                const tenDuAn = button.getAttribute('data-du-an-ten');
+                
+                document.getElementById('maDuAnInvite').value = maDuAn;
+                document.getElementById('tenDuAnInvite').textContent = tenDuAn;
+                document.getElementById('emailInvite').value = '';
+                document.getElementById('vaiTroNguoiDung').checked = true;
+            }
+        });
+
+        // Delete project handler
+        async function xoaDuAn(maDuAn) {
+            if (!confirm('⚠️ Cảnh báo: Xóa dự án sẽ xóa toàn bộ khu vực, thiết bị và dữ liệu liên quan. Bạn có chắc chắn muốn xóa dự án này?')) {
+                return false;
+            }
+
+            try {
+                const response = await fetch(`/du-an/${maDuAn}/xoa`, {
+                    method: 'DELETE',
+                    headers: {
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Hiển thị thông báo thành công
+                    showToast('✓ ' + (data.message || 'Xóa dự án thành công!'), 'success');
+                    
+                    // Reload sau 2 giây
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                showToast('✗ Lỗi xóa dự án: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        // Form handling for invite member
+        document.getElementById('moiThanhVienForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnGuiLoiMoi');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang gửi...';
+
+            try {
+                const maDuAn = document.getElementById('maDuAnInvite').value;
+                const email = document.getElementById('emailInvite').value;
+                const vaiTro = document.querySelector('input[name="vaiTroInvite"]:checked').value;
+
+                const response = await fetch(`/du-an/${maDuAn}/thanh-vien/moi`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [document.querySelector('meta[name="_csrf_header"]').content]: 
+                        document.querySelector('meta[name="_csrf"]').content
+                    },
+                    body: JSON.stringify({ email, vaiTro })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Đã gửi lời mời thành công!');
+                    moiThanhVienModal.hide();
+                    this.reset();
+                } else {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+        
+        // Export project report
+        async function exportProjectReport(maDuAn) {
+            try {
+                // Lấy danh sách khu vực của dự án
+                const response = await fetch(`/api/khu-vuc/du-an/${maDuAn}`);
+                const khuVucs = await response.json();
+                
+                // Populate select box
+                const selectBox = document.getElementById('khuVucSelect');
+                selectBox.innerHTML = '<option value="">-- Chọn khu vực --</option>';
+                khuVucs.forEach(kv => {
+                    selectBox.innerHTML += `<option value="${kv.maKhuVuc}">${kv.tenKhuVuc}</option>`;
+                });
+                
+                // Set default time range (24 hours)
+                setExportTimeRange(24);
+                
+                // Store project ID
+                document.getElementById('maDuAnExport').value = maDuAn;
+                
+                // Show modal
+                xuatBaoCaoModal.show();
+            } catch (error) {
+                alert('Không thể tải danh sách khu vực: ' + error.message);
+            }
+        }
+        
+        function setExportTimeRange(hours) {
+            const now = new Date();
+            const start = new Date(now.getTime() - hours * 60 * 60 * 1000);
+            
+            document.getElementById('endTimeExport').value = formatDateTimeLocal(now);
+            document.getElementById('startTimeExport').value = formatDateTimeLocal(start);
+        }
+        
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        
+        function downloadReport() {
+            const khuVucId = document.getElementById('khuVucSelect').value;
+            const startTime = document.getElementById('startTimeExport').value;
+            const endTime = document.getElementById('endTimeExport').value;
+            
+            if (!khuVucId) {
+                alert('Vui lòng chọn khu vực');
+                return;
+            }
+            
+            if (!startTime || !endTime) {
+                alert('Vui lòng chọn khoảng thời gian');
+                return;
+            }
+            
+            const startISO = new Date(startTime).toISOString();
+            const endISO = new Date(endTime).toISOString();
+            
+            const url = `/api/data-logs/export-report?khuVucId=${khuVucId}&startTime=${encodeURIComponent(startISO)}&endTime=${encodeURIComponent(endISO)}`;
+            window.open(url, '_blank');
+            
+            xuatBaoCaoModal.hide();
+        }
+    </script>
+</th:block>
+
+</body>
+</html>

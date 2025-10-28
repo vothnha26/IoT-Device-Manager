@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="fragments/layout :: layout(~{::title}, ~{::main}, ~{::script})">
+
+<head>
+    <title>Quản lý Luật - IoT Manager</title>
+</head>
+
+<body>
+<main>
+    <style>
+        .rules-page {
+            padding: 20px 0;
+            min-height: calc(100vh - 250px);
+        }
+        .rule-card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 5px; border-left: 4px solid #007bff; }
+        .rule-card.inactive { opacity: 0.6; border-left-color: #ccc; }
+        .condition-row { background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+        .logic-operator { background: #e9ecef; padding: 5px 15px; border-radius: 3px; margin: 5px 0; display: inline-block; }
+        .expression-preview { background: #e7f3ff; border: 1px solid #b8daff; padding: 10px; border-radius: 5px; margin-top: 10px; font-family: 'Courier New', monospace; }
+    </style>
+    <div class="rules-page">
+        <div class="container">
+        <div class="d-flex justify-content-between mb-4">
+            <div>
+                <h3>⚙️ Quản Lý Luật Tự Động</h3>
+                <p class="text-muted">Thiết bị: <strong th:text="${thietBi.tenThietBi}">-</strong></p>
+            </div>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ruleModal" onclick="openCreateModal()">+ Tạo Luật</button>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>💡 Hướng dẫn:</strong> Chỉ dùng <b>Biểu thức</b>. Ví dụ: <code>nhiet_do &gt; 30 AND do_am &lt; 70</code>. Trường hợp đơn giản vẫn có thể viết: <code>nhiet_do &gt; 30</code>. Duy trì: điều kiện phải đúng X giây.
+        </div>
+
+        <div th:if="${#lists.isEmpty(rules)}" class="text-center py-5">
+            <h4 class="text-muted">📭 Chưa có luật</h4>
+        </div>
+
+        <div th:each="rule : ${rules}" class="rule-card" th:classappend="${!rule.kichHoat ? 'inactive' : ''}" th:attr="data-rule-id=${rule.maLuat}">
+            <div class="row">
+                <div class="col-md-9">
+                    <span class="badge bg-primary">🔗 Biểu thức</span>
+                    <span th:if="${rule.kichHoat}" class="badge bg-success">✅ ON</span>
+                    <span th:if="${!rule.kichHoat}" class="badge bg-secondary">⏸️ OFF</span>
+
+                    <div class="mt-2">
+                        <strong>Điều kiện:</strong>
+                        <code th:text="${#strings.isEmpty(rule.bieuThucLogic) ? '-' : rule.bieuThucLogic}"></code>
+                    </div>
+
+                    <div th:if="${rule.thoiGianDuyTriDieuKien != null and rule.thoiGianDuyTriDieuKien > 0}">
+                        <small>⏱️ Duy trì: <strong th:text="${rule.thoiGianDuyTriDieuKien}"></strong>s</small>
+                    </div>
+
+                    <div>
+                        <strong>Hành động:</strong>
+                        <span th:if="${#strings.containsIgnoreCase(rule.lenhHanhDong, 'hoat_dong') or #strings.containsIgnoreCase(rule.lenhHanhDong, 'bat')}" class="badge bg-success">🟢 BẬT</span>
+                        <span th:if="${#strings.containsIgnoreCase(rule.lenhHanhDong, 'tat')}" class="badge bg-danger">🔴 TẮT</span>
+                    </div>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-sm btn-info" th:attr="data-rule-id=${rule.maLuat}" onclick="toggleRuleLogs(this)" title="Xem lịch sử cảnh báo">
+                        👁️ Log
+                    </button>
+                    <button class="btn btn-sm btn-primary" th:onclick="'editRule(' + ${rule.maLuat} + ')'">✏️</button>
+                    <button class="btn btn-sm" th:classappend="${rule.kichHoat ? 'btn-warning' : 'btn-success'}" th:onclick="'toggleRule(' + ${rule.maLuat} + ', ' + ${!rule.kichHoat} + ')'">
+                        <span th:text="${rule.kichHoat ? '⏸️' : '▶️'}"></span>
+                    </button>
+                    <button class="btn btn-sm btn-danger" th:onclick="'deleteRule(' + ${rule.maLuat} + ')'">🗑️</button>
+                </div>
+            </div>
+            
+            <!-- Log Panel (Hidden by default) -->
+            <div class="log-panel" th:id="'logPanel-' + ${rule.maLuat}" style="display: none; margin-top: 15px; border-top: 2px dashed #ddd; padding-top: 15px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        📊 Lịch Sử Cảnh Báo 
+                        <span class="badge bg-secondary" th:id="'logCount-' + ${rule.maLuat}">0</span>
+                    </h6>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" th:id="'timeFilter-' + ${rule.maLuat}" onchange="filterLogs(this)" style="width: 150px;">
+                            <option value="all">Tất cả</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="yesterday">Hôm qua</option>
+                            <option value="week">7 ngày qua</option>
+                            <option value="month">30 ngày qua</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-secondary" th:onclick="'refreshLogs(' + ${rule.maLuat} + ')'">
+                            🔄 Tải lại
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 60px;">#</th>
+                                <th>Nội dung</th>
+                                <th style="width: 200px;">Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody th:id="'logTable-' + ${rule.maLuat}">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    Đang tải...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center" th:id="'loadMoreBtn-' + ${rule.maLuat}" style="display: none;">
+                    <button class="btn btn-sm btn-outline-primary" th:onclick="'loadMoreLogs(' + ${rule.maLuat} + ')'">
+                        Xem thêm...
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ruleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 id="modalTitle">Tạo Luật</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="ruleForm">
+                        <input type="hidden" id="ruleId">
+                        <!-- Chỉ dùng Biểu thức -->
+                        <div id="expressionSection" class="mb-3">
+                            <label><strong>Biểu thức Logic</strong></label>
+                            
+                            <div id="conditionsContainer"></div>
+                            
+                            <button type="button" class="btn btn-sm btn-success" onclick="addCondition()">+ Thêm điều kiện</button>
+                            
+                            <div class="expression-preview mt-3">
+                                <strong>Biểu thức:</strong> <span id="expressionPreview" class="text-primary">-</span>
+                            </div>
+                            <input type="hidden" id="bieuThucLogic">
+                        </div>
+                        <!-- Loại Ngưỡng đã loại bỏ -->
+                        <div class="mb-3">
+                            <label><strong>Duy trì (giây)</strong></label>
+                            <input type="number" class="form-control" id="thoiGianDuyTriDieuKien" value="0" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label><strong>Hành động</strong></label>
+                            <select class="form-select" id="lenhHanhDong">
+                                <option value="hoat_dong">BẬT</option>
+                                <option value="tat">TẮT</option>
+                            </select>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="kichHoat" checked>
+                            <label class="form-check-label">Kích hoạt ngay</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button class="btn btn-primary" onclick="saveRule()">💾 Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const deviceId = /*[[${thietBi.maThietBi}]]*/ 0;
+        
+        // Lấy CSRF token
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+        
+        console.log('CSRF Token:', csrfToken);
+        console.log('CSRF Header:', csrfHeader);
+        
+        // Helper function để thêm CSRF và JWT (nếu có) vào fetch
+        function fetchWithCSRF(url, options = {}) {
+            if (!options.headers) {
+                options.headers = {};
+            }
+            options.headers[csrfHeader] = csrfToken;
+            
+            // Chỉ set Content-Type cho POST/PUT, không set cho DELETE
+            if (options.method === 'POST' || options.method === 'PUT') {
+                options.headers['Content-Type'] = 'application/json';
+            }
+            
+            // Đảm bảo gửi credentials (cookies) để hỗ trợ session-based auth
+            options.credentials = 'same-origin';
+            
+            // Đính kèm JWT nếu ứng dụng dùng JwtAuthFilter
+            try {
+                const jwt = localStorage.getItem('jwt') || sessionStorage.getItem('jwt');
+                if (jwt) {
+                    options.headers['Authorization'] = `Bearer ${jwt}`;
+                }
+            } catch (e) {
+                // ignore
+            }
+            console.log('Fetching:', url, 'with headers:', options.headers);
+            return fetch(url, options);
+        }
+        /*]]>*/
+
+        let conditions = [];
+        let conditionCounter = 0;
+
+        // Thêm điều kiện mới
+        function addCondition() {
+            const id = conditionCounter++;
+            const isFirst = conditions.length === 0;
+            
+            conditions.push({
+                id: id,
+                field: 'nhiet_do',
+                operator: '>',
+                value: '',
+                logicOperator: isFirst ? null : 'AND'
+            });
+            
+            renderConditions();
+        }
+
+        // Xóa điều kiện
+        function removeCondition(id) {
+            conditions = conditions.filter(c => c.id !== id);
+            // Nếu xóa điều kiện đầu tiên, loại bỏ logic operator của điều kiện mới đầu tiên
+            if (conditions.length > 0) {
+                conditions[0].logicOperator = null;
+            }
+            renderConditions();
+        }
+
+        // Cập nhật điều kiện
+        function updateCondition(id, field, value) {
+            const condition = conditions.find(c => c.id === id);
+            if (condition) {
+                condition[field] = value;
+                buildExpression();
+            }
+        }
+
+        // Render giao diện các điều kiện
+        function renderConditions() {
+            const container = document.getElementById('conditionsContainer');
+            container.innerHTML = '';
+            
+            conditions.forEach((cond, index) => {
+                const div = document.createElement('div');
+                div.className = 'condition-row';
+                
+                let html = '';
+                
+                // Logic operator (AND/OR) - chỉ hiển thị từ điều kiện thứ 2 trở đi
+                if (index > 0) {
+                    html += `
+                        <div class="mb-2">
+                            <select class="form-select form-select-sm d-inline-block w-auto logic-operator" 
+                                    onchange="updateCondition(${cond.id}, 'logicOperator', this.value)">
+                                <option value="AND" ${cond.logicOperator === 'AND' ? 'selected' : ''}>AND</option>
+                                <option value="OR" ${cond.logicOperator === 'OR' ? 'selected' : ''}>OR</option>
+                            </select>
+                        </div>
+                    `;
+                }
+                
+                // Trường, toán tử, giá trị
+                html += `
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control form-control-sm" 
+                                   placeholder="Trường (vd: nhiet_do)" 
+                                   value="${cond.field}"
+                                   onchange="updateCondition(${cond.id}, 'field', this.value)">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select form-select-sm" 
+                                    onchange="updateCondition(${cond.id}, 'operator', this.value)">
+                                <option value=">" ${cond.operator === '>' ? 'selected' : ''}>&gt;</option>
+                                <option value="<" ${cond.operator === '<' ? 'selected' : ''}>&lt;</option>
+                                <option value=">=" ${cond.operator === '>=' ? 'selected' : ''}>&gt;=</option>
+                                <option value="<=" ${cond.operator === '<=' ? 'selected' : ''}>&lt;=</option>
+                                <option value="=" ${cond.operator === '=' ? 'selected' : ''}>=</option>
+                                <option value="!=" ${cond.operator === '!=' ? 'selected' : ''}>!=</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control form-control-sm" 
+                                   placeholder="Giá trị" 
+                                   value="${cond.value}"
+                                   onchange="updateCondition(${cond.id}, 'value', this.value)">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeCondition(${cond.id})">
+                                🗑️ Xóa
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                div.innerHTML = html;
+                container.appendChild(div);
+            });
+            
+            buildExpression();
+        }
+
+        // Xây dựng chuỗi biểu thức
+        function buildExpression() {
+            let expr = '';
+            
+            conditions.forEach((cond, index) => {
+                if (index > 0 && cond.logicOperator) {
+                    expr += ' ' + cond.logicOperator + ' ';
+                }
+                
+                if (cond.field && cond.value) {
+                    expr += `${cond.field} ${cond.operator} ${cond.value}`;
+                }
+            });
+            
+            document.getElementById('expressionPreview').textContent = expr || '-';
+            document.getElementById('bieuThucLogic').value = expr;
+        }
+
+        // Không còn chuyển đổi loại luật
+
+        function openCreateModal() {
+            document.getElementById('modalTitle').textContent = 'Tạo Luật';
+            document.getElementById('ruleForm').reset();
+            document.getElementById('ruleId').value = '';
+            document.getElementById('expressionSection').style.display = 'block';
+            
+            // Reset builder
+            conditions = [];
+            conditionCounter = 0;
+            addCondition();
+        }
+
+        function editRule(id) {
+            fetchWithCSRF(`/api/rules/${id}`).then(r => r.json()).then(rule => {
+                document.getElementById('modalTitle').textContent = 'Sửa Luật';
+                document.getElementById('ruleId').value = rule.maLuat;
+                document.getElementById('expressionSection').style.display = 'block';
+                
+                // Parse biểu thức thành các điều kiện
+                conditions = [];
+                conditionCounter = 0;
+                
+                const expr = rule.bieuThucLogic || '';
+                if (expr.trim()) {
+                    // Parse expression: split by AND/OR operators
+                    const parts = expr.split(/\s+(AND|OR)\s+/i);
+                    
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i].trim();
+                        
+                        // Skip logic operators (they're in odd indices)
+                        if (part === 'AND' || part === 'OR') continue;
+                        
+                        // Parse condition: field operator value
+                        const match = part.match(/^(\w+)\s*(>=|<=|!=|>|<|=)\s*(.+)$/);
+                        if (match) {
+                            const [, field, operator, value] = match;
+                            const id = conditionCounter++;
+                            
+                            // Find logic operator (it's before this condition in parts array)
+                            let logicOp = null;
+                            if (conditions.length > 0) {
+                                // Get the operator that comes before this condition
+                                const opIndex = parts.indexOf(part) - 1;
+                                if (opIndex >= 0 && (parts[opIndex] === 'AND' || parts[opIndex] === 'OR')) {
+                                    logicOp = parts[opIndex];
+                                }
+                            }
+                            
+                            conditions.push({
+                                id: id,
+                                field: field.trim(),
+                                operator: operator,
+                                value: value.trim(),
+                                logicOperator: logicOp
+                            });
+                        }
+                    }
+                }
+                
+                // Nếu không parse được gì, add 1 điều kiện rỗng
+                if (conditions.length === 0) {
+                    addCondition();
+                } else {
+                    renderConditions();
+                }
+                
+                document.getElementById('thoiGianDuyTriDieuKien').value = rule.thoiGianDuyTriDieuKien || 0;
+                document.getElementById('lenhHanhDong').value = rule.lenhHanhDong || 'hoat_dong';
+                document.getElementById('kichHoat').checked = rule.kichHoat;
+                new bootstrap.Modal(document.getElementById('ruleModal')).show();
+            }).catch(() => alert('Lỗi load'));
+        }
+
+        function saveRule() {
+            const id = document.getElementById('ruleId').value;
+            const lenhHanhDong = document.getElementById('lenhHanhDong').value;
+            
+            // Validate action
+            if (!lenhHanhDong || (lenhHanhDong !== 'hoat_dong' && lenhHanhDong !== 'tat')) {
+                return alert('Hành động không hợp lệ! Phải là "hoat_dong" hoặc "tat"');
+            }
+            
+            const data = {
+                maThietBi: deviceId,
+                lenhHanhDong: lenhHanhDong,
+                kichHoat: document.getElementById('kichHoat').checked,
+                thoiGianDuyTriDieuKien: parseInt(document.getElementById('thoiGianDuyTriDieuKien').value) || 0
+            };
+            
+            // Chỉ dùng biểu thức
+            const e = document.getElementById('bieuThucLogic').value.trim();
+            if (!e) return alert('Nhập đủ điều kiện!');
+            data.bieuThucLogic = e;
+            
+            console.log('Saving rule with data:', data);
+            
+            fetchWithCSRF(id ? `/api/rules/${id}` : '/api/rules', {
+                method: id ? 'PUT' : 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).then(r => {
+                if (r.ok) {
+                    location.reload();
+                } else {
+                    return r.text().then(text => {
+                        console.error('Error response:', text);
+                        throw new Error(text);
+                    });
+                }
+            }).catch(err => {
+                console.error('Save error:', err);
+                alert('Lỗi: ' + (err.message || 'Không thể lưu luật'));
+            });
+        }
+
+        function toggleRule(id, s) {
+            if (confirm(`${s ? 'Kích hoạt' : 'Tắt'}?`)) {
+                fetchWithCSRF(`/api/rules/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({kichHoat: s})
+                }).then(r => r.ok ? location.reload() : Promise.reject()).catch(() => alert('Lỗi!'));
+            }
+        }
+
+        function deleteRule(id) {
+            if (confirm('Xóa?')) {
+                fetchWithCSRF(`/api/rules/${id}`, {method: 'DELETE'})
+                    .then(r => r.ok ? location.reload() : Promise.reject()).catch(() => alert('Lỗi!'));
+            }
+        }
+        
+        // WebSocket để nhận thông báo kích hoạt tự động
+        let stompClient = null;
+        
+        function connectWebSocket() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('WebSocket connected: ' + frame);
+                
+                // Subscribe to device-specific rule activations
+                stompClient.subscribe('/topic/device/' + deviceId + '/rule-activation', function(message) {
+                    const notification = JSON.parse(message.body);
+                    console.log('Rule activated:', notification);
+                    showRuleNotification(notification);
+                });
+            }, function(error) {
+                console.error('WebSocket error:', error);
+                // Retry connection after 5 seconds
+                setTimeout(connectWebSocket, 5000);
+            });
+        }
+        
+        function showRuleNotification(notification) {
+            // Create a toast notification
+            const toast = document.createElement('div');
+            toast.className = 'alert alert-info alert-dismissible fade show position-fixed';
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                <strong>⚡ Luật đã kích hoạt!</strong><br>
+                ${notification.message || 'Điều kiện đã thỏa mãn'}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+        
+        function disconnectWebSocket() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+                console.log('WebSocket disconnected');
+            }
+        }
+        
+        // Connect WebSocket when page loads
+        window.addEventListener('load', function() {
+            connectWebSocket();
+        });
+        
+        // Disconnect WebSocket when page unloads
+        window.addEventListener('beforeunload', function() {
+            disconnectWebSocket();
+        });
+        
+        // ============= VIEW RULE LOGS =============
+        const openLogPanels = new Set(); // Track which panels are open
+        const logCache = {}; // Cache log data by ruleId
+        
+        function toggleRuleLogs(button) {
+            const ruleId = button.getAttribute('data-rule-id');
+            const panel = document.getElementById('logPanel-' + ruleId);
+            
+            if (panel.style.display === 'none') {
+                // Show panel and load logs
+                panel.style.display = 'block';
+                button.innerHTML = '👁️ Ẩn';
+                button.classList.remove('btn-info');
+                button.classList.add('btn-secondary');
+                openLogPanels.add(ruleId);
+                loadRuleLogs(ruleId, 0);
+            } else {
+                // Hide panel
+                panel.style.display = 'none';
+                button.innerHTML = '👁️ Log';
+                button.classList.remove('btn-secondary');
+                button.classList.add('btn-info');
+                openLogPanels.delete(ruleId);
+            }
+        }
+        
+        function loadRuleLogs(ruleId, page = 0) {
+            const tableBody = document.getElementById('logTable-' + ruleId);
+            const logCount = document.getElementById('logCount-' + ruleId);
+            const loadMoreBtn = document.getElementById('loadMoreBtn-' + ruleId);
+            const timeFilter = document.getElementById('timeFilter-' + ruleId).value;
+            
+            // Show loading
+            if (page === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            Đang tải...
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            fetch(`/api/lich-su-canh-bao/luat/${ruleId}?page=${page}&size=20&filter=${timeFilter}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Cache data
+                    if (!logCache[ruleId]) logCache[ruleId] = { page: 0, data: [] };
+                    if (page === 0) {
+                        logCache[ruleId].data = data.content;
+                    } else {
+                        logCache[ruleId].data.push(...data.content);
+                    }
+                    logCache[ruleId].page = page;
+                    
+                    // Update count
+                    logCount.textContent = data.totalElements;
+                    
+                    // Render table
+                    if (data.content && data.content.length > 0) {
+                        const startIndex = page * 20;
+                        tableBody.innerHTML = logCache[ruleId].data.map((log, idx) => {
+                            const timeInfo = formatDateTime(log.thoiGian);
+                            return `
+                                <tr>
+                                    <td class="text-muted">${startIndex + idx + 1}</td>
+                                    <td>${log.noiDung}</td>
+                                    <td class="text-muted">
+                                        <div style="line-height: 1.3;">
+                                            <strong style="color: #495057;">${timeInfo.relative}</strong>
+                                            <br>
+                                            <small style="font-size: 0.85em;">${timeInfo.absolute}</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                        
+                        // Show/hide load more button
+                        if (data.totalPages > page + 1) {
+                            loadMoreBtn.style.display = 'block';
+                        } else {
+                            loadMoreBtn.style.display = 'none';
+                        }
+                    } else {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    📭 Chưa có lịch sử cảnh báo
+                                </td>
+                            </tr>
+                        `;
+                        loadMoreBtn.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading logs:', error);
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="text-center text-danger">
+                                ❌ Không thể tải lịch sử: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function loadMoreLogs(ruleId) {
+            const currentPage = logCache[ruleId]?.page || 0;
+            loadRuleLogs(ruleId, currentPage + 1);
+        }
+        
+        function refreshLogs(ruleId) {
+            delete logCache[ruleId];
+            loadRuleLogs(ruleId, 0);
+        }
+        
+        function filterLogs(selectElement) {
+            const ruleId = selectElement.id.replace('timeFilter-', '');
+            delete logCache[ruleId];
+            loadRuleLogs(ruleId, 0);
+        }
+        
+        function formatDateTime(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            const absoluteTime = date.toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let relativeTime;
+            if (diffMins < 1) {
+                relativeTime = 'Vừa xong';
+            } else if (diffMins < 60) {
+                relativeTime = `${diffMins} phút trước`;
+            } else if (diffHours < 24) {
+                relativeTime = `${diffHours} giờ trước`;
+            } else if (diffDays < 7) {
+                relativeTime = `${diffDays} ngày trước`;
+            } else {
+                relativeTime = absoluteTime;
+            }
+            
+            return {
+                relative: relativeTime,
+                absolute: absoluteTime
+            };
+        }
+    </script>
+    </div>
+</main>
+
+<script th:inline="javascript">
+</script>
+</body>
+</html>

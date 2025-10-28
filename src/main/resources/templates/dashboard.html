@@ -1,229 +1,449 @@
-<!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <title th:text="${title}">IoT Dashboard</title>
+<!DOCTYPE html>
+<html lang="vi" 
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="fragments/layout :: layout(~{::title}, ~{::main}, ~{::script})">
 
-        <!-- Bootstrap CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-        <link th:href="@{/css/theme.css}" rel="stylesheet">
-    </head>
-    <body>
-        <div class="d-flex" id="wrapper">
-            <!-- Sidebar -->
-            <nav id="sidebar" class="bg-dark text-white">
-                <div class="sidebar-header p-3">
-                    <h4 class="mb-0">IoT Manager</h4>
+<head>
+    <title>Dashboard - IoT Management</title>
+</head>
+
+<body>
+    <!-- Main Content -->
+    <main>
+        <div style="padding-top: 80px;">
+        <div class="container py-4">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Tổng quan hệ thống</h1>
+                <div>
+                    <a href="/thiet-bi/them" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Thêm thiết bị mới
+                    </a>
                 </div>
-                <ul class="list-unstyled components">
-                    <li class="active"><a href="#"><i class="fa fa-tachometer-alt me-2"></i> Bảng điều khiển</a></li>
-                    <li><a href="#"><i class="fa fa-user me-2"></i> Thông tin cá nhân</a></li>
-                    <li><a href="#"><i class="fa fa-map me-2"></i> Quản lý khu vực</a></li>
-                    <li><a href="#"><i class="fa fa-chart-pie me-2"></i> Báo cáo</a></li>
-                </ul>
-            </nav>
+            </div>
 
-            <!-- Page Content -->
-            <div id="page-content-wrapper" class="w-100">
-                <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-                    <div class="container-fluid">
-                        <button class="btn btn-primary" id="menu-toggle"><i class="fa fa-bars"></i></button>
-                        <div class="ms-auto">
-                            <span class="me-3 text-muted">Xin chào, <strong>Demo User</strong></span>
-                        </div>
-                    </div>
-                </nav>
-
-                <div class="container-fluid px-4 mt-4">
-                    <!-- Summary cards -->
-                    <div class="row g-3">
-                        <div class="col-lg-3 col-md-6">
-                            <div class="card summary-card shadow-sm">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3 icon-circle bg-primary"><i class="fa fa-layer-group text-white"></i></div>
-                                        <div>
-                                            <h6 class="mb-0">Tổng số khu vực quản lý</h6>
-                                            <h3 class="mb-0">3</h3>
-                                        </div>
-                                    </div>
+            <div class="row g-4">
+                <!-- Row 1: Thông tin tổng quan (2 cards full width) -->
+                <!-- Sử dụng gói cước -->
+                <div class="col-lg-12 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-box-seam dashboard-icon"></i> Sử dụng gói cước</div>
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <div class="dashboard-summary mb-2">Gói hiện tại:</div>
+                                <div class="fs-4 fw-bold text-primary">
+                                    <span id="currentPackageName" class="badge bg-primary fs-6">--</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="card summary-card shadow-sm">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3 icon-circle bg-success"><i class="fa fa-microchip text-white"></i></div>
-                                        <div>
-                                            <h6 class="mb-0">Tổng số Node</h6>
-                                            <h3 class="mb-0">5</h3>
-                                        </div>
-                                    </div>
+                            <div class="col-md-3">
+                                <div class="text-muted mb-1">Thiết bị</div>
+                                <div class="fs-4 fw-bold text-primary">
+                                    <span id="deviceUsed">--</span> / <span id="deviceLimit">--</span>
+                                </div>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div id="deviceProgress" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="card summary-card shadow-sm">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3 icon-circle bg-warning"><i class="fa fa-toggle-on text-white"></i></div>
-                                        <div>
-                                            <h6 class="mb-0">Tổng số công tắc hoạt động</h6>
-                                            <h3 class="mb-0">8</h3>
-                                        </div>
-                                    </div>
+                            <div class="col-md-2">
+                                <div class="text-muted mb-1">Khu vực</div>
+                                <div class="fs-4 fw-bold text-success">
+                                    <span id="areaUsed">--</span> / <span id="areaLimit">--</span>
+                                </div>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div id="areaProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="card summary-card shadow-sm">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3 icon-circle bg-info"><i class="fa fa-thermometer-half text-white"></i></div>
-                                        <div>
-                                            <h6 class="mb-0">Tổng số cảm biến hoạt động</h6>
-                                            <h3 class="mb-0">5</h3>
-                                        </div>
-                                    </div>
+                            <div class="col-md-2">
+                                <div class="text-muted mb-1">Người dùng</div>
+                                <div class="fs-4 fw-bold text-info">
+                                    <span id="userUsed">--</span> / <span id="userLimit">--</span>
+                                </div>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div id="userProgress" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-muted mb-1">
+                                    <i class="bi bi-clock text-warning"></i> Thời hạn còn lại
+                                </div>
+                                <div class="fs-4 fw-bold text-warning">
+                                    <span id="packageDaysLeft">--</span> ngày
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Rooms / Devices -->
-                    <div class="row mt-4">
-                        <div class="col-lg-8">
-                            <div class="card mb-3">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">Tổng quan Khu vực: Ftown 2</h5>
-                                    <div>
-                                        <button class="btn btn-sm btn-danger me-2">Tiến hành điều khiển</button>
-                                        <button class="btn btn-sm btn-secondary">Cấu hình</button>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <canvas id="chartTemp" height="140"></canvas>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <canvas id="chartHumidity" height="140"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
+                <!-- Row 2: Thiết bị & Khu vực (2 cards 50-50) -->
+                <!-- Thiết bị -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-hdd-network dashboard-icon"></i> Thiết bị</div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="dashboard-summary">Tổng số: <span id="totalDevices">--</span></div>
+                                <div class="dashboard-summary text-success">Hoạt động: <span id="activeDevices">--</span></div>
+                                <div class="dashboard-summary text-danger">Offline: <span id="offlineDevices">--</span></div>
                             </div>
-
-                            <div id="rooms" class="row g-3">
-                                <!-- Example room card -->
-                                <div class="col-md-12">
-                                    <div class="card room-card">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h5>Gs-Shop</h5>
-                                                    <div class="text-muted">Nhiệt độ • 7/13/2019</div>
-                                                    <h2 class="mt-3">32.8°C</h2>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="device-actions text-end">
-                                                        <div class="device-row" data-device-id="1">
-                                                            <span class="device-name">Công tắc 1</span>
-                                                            <div class="btn-group btn-group-sm ms-2" role="group">
-                                                                <button class="btn btn-outline-primary btn-control" data-device-id="1" data-action="toggle"><i class="fa fa-power-off"></i></button>
-                                                                <button class="btn btn-outline-secondary btn-schedule" data-device-id="1"><i class="fa fa-clock"></i></button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="device-row" data-device-id="2">
-                                                            <span class="device-name">Công tắc 2</span>
-                                                            <div class="btn-group btn-group-sm ms-2" role="group">
-                                                                <button class="btn btn-outline-primary btn-control" data-device-id="2" data-action="toggle"><i class="fa fa-power-off"></i></button>
-                                                                <button class="btn btn-outline-secondary btn-schedule" data-device-id="2"><i class="fa fa-clock"></i></button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="col-6">
+                                <div id="deviceTypeChart" class="dashboard-chart"></div>
                             </div>
                         </div>
+                        <div id="deviceAreaChart" class="dashboard-chart"></div>
+                    </div>
+                </div>
+                
+                <!-- Khu vực -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-geo-alt dashboard-icon"></i> Khu vực</div>
+                        <div class="dashboard-summary mb-3">Số lượng khu vực: <span id="totalAreas">--</span></div>
+                        <div id="areaDeviceBar" class="dashboard-chart"></div>
+                    </div>
+                </div>
 
-                        <div class="col-lg-4">
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <h6>Thống kê nhanh</h6>
-                                    <canvas id="pieSwitch" height="200"></canvas>
-                                </div>
+                <!-- Row 3: Cảm biến & Người dùng (2 cards 50-50) -->
+                <!-- Cảm biến & dữ liệu -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-graph-up dashboard-icon"></i> Cảm biến & dữ liệu</div>
+                        <div id="sensorLineChart" class="dashboard-chart"></div>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <div class="small">TB/ngày: <span id="sensorAvg" class="fw-bold">--</span></div>
+                                <div class="small">Max/ngày: <span id="sensorMax" class="fw-bold">--</span></div>
+                                <div class="small">Min/ngày: <span id="sensorMin" class="fw-bold">--</span></div>
                             </div>
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <h6>Thống kê khác</h6>
-                                    <p class="text-muted">Chi tiết báo cáo, tổng thời gian hoạt động, ...</p>
-                                </div>
+                            <div class="col-6">
+                                <div id="sensorRealtimeChart" class="dashboard-chart"></div>
                             </div>
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <h6>Simulator</h6>
-                                    <div class="mb-2">
-                                        <label class="form-label">Device ID</label>
-                                        <input id="simDeviceId" class="form-control form-control-sm" value="1" />
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label">Room ID</label>
-                                        <input id="simRoomId" class="form-control form-control-sm" value="1" />
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label">Type</label>
-                                        <select id="simType" class="form-select form-select-sm"><option value="temperature">temperature</option><option value="switch">switch</option></select>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label">Rate (msg/sec)</label>
-                                        <input id="simRate" class="form-control form-control-sm" value="5" />
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button id="simStart" class="btn btn-sm btn-success">Start</button>
-                                        <button id="simStop" class="btn btn-sm btn-danger">Stop</button>
-                                    </div>
-                                    <div class="mt-2 text-muted small">Active simulation id: <span id="simId">-</span></div>
-                                </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Người dùng dự án -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-people dashboard-icon"></i> Người dùng dự án</div>
+                        <div class="dashboard-summary mb-3">Thành viên: <span id="userCount" class="fw-bold">--</span> / <span id="userLimit" class="fw-bold">--</span></div>
+                        <div id="userRoleTable" class="mb-3"></div>
+                        <div class="table-responsive">
+                            <table class="table table-sm dashboard-table mb-0">
+                                <thead><tr><th>Thành viên</th><th>Vai trò</th><th>Lịch sử</th></tr></thead>
+                                <tbody id="userHistoryTable"><tr><td colspan="3" class="text-center text-muted">--</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Luật & Lịch trình (2 cards 50-50) -->
+                <!-- Luật & cảnh báo -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-exclamation-triangle dashboard-icon"></i> Luật & cảnh báo</div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="dashboard-summary">24h: <span id="alerts24h" class="badge bg-warning">--</span></div>
+                                <div class="dashboard-summary">7 ngày: <span id="alerts7d" class="badge bg-info">--</span></div>
                             </div>
+                            <div class="col-6">
+                                <div id="alertDonutChart" class="dashboard-chart"></div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm dashboard-table mb-0">
+                                <thead><tr><th>Thời gian</th><th>Thiết bị</th><th>Chi tiết</th></tr></thead>
+                                <tbody id="alertLogTable"><tr><td colspan="3" class="text-center text-muted">--</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lịch trình & điều khiển -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-calendar-check dashboard-icon"></i> Lịch trình & điều khiển</div>
+                        <div id="scheduleFreqChart" class="dashboard-chart mb-3"></div>
+                        <div class="table-responsive">
+                            <table class="table table-sm dashboard-table mb-0">
+                                <thead><tr><th>Thời gian</th><th>Thiết bị</th><th>Lệnh</th></tr></thead>
+                                <tbody id="controlLogTable"><tr><td colspan="3" class="text-center text-muted">--</td></tr></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        </div>
+    </main>
 
-        <!-- Libraries -->
-        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
-        <script th:src="@{/js/dashboard.js}"></script>
+    <!-- Custom Scripts -->
+    <script th:fragment="script">
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load custom styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .dashboard-section { margin-bottom: 2rem; }
+            .dashboard-card { box-shadow: 0 2px 12px rgba(0,0,0,0.07); border-radius: 12px; }
+            .dashboard-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 1rem; }
+            .dashboard-chart { min-height: 260px; }
+            .dashboard-table th, .dashboard-table td { font-size: 0.98rem; }
+            .dashboard-table th { background: #f6f9fc; }
+            .dashboard-table { margin-bottom: 0; }
+            .dashboard-summary { font-size: 1.1rem; font-weight: 500; }
+            .dashboard-icon { font-size: 2rem; margin-right: 0.5rem; }
+        `;
+        document.head.appendChild(style);
 
-        <script>
-            // small UI toggle for sidebar
-            document.getElementById('menu-toggle')?.addEventListener('click', function () {
-                document.getElementById('sidebar').classList.toggle('collapsed');
-            });
+        // Load ApexCharts
+        const apexScript = document.createElement('script');
+        apexScript.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
+        apexScript.onload = function() {
+            // Chart render helpers
+            const renderDonut = (id, labels, series) => {
+                var options = {
+                    chart: { type: 'donut' },
+                    labels: labels,
+                    series: series,
+                    colors: ['#2196f3','#00bcd4','#ffc107','#e91e63','#4caf50'],
+                    legend: { position: 'bottom' },
+                    dataLabels: { enabled: true },
+                };
+                var chart = new ApexCharts(document.querySelector('#'+id), options);
+                chart.render();
+            };
+            const renderLine = (id, categories, series) => {
+                var options = {
+                    chart: { type: 'line', height: 260 },
+                    xaxis: { categories: categories },
+                    series: series,
+                    colors: ['#2196f3','#e91e63','#ffc107'],
+                    stroke: { curve: 'smooth' },
+                    legend: { position: 'top' },
+                };
+                var chart = new ApexCharts(document.querySelector('#'+id), options);
+                chart.render();
+            };
+            const renderBar = (id, categories, series, stacked=false) => {
+                var options = {
+                    chart: { type: 'bar', stacked: stacked, height: 260 },
+                    xaxis: { categories: categories },
+                    series: series,
+                    colors: ['#00bcd4','#2196f3','#ffc107','#e91e63','#4caf50'],
+                    legend: { position: 'top' },
+                };
+                var chart = new ApexCharts(document.querySelector('#'+id), options);
+                chart.render();
+            };
 
-            // initialize sample charts
-            document.addEventListener('DOMContentLoaded', function () {
-                const ctx = document.getElementById('chartTemp');
-                if (ctx) {
-                    new Chart(ctx, { type: 'line', data: { labels: ['10:50','10:55','11:00','11:05'], datasets:[{label:'Nhiệt độ', data:[32.0,32.4,32.6,32.8], borderColor:'#007bff', backgroundColor:'rgba(0,123,255,0.06)'}] }, options:{responsive:true}});
-                }
-                const ctx2 = document.getElementById('chartHumidity');
-                if (ctx2) {
-                    new Chart(ctx2, { type: 'line', data: { labels: ['10:50','10:55','11:00','11:05'], datasets:[{label:'Độ ẩm', data:[68,67,67.5,66.8], borderColor:'#20c997', backgroundColor:'rgba(32,201,151,0.06)'}] }, options:{responsive:true}});
-                }
-                const pie = document.getElementById('pieSwitch');
-                if (pie) {
-                    new Chart(pie, { type:'doughnut', data:{labels:['Bật','Tắt'], datasets:[{data:[70,30], backgroundColor:['#20c997','#e9ecef']}], }, options:{responsive:true}});
-                }
-            });
-        </script>
-    </body>
+            // Fetch real data from API
+            // 1. Device stats
+            fetch('/api/dashboard/devices')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalDevices').textContent = data.total || 0;
+                    document.getElementById('activeDevices').textContent = data.active || 0;
+                    document.getElementById('offlineDevices').textContent = data.offline || 0;
+                    
+                    // Device type chart
+                    const typeLabels = Object.keys(data.byType || {});
+                    const typeSeries = Object.values(data.byType || {});
+                    if (typeLabels.length > 0) {
+                        renderDonut('deviceTypeChart', typeLabels, typeSeries);
+                    }
+                    
+                    // Device by area chart
+                    const areaLabels = Object.keys(data.byArea || {});
+                    const areaSeries = Object.values(data.byArea || {});
+                    if (areaLabels.length > 0) {
+                        renderBar('deviceAreaChart', areaLabels, [{name:'Thiết bị',data:areaSeries}]);
+                    }
+                })
+                .catch(err => console.error('Error loading devices:', err));
+
+            // 2. Area stats
+            fetch('/api/dashboard/areas')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalAreas').textContent = data.total || 0;
+                    
+                    // Area device bar
+                    const areaNames = (data.areaDevices || []).map(a => a.name);
+                    const deviceCounts = (data.areaDevices || []).map(a => a.deviceCount);
+                    if (areaNames.length > 0) {
+                        renderBar('areaDeviceBar', areaNames, [{name:'Thiết bị',data:deviceCounts}]);
+                    }
+                })
+                .catch(err => console.error('Error loading areas:', err));
+
+            // 3. Sensor data
+            fetch('/api/dashboard/sensors')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('sensorAvg').textContent = data.avg || '--';
+                    document.getElementById('sensorMax').textContent = data.max || '--';
+                    document.getElementById('sensorMin').textContent = data.min || '--';
+                    
+                    // Sensor line chart (24h)
+                    const hours = (data.hourlyData || []).map(h => h.hour + ':00');
+                    const values = (data.hourlyData || []).map(h => h.value);
+                    if (hours.length > 0) {
+                        renderLine('sensorLineChart', hours, [{name:'Giá trị',data:values}]);
+                    }
+                    
+                    // Realtime chart (last few hours)
+                    const recentHours = hours.slice(-10);
+                    const recentValues = values.slice(-10);
+                    if (recentHours.length > 0) {
+                        renderLine('sensorRealtimeChart', recentHours, [{name:'Real-time',data:recentValues}]);
+                    }
+                })
+                .catch(err => console.error('Error loading sensors:', err));
+
+            // 4. Alert stats
+            fetch('/api/dashboard/alerts')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('alerts24h').textContent = data.alerts24h || 0;
+                    document.getElementById('alerts7d').textContent = data.alerts7d || 0;
+                    
+                    // Alert donut
+                    const levelLabels = Object.keys(data.byLevel || {});
+                    const levelSeries = Object.values(data.byLevel || {});
+                    if (levelLabels.length > 0) {
+                        renderDonut('alertDonutChart', levelLabels, levelSeries);
+                    }
+                    
+                    // Alert log table
+                    const alertTable = document.getElementById('alertLogTable');
+                    if (data.latestAlerts && data.latestAlerts.length > 0) {
+                        alertTable.innerHTML = data.latestAlerts.map(alert => 
+                            `<tr><td>${new Date(alert.time).toLocaleString()}</td><td>${alert.device}</td><td>${alert.level}</td><td>${alert.message}</td></tr>`
+                        ).join('');
+                    } else {
+                        alertTable.innerHTML = '<tr><td colspan="4">Không có cảnh báo</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error loading alerts:', err));
+
+            // 5. Schedule stats
+            fetch('/api/dashboard/schedules')
+                .then(res => res.json())
+                .then(data => {
+                    // Schedule frequency chart
+                    const freqLabels = Object.keys(data.byFrequency || {});
+                    const freqSeries = Object.values(data.byFrequency || {});
+                    if (freqLabels.length > 0) {
+                        renderBar('scheduleFreqChart', freqLabels, [{name:'Số lịch trình',data:freqSeries}]);
+                    }
+                    
+                    // Control log table
+                    const controlTable = document.getElementById('controlLogTable');
+                    if (data.recentCommands && data.recentCommands.length > 0) {
+                        controlTable.innerHTML = data.recentCommands.map(cmd => 
+                            `<tr><td>${new Date(cmd.time).toLocaleString()}</td><td>${cmd.device}</td><td>${cmd.command}</td><td>${cmd.user}</td></tr>`
+                        ).join('');
+                    } else {
+                        controlTable.innerHTML = '<tr><td colspan="4">Không có lệnh điều khiển</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error loading schedules:', err));
+
+            // 6. User stats
+            fetch('/api/dashboard/users')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('userCount').textContent = data.currentUsers || 0;
+                    document.getElementById('userLimit').textContent = data.userLimit || 1;
+                    
+                    // User history table
+                    const userHistoryTable = document.getElementById('userHistoryTable');
+                    if (data.userHistory && data.userHistory.length > 0) {
+                        userHistoryTable.innerHTML = data.userHistory.map(user => 
+                            `<tr>
+                                <td>${user.username} (${user.email})</td>
+                                <td><span class="badge bg-primary">${user.role}</span></td>
+                                <td>${new Date(user.addedDate).toLocaleDateString('vi-VN')}</td>
+                            </tr>`
+                        ).join('');
+                    } else {
+                        userHistoryTable.innerHTML = '<tr><td colspan="3">Chưa có thành viên nào</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error loading users:', err));
+
+            // 7. Package usage stats
+            fetch('/api/dashboard/package-usage')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('deviceUsed').textContent = data.deviceUsed || 0;
+                    document.getElementById('deviceLimit').textContent = data.deviceLimit || 0;
+                    document.getElementById('areaUsed').textContent = data.areaUsed || 0;
+                    document.getElementById('areaLimit').textContent = data.areaLimit || 0;
+                    document.getElementById('userUsed').textContent = data.userUsed || 0;
+                    document.getElementById('userLimit').textContent = data.userLimit || 0;
+                    document.getElementById('packageDaysLeft').textContent = data.daysLeft || 0;
+                    document.getElementById('currentPackageName').textContent = data.packageName || 'Free';
+                    
+                    // Calculate and set progress bars
+                    const devicePercent = data.deviceLimit > 0 ? (data.deviceUsed / data.deviceLimit * 100) : 0;
+                    const areaPercent = data.areaLimit > 0 ? (data.areaUsed / data.areaLimit * 100) : 0;
+                    const userPercent = data.userLimit > 0 ? (data.userUsed / data.userLimit * 100) : 0;
+                    
+                    document.getElementById('deviceProgress').style.width = devicePercent + '%';
+                    document.getElementById('areaProgress').style.width = areaPercent + '%';
+                    document.getElementById('userProgress').style.width = userPercent + '%';
+                    
+                    // Change color if near limit
+                    if (devicePercent >= 90) {
+                        document.getElementById('deviceProgress').classList.remove('bg-primary');
+                        document.getElementById('deviceProgress').classList.add('bg-danger');
+                    } else if (devicePercent >= 75) {
+                        document.getElementById('deviceProgress').classList.remove('bg-primary');
+                        document.getElementById('deviceProgress').classList.add('bg-warning');
+                    }
+                    
+                    if (areaPercent >= 90) {
+                        document.getElementById('areaProgress').classList.remove('bg-success');
+                        document.getElementById('areaProgress').classList.add('bg-danger');
+                    } else if (areaPercent >= 75) {
+                        document.getElementById('areaProgress').classList.remove('bg-success');
+                        document.getElementById('areaProgress').classList.add('bg-warning');
+                    }
+                    
+                    if (userPercent >= 90) {
+                        document.getElementById('userProgress').classList.remove('bg-info');
+                        document.getElementById('userProgress').classList.add('bg-danger');
+                    } else if (userPercent >= 75) {
+                        document.getElementById('userProgress').classList.remove('bg-info');
+                        document.getElementById('userProgress').classList.add('bg-warning');
+                    }
+                })
+                .catch(err => console.error('Error loading package usage:', err));
+
+            // 8. Finance stats
+            fetch('/api/dashboard/finance')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('financeMonth').textContent = (data.monthTotal || 0).toLocaleString('vi-VN') + ' VND';
+                    document.getElementById('financeQuarter').textContent = (data.quarterTotal || 0).toLocaleString('vi-VN') + ' VND';
+                    document.getElementById('currentPackage').textContent = data.currentPackage || 'Free';
+                    
+                    // Finance table
+                    const financeTable = document.getElementById('financeTable');
+                    if (data.recentPayments && data.recentPayments.length > 0) {
+                        financeTable.innerHTML = data.recentPayments.map(payment => 
+                            `<tr><td>${new Date(payment.date).toLocaleDateString()}</td><td>${payment.amount.toLocaleString('vi-VN')} VND</td><td>${payment.package}</td></tr>`
+                        ).join('');
+                    } else {
+                        financeTable.innerHTML = '<tr><td colspan="3">Không có giao dịch</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error loading finance:', err));
+        };
+        document.head.appendChild(apexScript);
+    });
+    </script>
+</body>
 </html>

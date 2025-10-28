@@ -1,0 +1,149 @@
+body {
+    background-color: #f8f9fa !important;
+}
+
+main.bg-light {
+    min-height: 100vh;
+    padding-bottom: 60px;
+    background-color: #f8f9fa !important;
+}
+
+.container-fluid {
+    position: relative;
+}
+
+/* Adjust z-index stacking */
+.modal {
+    z-index: 1055 !important;
+}
+
+.btn-primary.position-fixed {
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1050 !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.weather-header,
+.device-card,
+.schedule-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Thiết lập z-index hierarchy - Fix backdrop issue */
+.modal-backdrop {
+    z-index: 1054 !important;
+}
+
+.modal {
+    z-index: 1055 !important;
+}
+
+/* Style cho nút thêm */
+.add-device-btn {
+    position: fixed !important;
+    bottom: 2rem !important;
+    right: 2rem !important;
+
+/* Schedule List Styles */
+.schedules-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.schedule-list-item {
+    transition: all 0.2s ease;
+    border: 1px solid #e0e0e0 !important;
+}
+
+.schedule-list-item:hover {
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.schedule-item {
+    transition: all 0.2s ease;
+}
+
+.schedule-item:hover {
+    background: rgba(13, 110, 253, 0.05) !important;
+    transform: translateX(4px);
+}
+
+/* Badge styles */
+.badge.bg-success-subtle {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.badge.bg-secondary-subtle {
+    background-color: rgba(108, 117, 125, 0.1) !important;
+}
+
+/* Modal XL adjustments */
+.modal-xl .modal-body {
+    padding: 1.5rem;
+}
+
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 3px solid transparent;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #0d6efd;
+    border-bottom-color: rgba(13, 110, 253, 0.3);
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    background-color: transparent;
+}
+    z-index: 1050 !important;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(45deg, #2048bb, #4e73df);
+    border: none;
+    transition: transform 0.2s;
+}
+
+.add-device-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Đảm bảo nội dung chính không bị che */
+.content-section,
+.device-section,
+.device-cards,
+.card {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+}
+
+/* Card styles */
+.card {
+    margin-bottom: 1.5rem;
+    background: white !important;
+    border-radius: 1rem;
+}
+
+.weather-header {
+    margin-bottom: 2rem;
+}

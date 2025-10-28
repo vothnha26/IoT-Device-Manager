@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+    th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
+
+<head>
+    <title th:fragment="title" th:text="'Khu vực - Dự án: ' + ${duAn.tenDuAn}">Quản lý Khu vực</title>
+</head>
+
+<body>
+
+    <main th:fragment="main">
+        <div class="khu-vuc-wrapper bg-light">
+            <div class="container-fluid px-4">
+                <!-- Action buttons -->
+                <div class="d-flex justify-content-between align-items-center py-3 border-bottom bg-light">
+                    <h4 class="mb-0 text-primary">Quản lý khu vực</h4>
+                    <button class="btn btn-primary d-flex align-items-center"
+                        onclick="showAddModal(); console.log('Add button clicked');"
+                        style="background: linear-gradient(45deg, #4e73df, #224abe);">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Thêm khu vực
+                    </button>
+                </div>
+
+                <!-- Main content -->
+                <div class="main-content py-4">
+                    <!-- Thống kê tổng quan -->
+                    <div class="dashboard-stats mb-4">
+                        <div class="row g-4">
+                            <!-- Khu vực đang quản lý -->
+                            <div class="col-md-4">
+                                <div class="stat-card h-100 rounded-4 p-4 position-relative overflow-hidden shadow-sm hover-lift transition-all"
+                                    style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
+                                    <!-- Background pattern -->
+                                    <div class="position-absolute top-0 end-0 opacity-10">
+                                        <i class="bi bi-hexagon-fill display-1 rotate-45"></i>
+                                    </div>
+
+                                    <div class="position-relative">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="stat-icon me-3">
+                                                <div class="icon-circle bg-white bg-opacity-10 p-3 rounded-circle">
+                                                    <i class="bi bi-grid-3x3-gap-fill fs-3 text-white"></i>
+                                                </div>
+                                            </div>
+                                            <div class="stat-title text-white-50">Khu vực đang quản lý</div>
+                                        </div>
+
+                                        <div class="stat-value text-white display-5 fw-bold mb-3"
+                                            th:text="${#lists.size(khuVucs)}">2</div>
+
+                                        <div class="d-flex align-items-center">
+                                            <span
+                                                class="badge rounded-pill bg-white bg-opacity-25 text-white px-3 py-2">
+                                                <i class="bi bi-check2-circle me-1"></i>
+                                                Hoạt động tốt
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Công tắc hoạt động -->
+                            <div class="col-md-4">
+                                <div class="stat-card h-100 rounded-4 p-4 position-relative overflow-hidden shadow-sm hover-lift transition-all"
+                                    style="background: linear-gradient(135deg, #36b9cc 0%, #1a8a9c 100%);">
+                                    <!-- Background pattern -->
+                                    <div class="position-absolute top-0 end-0 opacity-10">
+                                        <i class="bi bi-toggles-2 display-1 rotate-45"></i>
+                                    </div>
+
+                                    <div class="position-relative">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="stat-icon me-3">
+                                                <div class="icon-circle bg-white bg-opacity-10 p-3 rounded-circle">
+                                                    <i class="bi bi-toggles fs-3 text-white"></i>
+                                                </div>
+                                            </div>
+                                            <div class="stat-title text-white-50">Công tắc hoạt động</div>
+                                        </div>
+
+                                        <div class="d-flex align-items-baseline gap-2 mb-3">
+                                            <div class="stat-value text-white display-5 fw-bold"
+                                                th:with="totalActive=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER' and #strings.equalsIgnoreCase(trangThai, 'hoat_dong')])])}"
+                                                th:text="${totalActive}">8</div>
+                                            <div class="stat-change">
+                                                <span class="badge rounded-pill bg-white bg-opacity-25 text-white px-3"
+                                                    th:text="'/' + ${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER'])])} + ' thiết bị'">
+                                                    /10 thiết bị
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="progress bg-white bg-opacity-25"
+                                            style="height: 6px; border-radius: 3px;">
+                                            <div class="progress-bar bg-white" role="progressbar"
+                                                th:with="total=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER'])])}"
+                                                th:style="${total > 0} ? ('width: ' + ${(totalActive?:0) * 100 / total} + '%') : 'width: 0%'"
+                                                style="width: 80%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cảm biến hoạt động -->
+                            <div class="col-md-4">
+                                <div class="stat-card h-100 rounded-4 p-4 position-relative overflow-hidden shadow-sm hover-lift transition-all"
+                                    style="background: linear-gradient(135deg, #f6c23e 0%, #dfa82a 100%);">
+                                    <!-- Background pattern -->
+                                    <div class="position-absolute top-0 end-0 opacity-10">
+                                        <i class="bi bi-disc-fill display-1 rotate-45"></i>
+                                    </div>
+
+                                    <div class="position-relative">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="stat-icon me-3">
+                                                <div class="icon-circle bg-white bg-opacity-10 p-3 rounded-circle">
+                                                    <i class="bi bi-disc fs-3 text-white"></i>
+                                                </div>
+                                            </div>
+                                            <div class="stat-title text-white-50">Cảm biến hoạt động</div>
+                                        </div>
+
+                                        <div class="d-flex align-items-baseline gap-2 mb-3">
+                                            <div class="stat-value text-white display-5 fw-bold"
+                                                th:with="totalActive=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR' and #strings.equalsIgnoreCase(trangThai, 'hoat_dong')])])}"
+                                                th:text="${totalActive}">5</div>
+                                            <div class="stat-change">
+                                                <span class="badge rounded-pill bg-white bg-opacity-25 text-white px-3"
+                                                    th:text="'/' + ${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR'])])} + ' thiết bị'">
+                                                    /8 thiết bị
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="progress bg-white bg-opacity-25"
+                                            style="height: 6px; border-radius: 3px;">
+                                            <div class="progress-bar bg-white" role="progressbar"
+                                                th:with="total=${#aggregates.sum(khuVucs.![#lists.size(thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR'])])}"
+                                                th:style="${total > 0} ? ('width: ' + ${(totalActive?:0) * 100 / total} + '%') : 'width: 0%'"
+                                                style="width: 62.5%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách khu vực -->
+                    <div class="row g-4">
+                        <!-- Card cho mỗi khu vực -->
+                        <div class="col-md-6" th:each="khuVuc : ${khuVucs}">
+                            <div class="area-card">
+                                <div class="card hover-shadow-lg transition-all">
+                                    <div
+                                        class="card-header border-bottom-0 bg-gradient-light d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center flex-grow-1">
+                                            <div class="area-icon me-3">
+                                                <div class="icon-circle bg-primary bg-opacity-10 p-3">
+                                                    <i class="bi bi-grid-3x3-gap-fill fs-4 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h5 class="card-title mb-1 text-gradient" th:text="${khuVuc.tenKhuVuc}">
+                                                    Tên khu vực</h5>
+                                                <small class="badge"
+                                                    th:class="${khuVuc.loaiKhuVuc == 'PHONG' ? 'badge bg-info' : (khuVuc.loaiKhuVuc == 'TANG' ? 'badge bg-warning' : 'badge bg-secondary')}"
+                                                    th:text="${khuVuc.loaiKhuVuc}">
+                                                    Loại khu vực
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-link text-muted" type="button"
+                                                data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item" href="#" onclick="showEditModal(this)"
+                                                        th:data-id="${khuVuc.maKhuVuc}"
+                                                        th:data-name="${khuVuc.tenKhuVuc}"
+                                                        th:data-type="${khuVuc.loaiKhuVuc}"
+                                                        th:data-desc="${khuVuc.moTa}">
+                                                        <i class="bi bi-pencil me-2"></i>
+                                                        Chỉnh sửa
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#"
+                                                        th:onclick="'return deleteKhuVuc(' + ${khuVuc.maKhuVuc} + ')'">
+                                                        <i class="bi bi-trash me-2"></i>
+                                                        Xóa
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <!-- Biểu đồ -->
+                                            <div class="col-md-6">
+                                                <div class="area-chart" th:id="'chart-' + ${khuVuc.maKhuVuc}">
+                                                    <!-- Biểu đồ sẽ được render bằng JavaScript -->
+                                                </div>
+                                            </div>
+                                            <!-- Thống kê -->
+                                            <div class="col-md-6">
+                                                <div class="stats-list">
+                                                    <div
+                                                        class="stat-item p-3 border rounded mb-2 hover-shadow transition-all">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="stat-icon me-3">
+                                                                <div class="icon-circle bg-warning bg-opacity-10 p-2">
+                                                                    <i class="bi bi-disc-fill text-warning fs-4"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div class="stat-label text-muted small">Cảm biến</div>
+                                                                <div class="d-flex align-items-baseline">
+                                                                    <span class="stat-value h4 mb-0"
+                                                                        th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR'])}">3</span>
+                                                                    <span class="stat-status ms-2 small">
+                                                                        (<span class="text-success"
+                                                                            th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'SENSOR' and #strings.equalsIgnoreCase(trangThai, 'hoat_dong')])}">2</span>
+                                                                        hoạt động)
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        class="stat-item p-3 border rounded hover-shadow transition-all">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="stat-icon me-3">
+                                                                <div class="icon-circle bg-info bg-opacity-10 p-2">
+                                                                    <i class="bi bi-toggle2-on text-info fs-4"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div class="stat-label text-muted small">Công tắc</div>
+                                                                <div class="d-flex align-items-baseline">
+                                                                    <span class="stat-value h4 mb-0"
+                                                                        th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER'])}">8</span>
+                                                                    <span class="stat-status ms-2 small">
+                                                                        (<span class="text-success"
+                                                                            th:text="${#lists.size(khuVuc.thietBis.?[loaiThietBi != null and loaiThietBi.nhomThietBi.name() == 'CONTROLLER' and #strings.equalsIgnoreCase(trangThai, 'hoat_dong')])}">6</span>
+                                                                        hoạt động)
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-actions mt-3 d-flex gap-2">
+                                            <a th:href="@{/thiet-bi/khu-vuc/{id}(id=${khuVuc.maKhuVuc})}"
+                                                class="btn btn-primary d-flex align-items-center"
+                                                style="background: linear-gradient(45deg, #4e73df, #224abe);">
+                                                <i class="bi bi-play-circle me-2"></i>
+                                                Điều khiển thiết bị
+                                            </a>
+                                            <button class="btn btn-light d-flex align-items-center hover-shadow"
+                                                style="border: 1px solid #e3e6f0;">
+                                                <i class="bi bi-gear me-2"></i>
+                                                Cấu hình
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+    
+
+        </div> <!-- Kết thúc .khu-vuc-wrapper -->
+
+        <!-- Modal Thêm/Sửa Khu vực -->
+        <div class="modal fade" id="themKhuVucModal" tabindex="-1" aria-labelledby="themKhuVucModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="themKhuVucModalLabel">Thêm khu vực mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formKhuVuc" class="needs-validation" novalidate>
+                        <div class="modal-body">
+                            <input type="hidden" id="khuVucId" name="khuVucId">
+                            <div class="mb-3">
+                                <label for="tenKhuVuc" class="form-label required">Tên khu vực</label>
+                                <input type="text" class="form-control" id="tenKhuVuc" name="tenKhuVuc" required
+                                    placeholder="Nhập tên khu vực (vd: Phòng khách)" maxlength="100">
+                                <div class="invalid-feedback">
+                                    Vui lòng nhập tên khu vực
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="loaiKhuVuc" class="form-label">Loại khu vực</label>
+                                <select class="form-select" id="loaiKhuVuc" name="loaiKhuVuc">
+                                    <option value="">Chọn loại khu vực...</option>
+                                    <option value="PHONG">Phòng</option>
+                                    <option value="TANG">Tầng</option>
+                                    <option value="KHU">Khu</option>
+                                    <option value="KHAC">Khác</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="moTa" class="form-label">Mô tả</label>
+                                <textarea class="form-control" id="moTa" name="moTa" rows="3"
+                                    placeholder="Nhập mô tả về khu vực này (không bắt buộc)" maxlength="500"></textarea>
+                                <div class="form-text">Tối đa 500 ký tự</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary" id="btnLuuKhuVuc">
+                                <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
+                                Lưu khu vực
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Sửa Khu vực -->
+        <div class="modal fade" id="suaKhuVucModal" tabindex="-1" aria-labelledby="suaKhuVucModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="suaKhuVucModalLabel">Sửa thông tin khu vực</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formSuaKhuVuc" class="needs-validation" novalidate>
+                        <div class="modal-body">
+                            <input type="hidden" id="suaKhuVucId" name="khuVucId">
+                            <div class="mb-3">
+                                <label for="suaTenKhuVuc" class="form-label required">Tên khu vực</label>
+                                <input type="text" class="form-control" id="suaTenKhuVuc" name="tenKhuVuc" required
+                                    maxlength="100">
+                                <div class="invalid-feedback">
+                                    Vui lòng nhập tên khu vực
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="suaLoaiKhuVuc" class="form-label">Loại khu vực</label>
+                                <select class="form-select" id="suaLoaiKhuVuc" name="loaiKhuVuc">
+                                    <option value="">Chọn loại khu vực...</option>
+                                    <option value="PHONG">Phòng</option>
+                                    <option value="TANG">Tầng</option>
+                                    <option value="KHU">Khu</option>
+                                    <option value="KHAC">Khác</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="suaMoTa" class="form-label">Mô tả</label>
+                                <textarea class="form-control" id="suaMoTa" name="moTa" rows="3"
+                                    maxlength="500"></textarea>
+                                <div class="form-text">Tối đa 500 ký tự</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary" id="btnCapNhatKhuVuc">
+                                <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
+                                Cập nhật
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <th:block th:fragment="scripts">
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            const maDuAn = /*[[${duAn.maDuAn}]]*/ null;
+
+            // Tạo cấu trúc dữ liệu đơn giản cho charts
+            const khuVucs = [];
+            /*[# th:each="kv : ${khuVucs}"]*/
+            khuVucs.push({
+                maKhuVuc: /*[[${kv.maKhuVuc}]]*/ 0,
+                tenKhuVuc: /*[[${kv.tenKhuVuc}]]*/ '',
+                thietBis: [
+                    /*[# th:each="tb : ${kv.thietBis}"]*/
+                    {
+                        maThietBi: /*[[${tb.maThietBi}]]*/ 0,
+                        tenThietBi: /*[[${tb.tenThietBi}]]*/ '',
+                        trangThai: /*[[${tb.trangThai}]]*/ '',
+                        loaiThietBi: {
+                            nhomThietBi: /*[[${tb.loaiThietBi?.nhomThietBi?.name()}]]*/ ''
+                        }
+                    },
+                    /*[/]*/
+                ].filter(t => t.maThietBi !== 0)
+            });
+            /*[/]*/
+
+            let themModal, suaModal;
+
+            // Utility function to show/hide loading state
+            function setLoadingState(button, isLoading) {
+                if (isLoading) {
+                    button.setAttribute('disabled', 'disabled');
+                    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+                } else {
+                    button.removeAttribute('disabled');
+                    button.innerHTML = button.getAttribute('data-original-text') || 'Lưu';
+                }
+            }
+
+            // Khởi tạo các modal và form validation
+            document.addEventListener('DOMContentLoaded', function () {
+                console.log('DOM Content Loaded');
+                console.log('Khu vucs data:', khuVucs);
+
+                // Đảm bảo ApexCharts đã được load rồi mới khởi tạo biểu đồ
+                ensureApexChartsLoaded(() => {
+                    initializeCharts();
+                });
+
+                // Khởi tạo các modal
+                themModal = new bootstrap.Modal(document.getElementById('themKhuVucModal'));
+                suaModal = new bootstrap.Modal(document.getElementById('suaKhuVucModal'));
+
+                console.log('Modals initialized:', { themModal, suaModal });
+
+                // Lưu text gốc của các nút
+                document.querySelectorAll('button[type="submit"]').forEach(btn => {
+                    btn.setAttribute('data-original-text', btn.innerHTML);
+                });
+
+                // Khởi tạo form thêm mới
+                const formThem = document.getElementById('formKhuVuc');
+                if (formThem) {
+                    formThem.addEventListener('submit', handleThemKhuVuc);
+                    console.log('Add form initialized');
+                } else {
+                    console.error('Form thêm mới không tồn tại');
+                }
+
+                // Khởi tạo form sửa
+                const formSua = document.getElementById('formSuaKhuVuc');
+                if (formSua) {
+                    formSua.addEventListener('submit', handleSuaKhuVuc);
+                    console.log('Edit form initialized');
+                } else {
+                    console.error('Form sửa không tồn tại');
+                }
+
+                // Test button clicks
+                const addButton = document.querySelector('[onclick="showAddModal()"]');
+                if (addButton) {
+                    console.log('Add button found');
+                    addButton.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        console.log('Add button clicked');
+                        showAddModal();
+                    });
+                }
+            });
+
+
+
+            // Nạp ApexCharts từ CDN nếu chưa có
+            function ensureApexChartsLoaded(callback) {
+                if (window.ApexCharts) {
+                    callback && callback();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
+                script.onload = () => callback && callback();
+                script.onerror = () => console.error('Không thể tải ApexCharts từ CDN');
+                document.head.appendChild(script);
+            }
+
+            // CSS styles
+            // Khởi tạo biểu đồ cho từng khu vực
+            function initializeCharts() {
+                document.querySelectorAll('[id^="chart-"]').forEach(chartElement => {
+                    const khuVucId = chartElement.id.split('-')[1];
+                    const khuVuc = findKhuVucById(khuVucId);
+
+                    if (!khuVuc) return;
+
+                    // Đảm bảo vùng hiển thị đủ cao cho biểu đồ
+                    chartElement.style.minHeight = '220px';
+
+                    const totalSensors = khuVuc.thietBis.filter(t => t.loaiThietBi && t.loaiThietBi.nhomThietBi === 'SENSOR').length || 0;
+                    const totalControllers = khuVuc.thietBis.filter(t => t.loaiThietBi && t.loaiThietBi.nhomThietBi === 'CONTROLLER').length || 0;
+                    const totalForChart = totalSensors + totalControllers;
+
+                    if (totalForChart === 0) {
+                        chartElement.innerHTML = '<div class="text-muted small text-center py-5">Chưa có thiết bị hoạt động</div>';
+                        return;
+                    }
+
+                    const options = {
+                        series: [totalSensors, totalControllers],
+                        chart: {
+                            type: 'donut',
+                            height: 200
+                        },
+                        labels: ['Cảm biến', 'Công tắc'],
+                        colors: ['#f6c23e', '#36b9cc'],
+                        legend: {
+                            position: 'bottom',
+                            fontSize: '12px'
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function (val, opts) {
+                                return opts.w.config.series[opts.seriesIndex]
+                            }
+                        },
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '65%',
+                                    labels: {
+                                        show: true,
+                                        total: {
+                                            show: true,
+                                            label: 'Tổng thiết bị',
+                                            fontSize: '14px',
+                                            formatter: function (w) {
+                                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    const chart = new ApexCharts(chartElement, options);
+                    chart.render();
+                });
+            }
+
+            // Hàm tìm khu vực theo ID
+            function findKhuVucById(id) {
+                return khuVucs.find(k => k.maKhuVuc === parseInt(id));
+            }
+
+            $(document).ready(function () {
+                const modalEl = document.getElementById('khuVucModal');
+                if (modalEl) {
+                    modal = new bootstrap.Modal(modalEl);
+                    // Khởi tạo các sự kiện cho modal
+                    modalEl.addEventListener('hidden.bs.modal', function () {
+                        $('#khuVucForm').trigger('reset');
+                        $('#khuVucId').val('');
+                    });
+                }
+                setupFormHandling();
+            });
+
+            function showNotification(message, type = 'success') {
+                // Map type to Bootstrap colors and icons
+                const typeConfig = {
+                    'success': { bg: 'success', icon: 'check-circle-fill', text: 'text-white' },
+                    'danger': { bg: 'danger', icon: 'exclamation-triangle-fill', text: 'text-white' },
+                    'warning': { bg: 'warning', icon: 'exclamation-circle-fill', text: 'text-dark' },
+                    'info': { bg: 'info', icon: 'info-circle-fill', text: 'text-white' }
+                };
+                
+                const config = typeConfig[type] || typeConfig['success'];
+                
+                const toast = $(`
+                <div class="toast align-items-center border-0 position-fixed end-0 bg-${config.bg} ${config.text}" style="top: 70px; right: 1rem; z-index: 1050; min-width: 300px;">
+                    <div class="d-flex">
+                        <div class="toast-body d-flex align-items-center">
+                            <i class="bi bi-${config.icon} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close ${config.text === 'text-white' ? 'btn-close-white' : ''} me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `);
+
+                $('body').append(toast);
+                const bsToast = new bootstrap.Toast(toast[0], { delay: 3000 });
+                bsToast.show();
+                toast.on('hidden.bs.toast', () => toast.remove());
+            }
+
+            // Xử lý thêm mới khu vực
+            async function handleThemKhuVuc(e) {
+                e.preventDefault();
+                const form = e.target;
+
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated');
+                    return;
+                }
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                try {
+                    setLoadingState(submitBtn, true);
+
+                    const formData = {
+                        tenKhuVuc: form.querySelector('#tenKhuVuc').value,
+                        loaiKhuVuc: form.querySelector('#loaiKhuVuc').value,
+                        moTa: form.querySelector('#moTa').value
+                    };
+
+                    const response = await fetch(`/du-an/${maDuAn}/khu-vuc/them-moi`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            [document.querySelector('meta[name="_csrf_header"]').content]:
+                                document.querySelector('meta[name="_csrf"]').content
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showNotification('Thêm khu vực thành công!');
+                        location.reload();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    showNotification(error.message || 'Có lỗi xảy ra khi thêm khu vực', 'danger');
+                } finally {
+                    setLoadingState(submitBtn, false);
+                    themModal.hide();
+                }
+            }
+
+            // Xử lý sửa khu vực
+            async function handleSuaKhuVuc(e) {
+                e.preventDefault();
+                const form = e.target;
+
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated');
+                    return;
+                }
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                try {
+                    setLoadingState(submitBtn, true);
+
+                    const formData = {
+                        tenKhuVuc: form.querySelector('#suaTenKhuVuc').value,
+                        loaiKhuVuc: form.querySelector('#suaLoaiKhuVuc').value,
+                        moTa: form.querySelector('#suaMoTa').value
+                    };
+
+                    const khuVucId = form.querySelector('#suaKhuVucId').value;
+                    if (!khuVucId) {
+                        throw new Error('Không tìm thấy ID khu vực');
+                    }
+
+                    const response = await fetch(`/du-an/${maDuAn}/khu-vuc/${khuVucId}/cap-nhat`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            [document.querySelector('meta[name="_csrf_header"]').content]:
+                                document.querySelector('meta[name="_csrf"]').content
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showNotification('Cập nhật khu vực thành công!');
+                        location.reload();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    showNotification(error.message || 'Có lỗi xảy ra khi cập nhật khu vực', 'danger');
+                } finally {
+                    setLoadingState(submitBtn, false);
+                    suaModal.hide();
+                }
+            }
+
+            // Xử lý xóa khu vực
+            async function deleteKhuVuc(khuVucId) {
+                if (!confirm('Bạn có chắc chắn muốn xóa khu vực này?')) {
+                    return false;
+                }
+
+                try {
+                    const response = await fetch(`/du-an/${maDuAn}/khu-vuc/${khuVucId}/xoa`, {
+                        method: 'DELETE',
+                        headers: {
+                            [document.querySelector('meta[name="_csrf_header"]').content]:
+                                document.querySelector('meta[name="_csrf"]').content
+                        }
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showNotification('Xóa khu vực thành công!');
+                        location.reload();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    showNotification(error.message || 'Có lỗi xảy ra khi xóa khu vực', 'danger');
+                }
+            }
+
+            // Hiển thị modal thêm khu vực
+            function showAddModal() {
+                console.log('showAddModal called');
+                const modalElement = document.getElementById('themKhuVucModal');
+                if (!modalElement) {
+                    console.error('Modal element not found');
+                    return;
+                }
+
+                if (!themModal) {
+                    console.log('Initializing them modal');
+                    themModal = new bootstrap.Modal(modalElement);
+                }
+
+                const labelElement = document.getElementById('themKhuVucModalLabel');
+                if (labelElement) {
+                    labelElement.textContent = 'Thêm khu vực mới';
+                }
+
+                const formElement = document.getElementById('formKhuVuc');
+                if (formElement) {
+                    formElement.reset();
+                }
+
+                console.log('Showing modal');
+                themModal.show();
+            }
+
+            // Hiển thị modal sửa khu vực
+            function showEditModal(element) {
+                console.log('showEditModal called', element);
+                const modalElement = document.getElementById('suaKhuVucModal');
+                if (!modalElement) {
+                    console.error('Edit modal element not found');
+                    return;
+                }
+
+                if (!suaModal) {
+                    console.log('Initializing sua modal');
+                    suaModal = new bootstrap.Modal(modalElement);
+                }
+
+                // Lấy dữ liệu từ data attributes
+                const id = element.getAttribute('data-id');
+                const name = element.getAttribute('data-name');
+                const type = element.getAttribute('data-type');
+                const desc = element.getAttribute('data-desc');
+
+                console.log('Data:', { id, name, type, desc });
+
+                // Set form values
+                const idInput = document.getElementById('suaKhuVucId');
+                const nameInput = document.getElementById('suaTenKhuVuc');
+                const typeInput = document.getElementById('suaLoaiKhuVuc');
+                const descInput = document.getElementById('suaMoTa');
+                const labelElement = document.getElementById('suaKhuVucModalLabel');
+
+                if (idInput) idInput.value = id;
+                if (nameInput) nameInput.value = name;
+                if (typeInput) typeInput.value = type || '';
+                if (descInput) descInput.value = desc || '';
+                if (labelElement) labelElement.textContent = 'Sửa thông tin khu vực';
+
+                console.log('Showing edit modal');
+                suaModal.show();
+            }
+
+            // Xử lý thêm khu vực
+            async function handleThemKhuVuc(e) {
+                e.preventDefault();
+                const form = e.target;
+
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated');
+                    return;
+                }
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                try {
+                    setLoadingState(submitBtn, true);
+
+                    const formData = {
+                        tenKhuVuc: form.querySelector('#tenKhuVuc').value,
+                        loaiKhuVuc: form.querySelector('#loaiKhuVuc').value,
+                        moTa: form.querySelector('#moTa').value
+                    };
+
+                    const khuVucId = form.querySelector('#khuVucId').value;
+                    const url = khuVucId ?
+                        `/du-an/${maDuAn}/khu-vuc/${khuVucId}/cap-nhat` :
+                        `/du-an/${maDuAn}/khu-vuc/them-moi`;
+
+                    const response = await fetch(url, {
+                        method: khuVucId ? 'PUT' : 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            [document.querySelector('meta[name="_csrf_header"]').content]:
+                                document.querySelector('meta[name="_csrf"]').content
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showNotification('Lưu khu vực thành công!');
+                        location.reload();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    showNotification(error.message || 'Có lỗi xảy ra khi lưu khu vực', 'danger');
+                } finally {
+                    setLoadingState(submitBtn, false);
+                }
+            }
+
+            function showAddModal() {
+                // Đảm bảo modal đã được khởi tạo
+                if (!modal) {
+                    modal = new bootstrap.Modal(document.getElementById('khuVucModal'));
+                }
+                // Reset form và cập nhật tiêu đề
+                $('#modalTitle').text('Thêm khu vực mới');
+                $('#khuVucForm')[0].reset();
+                $('#khuVucId').val('');
+                modal.show(); // Hiển thị modal
+            }
+
+            function showAreaDetails(element) {
+                const id = $(element).data('id');
+                const name = $(element).data('name');
+                const type = $(element).data('type');
+                const desc = $(element).data('desc');
+                const deviceCount = $(element).data('device-count');
+
+                // Update details view
+                $('#detailAreaName').text(name);
+                $('#detailAreaType').text(type || 'Chưa phân loại');
+                $('#detailAreaDesc').text(desc || 'Chưa có mô tả');
+                $('#detailDeviceCount').text(deviceCount);
+                $('#btnViewDevices').attr('href', `/du-an/${maDuAn}/khu-vuc/${id}/thiet-bi`);
+
+                // Show details view, hide initial state
+                $('#initialState').hide();
+                $('#areaDetails').show();
+
+                // Highlight selected area
+                $('.hover-bg-light').removeClass('bg-light fw-bold');
+                $(element).addClass('bg-light fw-bold');
+            }
+
+            function showEditModal(element) {
+                const id = element.dataset.id;
+                const name = element.dataset.name;
+                const type = element.dataset.type;
+                const desc = element.dataset.desc;
+
+                // Điền thông tin vào form sửa
+                document.getElementById('suaKhuVucId').value = id;
+                document.getElementById('suaTenKhuVuc').value = name;
+                document.getElementById('suaLoaiKhuVuc').value = type || '';
+                document.getElementById('suaMoTa').value = desc || '';
+
+                // Hiện modal sửa
+                suaModal.show();
+            }
+
+            async function deleteKhuVuc(id) {
+                if (!confirm('Bạn có chắc chắn muốn xóa khu vực này?')) {
+                    return false;
+                }
+
+                try {
+                    const response = await fetch(`/du-an/${maDuAn}/khu-vuc/${id}/xoa`, {
+                        method: 'DELETE',
+                        headers: {
+                            [document.querySelector('meta[name="_csrf_header"]').content]:
+                                document.querySelector('meta[name="_csrf"]').content
+                        }
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showNotification('Xóa khu vực thành công!');
+                        location.reload();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    showNotification('Có lỗi xảy ra khi xóa: ' + error.message, 'danger');
+                    return false;
+                }
+            }
+        </script>
+        <script>
+            function showAddModal() {
+                const modalElement = document.getElementById('themKhuVucModal');
+                if (!modalElement) {
+                    console.error('Không tìm thấy modal "themKhuVucModal"');
+                    return;
+                }
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+        </script>
+    </th:block>
+
+</body>
+
+</html>

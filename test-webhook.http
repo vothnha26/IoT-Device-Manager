@@ -1,0 +1,33 @@
+### Test SePay Webhook
+POST http://10.21.39.39:8080/api/payments/webhook
+Content-Type: application/json
+X-SEPAY-SIGN: test-signature
+
+{
+  "id": 12345,
+  "gateway": "VCB",
+  "transactionDate": "2025-10-29 00:00:00",
+  "accountNumber": "1234567890",
+  "code": null,
+  "content": "NAPTIEN 1",
+  "transferType": "in",
+  "transferAmount": 50000,
+  "accumulated": 1000000,
+  "subAccount": null,
+  "referenceCode": "REF123",
+  "description": "Test payment",
+  "bankBrandName": "Vietcombank"
+}
+
+### Test với Order ID khác
+POST http://10.21.39.39:8080/api/payments/webhook
+Content-Type: application/json
+
+{
+  "content": "NAPTIEN 2",
+  "transferAmount": 100000,
+  "transactionDate": "2025-10-29 01:00:00"
+}
+
+### Check payment status
+GET http://10.21.39.39:8080/api/payments/status/1

@@ -1,0 +1,377 @@
+/* ========================================
+   Authentication Pages Styles
+   ======================================== */
+
+/* Layout */
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 40px;
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Logo & Header */
+.auth-logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.auth-logo i {
+    font-size: 48px;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.auth-logo h2 {
+    color: #333;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.auth-logo p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Form Styles */
+.auth-form .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.auth-form .form-control {
+    height: 48px;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    padding: 12px 16px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.auth-form .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.auth-form .form-control::placeholder {
+    color: #aaa;
+}
+
+/* Input Icons */
+.input-icon-wrapper {
+    position: relative;
+}
+
+.input-icon-wrapper i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 16px;
+}
+
+.input-icon-wrapper .form-control {
+    padding-left: 45px;
+}
+
+/* Password Toggle */
+.password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #999;
+    font-size: 16px;
+    z-index: 10;
+}
+
+.password-toggle:hover {
+    color: #667eea;
+}
+
+/* Buttons */
+.btn-auth-primary {
+    width: 100%;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-auth-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-auth-primary:active {
+    transform: translateY(0);
+}
+
+.btn-auth-secondary {
+    width: 100%;
+    height: 48px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.btn-auth-secondary:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+/* Links */
+.auth-links {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.auth-links a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.auth-links a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.auth-divider {
+    text-align: center;
+    margin: 20px 0;
+    color: #999;
+    font-size: 14px;
+}
+
+/* Alerts */
+.auth-alert {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.auth-alert i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.auth-alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.auth-alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.auth-alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Loading Spinner */
+.auth-loading {
+    display: none;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.auth-loading.active {
+    display: block;
+}
+
+.spinner-border-sm {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+/* Footer */
+.auth-footer {
+    text-align: center;
+    margin-top: 30px;
+    color: white;
+    font-size: 14px;
+}
+
+.auth-footer a {
+    color: white;
+    text-decoration: underline;
+}
+
+/* Code Input (for verification) */
+.code-input-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.code-input {
+    width: 50px;
+    height: 60px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.code-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 30px 20px;
+    }
+    
+    .auth-logo h2 {
+        font-size: 24px;
+    }
+    
+    .code-input {
+        width: 45px;
+        height: 55px;
+        font-size: 20px;
+    }
+}
+
+/* Remember Me Checkbox */
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-check-label {
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+}
+
+/* Password Strength Indicator */
+.password-strength {
+    height: 4px;
+    border-radius: 2px;
+    margin-top: 8px;
+    background-color: #e0e0e0;
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.strength-weak {
+    width: 33%;
+    background-color: #dc3545;
+}
+
+.strength-medium {
+    width: 66%;
+    background-color: #ffc107;
+}
+
+.strength-strong {
+    width: 100%;
+    background-color: #28a745;
+}
+
+/* Resend Code Button */
+.resend-code {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+}
+
+.resend-code:hover {
+    text-decoration: underline;
+}
+
+.resend-code:disabled {
+    color: #999;
+    cursor: not-allowed;
+}
+
+.resend-timer {
+    color: #999;
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.input-icon-wrapper {
+    position: relative;
+}
+
+.input-left-icon {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem; /* khoảng cách từ trái */
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+}
+
+.password-toggle {
+    cursor: pointer;
+    color: #6c757d;
+}
