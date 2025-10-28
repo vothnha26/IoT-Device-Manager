@@ -622,12 +622,14 @@ public class ThanhVienDuAnController {
                     // CHU_SO_HUU và QUAN_LY: tự động full quyền, không chỉnh được
                     deviceData.put("hasPermission", true);
                     deviceData.put("coQuyenXemDuLieu", true);
+                    deviceData.put("coQuyenChinhSua", true);
                     deviceData.put("coQuyenDieuKhien", true);
                     deviceData.put("inheritedFromProject", true);
                 } else {
                     // NGUOI_DUNG: phân quyền chi tiết
                     deviceData.put("hasPermission", perm != null);
                     deviceData.put("coQuyenXemDuLieu", perm != null && Boolean.TRUE.equals(perm.getCoQuyenXemDuLieu()));
+                    deviceData.put("coQuyenChinhSua", perm != null && Boolean.TRUE.equals(perm.getCoQuyenChinhSua()));
                     deviceData.put("coQuyenDieuKhien", perm != null && Boolean.TRUE.equals(perm.getCoQuyenDieuKhien()));
                     deviceData.put("inheritedFromProject", false);
                 }

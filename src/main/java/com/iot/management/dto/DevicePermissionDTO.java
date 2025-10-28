@@ -3,6 +3,7 @@ package com.iot.management.dto;
 public class DevicePermissionDTO {
     private Long maThietBi;
     private boolean coQuyenXemDuLieu;
+    private boolean coQuyenChinhSua;
     private boolean coQuyenDieuKhien;
     
     public Long getMaThietBi() { 
@@ -19,6 +20,14 @@ public class DevicePermissionDTO {
     
     public void setCoQuyenXemDuLieu(boolean coQuyenXemDuLieu) { 
         this.coQuyenXemDuLieu = coQuyenXemDuLieu; 
+    }
+    
+    public boolean isCoQuyenChinhSua() { 
+        return coQuyenChinhSua; 
+    }
+    
+    public void setCoQuyenChinhSua(boolean coQuyenChinhSua) { 
+        this.coQuyenChinhSua = coQuyenChinhSua; 
     }
     
     public boolean isCoQuyenDieuKhien() { 

@@ -572,6 +572,16 @@
                                         <i class="bi bi-sliders"></i> Điều khiển
                                     </label>
                                 </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input device-edit-checkbox" type="checkbox" 
+                                           id="deviceEdit_${device.maThietBi}" 
+                                           ${device.coQuyenChinhSua ? 'checked' : ''}
+                                           ${device.inheritedFromProject ? 'disabled' : ''}
+                                           onchange="handleEditCheckbox(${device.maThietBi}, this.checked)">
+                                    <label class="form-check-label" for="deviceEdit_${device.maThietBi}">
+                                        <i class="bi bi-pencil"></i> Chỉnh sửa
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     `).join('');
@@ -672,14 +682,36 @@
             if (!enabled) {
                 document.getElementById(`deviceView_${maThietBi}`).checked = false;
                 document.getElementById(`deviceControl_${maThietBi}`).checked = false;
+                document.getElementById(`deviceEdit_${maThietBi}`).checked = false;
             }
         }
         
-        // Xử lý khi tick "Điều khiển" thì tự động tick "Xem"
+        // Xử lý khi tick "Điều khiển" thì tự động tick "Xem" và "Chỉnh sửa"
         function handleControlCheckbox(maThietBi, checked) {
             if (checked) {
-                // Nếu tick Điều khiển thì tự động tick Xem
+                // Nếu tick Điều khiển thì tự động tick Xem và Chỉnh sửa
                 const viewCheckbox = document.getElementById(`deviceView_${maThietBi}`);
+                const editCheckbox = document.getElementById(`deviceEdit_${maThietBi}`);
+                
+                if (viewCheckbox && !viewCheckbox.disabled) {
+                    viewCheckbox.checked = true;
+                }
+                if (editCheckbox && !editCheckbox.disabled) {
+                    editCheckbox.checked = true;
+                }
+            }
+        }
+        
+        // Xử lý khi tick "Chỉnh sửa" thì tự động tick "Điều khiển" và "Xem"
+        function handleEditCheckbox(maThietBi, checked) {
+            if (checked) {
+                // Nếu tick Chỉnh sửa thì tự động tick Điều khiển và Xem
+                const controlCheckbox = document.getElementById(`deviceControl_${maThietBi}`);
+                const viewCheckbox = document.getElementById(`deviceView_${maThietBi}`);
+                
+                if (controlCheckbox && !controlCheckbox.disabled) {
+                    controlCheckbox.checked = true;
+                }
                 if (viewCheckbox && !viewCheckbox.disabled) {
                     viewCheckbox.checked = true;
                 }
@@ -741,10 +773,12 @@
                     const maThietBi = checkbox.id.replace('device_', '');
                     const coQuyenXemDuLieu = document.getElementById(`deviceView_${maThietBi}`).checked;
                     const coQuyenDieuKhien = document.getElementById(`deviceControl_${maThietBi}`).checked;
+                    const coQuyenChinhSua = document.getElementById(`deviceEdit_${maThietBi}`).checked;
                     devicePermissions.push({ 
                         maThietBi: parseInt(maThietBi), 
                         coQuyenXemDuLieu, 
-                        coQuyenDieuKhien 
+                        coQuyenDieuKhien,
+                        coQuyenChinhSua
                     });
                 }
             });
