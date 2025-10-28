@@ -1,20 +1,25 @@
 package com.iot.management.controller.api.admin;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.iot.management.model.entity.KhuVuc;
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.entity.ThietBi;
 import com.iot.management.service.KhuVucService;
 import com.iot.management.service.NguoiDungService;
 import com.iot.management.service.ThietBiService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -36,8 +41,6 @@ public class AdminUserController {
     @GetMapping
     public ResponseEntity<List<NguoiDung>> getAllUsers() {
         List<NguoiDung> users = nguoiDungService.findAllUsers();
-        // Xóa mật khẩu trước khi trả về
-        users.forEach(u -> u.setMatKhauBam(null));
         return ResponseEntity.ok(users);
     }
 
@@ -52,7 +55,6 @@ public class AdminUserController {
         }
         
         NguoiDung user = userOpt.get();
-        user.setMatKhauBam(null); // Không trả về mật khẩu
         
         return ResponseEntity.ok(user);
     }

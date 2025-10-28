@@ -1,15 +1,16 @@
 package com.iot.management.model.repository;
 
-import com.iot.management.model.entity.NguoiDung;
-import com.iot.management.model.entity.ThongBao;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.iot.management.model.entity.NguoiDung;
+import com.iot.management.model.entity.ThongBao;
 
 @Repository
 public interface ThongBaoRepository extends JpaRepository<ThongBao, Long> {
@@ -33,4 +34,7 @@ public interface ThongBaoRepository extends JpaRepository<ThongBao, Long> {
 
     // Lấy N thông báo mới nhất
     List<ThongBao> findTop10ByNguoiDungOrderByThoiGianTaoDesc(NguoiDung nguoiDung);
+    
+    // Đếm số thông báo trong khoảng thời gian
+    long countByThoiGianTaoBetween(LocalDateTime start, LocalDateTime end);
 }

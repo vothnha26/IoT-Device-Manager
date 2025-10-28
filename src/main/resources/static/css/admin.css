@@ -363,6 +363,12 @@ body {
     align-items: center;
     gap: 1rem;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: var(--admin-transition);
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .admin-stat-icon {
@@ -374,6 +380,7 @@ body {
     justify-content: center;
     font-size: 1.5rem;
     color: white;
+    flex-shrink: 0;
 }
 
 .admin-stat-info h4 {
@@ -381,11 +388,41 @@ body {
     font-weight: 700;
     margin: 0;
     color: var(--admin-text);
+    transition: all 0.3s ease;
+}
+
+.admin-stat-info h4.updated {
+    animation: pulseUpdate 0.5s ease;
+}
+
+@keyframes pulseUpdate {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+        color: var(--admin-accent);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .admin-stat-info p {
     margin: 0;
     color: var(--admin-text-light);
+    font-size: 0.9rem;
+}
+
+/* Chart Container */
+.chart-container {
+    position: relative;
+    height: 300px;
+    padding: 1rem;
+}
+
+.chart-container canvas {
+    max-height: 100%;
 }
 
 /* Responsive */
