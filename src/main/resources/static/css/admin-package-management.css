@@ -1,0 +1,103 @@
+/* Admin Package Management Specific Styles */
+.admin-package-management {
+    padding: 0;
+    margin: 0;
+}
+
+.admin-package-management .content-wrapper {
+    margin-left: 240px;
+    min-height: 100vh;
+    background-color: #e9ecef;
+    padding: 20px;
+}
+
+.admin-package-management .page-header {
+    margin-bottom: 25px;
+}
+
+.admin-package-management .page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.admin-package-management .card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.admin-package-management .package-card {
+    transition: transform 0.2s;
+}
+
+.admin-package-management .package-card:hover {
+    transform: translateY(-5px);
+}
+
+.admin-package-management .card-header {
+    background: transparent;
+    border-bottom: 2px solid #f0f0f0;
+    padding: 15px 20px;
+}
+
+.admin-package-management .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.admin-package-management .package-price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3498db;
+    margin: 15px 0;
+}
+
+.admin-package-management .package-duration {
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.admin-package-management .package-features {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+}
+
+.admin-package-management .package-features li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-package-management .package-features li:last-child {
+    border-bottom: none;
+}
+
+.admin-package-management .btn-action {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 3px;
+}
+
+.admin-package-management .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.admin-package-management .status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.admin-package-management .status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}

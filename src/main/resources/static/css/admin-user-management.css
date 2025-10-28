@@ -1,0 +1,335 @@
+/* Admin User Management Specific Styles */
+.admin-user-management {
+    padding: 0;
+    margin: 0;
+}
+
+/* Sidebar Styles */
+.admin-user-management .sidebar-brand {
+    padding: 20px 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-user-management .sidebar-brand img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+}
+
+.admin-user-management .sidebar-brand-text {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Navigation Links */
+.admin-user-management #sidebar .nav-link {
+    padding: 15px 20px;
+    text-align: left;
+    color: rgba(255,255,255,0.6);
+    transition: all 0.3s;
+    position: relative;
+    border-left: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.admin-user-management #sidebar .nav-link:hover {
+    color: white;
+    background: rgba(255,255,255,0.05);
+}
+
+.admin-user-management #sidebar .nav-link.active {
+    color: white;
+    background: rgba(52, 152, 219, 0.2);
+    border-left-color: #3498db;
+}
+
+.admin-user-management #sidebar .nav-link i {
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+.admin-user-management #sidebar .nav-link span {
+    font-size: 14px;
+}
+
+/* Main Content Area */
+.admin-user-management .main-content {
+    margin-left: 240px;
+    min-height: 100vh;
+    background-color: #e9ecef;
+}
+
+/* Header Styles */
+.admin-user-management .top-header {
+    background: white;
+    padding: 15px 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-user-management .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-user-management .user-avatar-header {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: #e74c3c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+}
+
+/* Content Area Styles */
+.admin-user-management .content-area {
+    padding: 25px 30px;
+}
+
+.admin-user-management .page-header {
+    margin-bottom: 25px;
+}
+
+.admin-user-management .page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.admin-user-management .page-subtitle {
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+/* Cards */
+.admin-user-management .filter-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.admin-user-management .users-table-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 25px;
+}
+
+/* Table Styles */
+.admin-user-management .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.admin-user-management .table-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.admin-user-management .user-table {
+    width: 100%;
+}
+
+.admin-user-management .user-table th {
+    background: #f8f9fa;
+    padding: 12px;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.admin-user-management .user-table td {
+    padding: 15px 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-user-management .user-table tr:hover {
+    background: #f8f9fa;
+}
+
+/* Avatar and Badges */
+.admin-user-management .user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.admin-user-management .badge-role {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.admin-user-management .badge-user {
+    background: #3498db;
+    color: white;
+}
+
+.admin-user-management .badge-manager {
+    background: #e74c3c;
+    color: white;
+}
+
+.admin-user-management .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.admin-user-management .status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.admin-user-management .status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Action Buttons */
+.admin-user-management .action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 0 3px;
+}
+
+.admin-user-management .action-btn.view {
+    background: #3498db;
+    color: white;
+}
+
+.admin-user-management .action-btn.view:hover {
+    background: #2980b9;
+}
+
+.admin-user-management .action-btn.toggle {
+    background: #f39c12;
+    color: white;
+}
+
+.admin-user-management .action-btn.toggle:hover {
+    background: #e67e22;
+}
+
+.admin-user-management .action-btn.toggle.inactive {
+    background: #27ae60;
+}
+
+.admin-user-management .action-btn.toggle.inactive:hover {
+    background: #229954;
+}
+
+/* Statistics Cards */
+.admin-user-management .stats-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.admin-user-management .stat-card {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.admin-user-management .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.admin-user-management .stat-icon.total {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.admin-user-management .stat-icon.active {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.admin-user-management .stat-icon.inactive {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+}
+
+.admin-user-management .stat-info h3 {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.admin-user-management .stat-info p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+/* Empty State */
+.admin-user-management .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.admin-user-management .empty-state i {
+    font-size: 64px;
+    color: #bdc3c7;
+    margin-bottom: 20px;
+}
+
+.admin-user-management .empty-state h5 {
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.admin-user-management .empty-state p {
+    color: #95a5a6;
+}

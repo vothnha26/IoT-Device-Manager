@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi" 
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="fragments/layout :: layout(~{::title}, ~{::main}, ~{::script})">
+
+<head>
+    <title>Dashboard - IoT Management</title>
+</head>
+
+<body>
+    <!-- Main Content -->
+    <main>
+        <div style="padding-top: 80px;">
+        <div class="container py-4">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Tổng quan hệ thống</h1>
+                <div>
+                    <a href="/thiet-bi/them" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Thêm thiết bị mới
+                    </a>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Thiết bị -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-hdd-network dashboard-icon"></i> Thiết bị</div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="dashboard-summary">Tổng số thiết bị: <span id="totalDevices">--</span></div>
+                                <div class="dashboard-summary">Đang hoạt động: <span id="activeDevices">--</span></div>
+                                <div class="dashboard-summary">Offline: <span id="offlineDevices">--</span></div>
+                            </div>
+                            <div class="col-6">
+                                <div id="deviceTypeChart" class="dashboard-chart"></div>
+                            </div>
+                        </div>
+                        <div id="deviceAreaChart" class="dashboard-chart"></div>
+                    </div>
+                </div>
+                <!-- Khu vực -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-geo-alt dashboard-icon"></i> Khu vực</div>
+                        <div class="dashboard-summary">Số lượng khu vực: <span id="totalAreas">--</span></div>
+                        <div id="areaDeviceBar" class="dashboard-chart"></div>
+                    </div>
+                </div>
+                <!-- Cảm biến & dữ liệu -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-graph-up dashboard-icon"></i> Cảm biến & dữ liệu</div>
+                        <div id="sensorLineChart" class="dashboard-chart"></div>
+                        <div class="row mt-3">
+                            <div class="col">
+                                <div>Trung bình/ngày: <span id="sensorAvg">--</span></div>
+                                <div>Max/ngày: <span id="sensorMax">--</span></div>
+                                <div>Min/ngày: <span id="sensorMin">--</span></div>
+                            </div>
+                            <div class="col">
+                                <div id="sensorRealtimeChart" class="dashboard-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Luật & cảnh báo -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-exclamation-triangle dashboard-icon"></i> Luật & cảnh báo</div>
+                        <div class="dashboard-summary">Cảnh báo 24h: <span id="alerts24h">--</span></div>
+                        <div class="dashboard-summary">Cảnh báo 7 ngày: <span id="alerts7d">--</span></div>
+                        <div id="alertDonutChart" class="dashboard-chart"></div>
+                        <div class="mt-3">
+                            <table class="table table-sm dashboard-table">
+                                <thead><tr><th>Thời gian</th><th>Thiết bị</th><th>Loại cảnh báo</th><th>Chi tiết</th></tr></thead>
+                                <tbody id="alertLogTable"><tr><td colspan="4">--</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Lịch trình & điều khiển -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-calendar-check dashboard-icon"></i> Lịch trình & điều khiển</div>
+                        <div id="scheduleFreqChart" class="dashboard-chart"></div>
+                        <div class="mt-3">
+                            <table class="table table-sm dashboard-table">
+                                <thead><tr><th>Thời gian</th><th>Thiết bị</th><th>Lệnh</th><th>Người gửi</th></tr></thead>
+                                <tbody id="controlLogTable"><tr><td colspan="4">--</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Người dùng dự án -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-people dashboard-icon"></i> Người dùng dự án</div>
+                        <div class="dashboard-summary">Thành viên: <span id="userCount">--</span> / <span id="userLimit">--</span></div>
+                        <div id="userRoleTable" class="mt-3"></div>
+                        <div class="mt-2">
+                            <table class="table table-sm dashboard-table">
+                                <thead><tr><th>Thành viên</th><th>Vai trò</th><th>Lịch sử mời/thu hồi</th></tr></thead>
+                                <tbody id="userHistoryTable"><tr><td colspan="3">--</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Token & gói cước -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-key dashboard-icon"></i> Token & gói cước</div>
+                        <div class="dashboard-summary">Token đã sử dụng: <span id="tokenUsed">--</span> / <span id="tokenLimit">--</span></div>
+                        <div class="dashboard-summary">Thời hạn còn lại: <span id="packageDaysLeft">--</span> ngày</div>
+                        <div id="tokenLineChart" class="dashboard-chart"></div>
+                    </div>
+                </div>
+                <!-- Tài chính -->
+                <div class="col-lg-6 dashboard-section">
+                    <div class="dashboard-card p-4">
+                        <div class="dashboard-title"><i class="bi bi-cash-stack dashboard-icon"></i> Tài chính</div>
+                        <div class="dashboard-summary">Tổng chi tháng: <span id="financeMonth">--</span></div>
+                        <div class="dashboard-summary">Tổng chi quý: <span id="financeQuarter">--</span></div>
+                        <div class="dashboard-summary">Gói hiện tại: <span id="currentPackage">--</span></div>
+                        <div class="mt-3">
+                            <table class="table table-sm dashboard-table">
+                                <thead><tr><th>Thời gian</th><th>Số tiền</th><th>Gói</th></tr></thead>
+                                <tbody id="financeTable"><tr><td colspan="3">--</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </main>
+
+    <!-- Custom Scripts -->
+    <script th:fragment="script">
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load custom styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .dashboard-section { margin-bottom: 2rem; }
+            .dashboard-card { box-shadow: 0 2px 12px rgba(0,0,0,0.07); border-radius: 12px; }
+            .dashboard-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 1rem; }
+            .dashboard-chart { min-height: 260px; }
+            .dashboard-table th, .dashboard-table td { font-size: 0.98rem; }
+            .dashboard-table th { background: #f6f9fc; }
+            .dashboard-table { margin-bottom: 0; }
+            .dashboard-summary { font-size: 1.1rem; font-weight: 500; }
+            .dashboard-icon { font-size: 2rem; margin-right: 0.5rem; }
+        `;
+        document.head.appendChild(style);
+
+        // Load ApexCharts
+        const apexScript = document.createElement('script');
+        apexScript.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
+        apexScript.onload = function() {
+            // Chart render helpers
+            const renderDonut = (id, labels, series) => {
+                var options = {
+                    chart: { type: 'donut' },
+                    labels: labels,
+                    series: series,
+                    colors: ['#2196f3','#00bcd4','#ffc107','#e91e63','#4caf50'],
+                    legend: { position: 'bottom' },
+                    dataLabels: { enabled: true },
+                };
+                var chart = new ApexCharts(document.querySelector('#'+id), options);
+                chart.render();
+            };
+            const renderLine = (id, categories, series) => {
+                var options = {
+                    chart: { type: 'line', height: 260 },
+                    xaxis: { categories: categories },
+                    series: series,
+                    colors: ['#2196f3','#e91e63','#ffc107'],
+                    stroke: { curve: 'smooth' },
+                    legend: { position: 'top' },
+                };
+                var chart = new ApexCharts(document.querySelector('#'+id), options);
+                chart.render();
+            };
+            const renderBar = (id, categories, series, stacked=false) => {
+                var options = {
+                    chart: { type: 'bar', stacked: stacked, height: 260 },
+                    xaxis: { categories: categories },
+                    series: series,
+                    colors: ['#00bcd4','#2196f3','#ffc107','#e91e63','#4caf50'],
+                    legend: { position: 'top' },
+                };
+                var chart = new ApexCharts(document.querySelector('#'+id), options);
+                chart.render();
+            };
+
+            // Fetch real data from API
+            // 1. Device stats
+            fetch('/api/dashboard/devices')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalDevices').textContent = data.total || 0;
+                    document.getElementById('activeDevices').textContent = data.active || 0;
+                    document.getElementById('offlineDevices').textContent = data.offline || 0;
+                    
+                    // Device type chart
+                    const typeLabels = Object.keys(data.byType || {});
+                    const typeSeries = Object.values(data.byType || {});
+                    if (typeLabels.length > 0) {
+                        renderDonut('deviceTypeChart', typeLabels, typeSeries);
+                    }
+                    
+                    // Device by area chart
+                    const areaLabels = Object.keys(data.byArea || {});
+                    const areaSeries = Object.values(data.byArea || {});
+                    if (areaLabels.length > 0) {
+                        renderBar('deviceAreaChart', areaLabels, [{name:'Thiết bị',data:areaSeries}]);
+                    }
+                })
+                .catch(err => console.error('Error loading devices:', err));
+
+            // 2. Area stats
+            fetch('/api/dashboard/areas')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalAreas').textContent = data.total || 0;
+                    
+                    // Area device bar
+                    const areaNames = (data.areaDevices || []).map(a => a.name);
+                    const deviceCounts = (data.areaDevices || []).map(a => a.deviceCount);
+                    if (areaNames.length > 0) {
+                        renderBar('areaDeviceBar', areaNames, [{name:'Thiết bị',data:deviceCounts}]);
+                    }
+                })
+                .catch(err => console.error('Error loading areas:', err));
+
+            // 3. Sensor data
+            fetch('/api/dashboard/sensors')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('sensorAvg').textContent = data.avg || '--';
+                    document.getElementById('sensorMax').textContent = data.max || '--';
+                    document.getElementById('sensorMin').textContent = data.min || '--';
+                    
+                    // Sensor line chart (24h)
+                    const hours = (data.hourlyData || []).map(h => h.hour + ':00');
+                    const values = (data.hourlyData || []).map(h => h.value);
+                    if (hours.length > 0) {
+                        renderLine('sensorLineChart', hours, [{name:'Giá trị',data:values}]);
+                    }
+                    
+                    // Realtime chart (last few hours)
+                    const recentHours = hours.slice(-10);
+                    const recentValues = values.slice(-10);
+                    if (recentHours.length > 0) {
+                        renderLine('sensorRealtimeChart', recentHours, [{name:'Real-time',data:recentValues}]);
+                    }
+                })
+                .catch(err => console.error('Error loading sensors:', err));
+
+            // 4. Alert stats
+            fetch('/api/dashboard/alerts')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('alerts24h').textContent = data.alerts24h || 0;
+                    document.getElementById('alerts7d').textContent = data.alerts7d || 0;
+                    
+                    // Alert donut
+                    const levelLabels = Object.keys(data.byLevel || {});
+                    const levelSeries = Object.values(data.byLevel || {});
+                    if (levelLabels.length > 0) {
+                        renderDonut('alertDonutChart', levelLabels, levelSeries);
+                    }
+                    
+                    // Alert log table
+                    const alertTable = document.getElementById('alertLogTable');
+                    if (data.latestAlerts && data.latestAlerts.length > 0) {
+                        alertTable.innerHTML = data.latestAlerts.map(alert => 
+                            `<tr><td>${new Date(alert.time).toLocaleString()}</td><td>${alert.device}</td><td>${alert.level}</td><td>${alert.message}</td></tr>`
+                        ).join('');
+                    } else {
+                        alertTable.innerHTML = '<tr><td colspan="4">Không có cảnh báo</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error loading alerts:', err));
+
+            // 5. Schedule stats
+            fetch('/api/dashboard/schedules')
+                .then(res => res.json())
+                .then(data => {
+                    // Schedule frequency chart
+                    const freqLabels = Object.keys(data.byFrequency || {});
+                    const freqSeries = Object.values(data.byFrequency || {});
+                    if (freqLabels.length > 0) {
+                        renderBar('scheduleFreqChart', freqLabels, [{name:'Số lịch trình',data:freqSeries}]);
+                    }
+                    
+                    // Control log table
+                    const controlTable = document.getElementById('controlLogTable');
+                    if (data.recentCommands && data.recentCommands.length > 0) {
+                        controlTable.innerHTML = data.recentCommands.map(cmd => 
+                            `<tr><td>${new Date(cmd.time).toLocaleString()}</td><td>${cmd.device}</td><td>${cmd.command}</td><td>${cmd.user}</td></tr>`
+                        ).join('');
+                    } else {
+                        controlTable.innerHTML = '<tr><td colspan="4">Không có lệnh điều khiển</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error loading schedules:', err));
+
+            // 6. User stats
+            fetch('/api/dashboard/users')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('userCount').textContent = data.currentUsers || 0;
+                    document.getElementById('userLimit').textContent = data.userLimit || 1;
+                })
+                .catch(err => console.error('Error loading users:', err));
+
+            // 7. Token stats
+            fetch('/api/dashboard/tokens')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('tokenUsed').textContent = data.tokenUsed || 0;
+                    document.getElementById('tokenLimit').textContent = data.tokenLimit || 0;
+                    document.getElementById('packageDaysLeft').textContent = data.daysLeft || 0;
+                    
+                    // Token line chart
+                    const months = (data.monthlyUsage || []).map(m => m.month);
+                    const usages = (data.monthlyUsage || []).map(m => m.used);
+                    if (months.length > 0) {
+                        renderLine('tokenLineChart', months, [{name:'Token sử dụng',data:usages}]);
+                    }
+                })
+                .catch(err => console.error('Error loading tokens:', err));
+
+            // 8. Finance stats
+            fetch('/api/dashboard/finance')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('financeMonth').textContent = (data.monthTotal || 0).toLocaleString('vi-VN') + ' VND';
+                    document.getElementById('financeQuarter').textContent = (data.quarterTotal || 0).toLocaleString('vi-VN') + ' VND';
+                    document.getElementById('currentPackage').textContent = data.currentPackage || 'Free';
+                    
+                    // Finance table
+                    const financeTable = document.getElementById('financeTable');
+                    if (data.recentPayments && data.recentPayments.length > 0) {
+                        financeTable.innerHTML = data.recentPayments.map(payment => 
+                            `<tr><td>${new Date(payment.date).toLocaleDateString()}</td><td>${payment.amount.toLocaleString('vi-VN')} VND</td><td>${payment.package}</td></tr>`
+                        ).join('');
+                    } else {
+                        financeTable.innerHTML = '<tr><td colspan="3">Không có giao dịch</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error loading finance:', err));
+        };
+        document.head.appendChild(apexScript);
+    });
+    </script>
+</body>
+</html>

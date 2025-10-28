@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <th:block th:replace="~{admin/layout :: admin-head('Quản lý Loại thiết bị - IoT Manager')}"></th:block>
+    
+    <link rel="stylesheet" th:href="@{/css/admin-device-management.css}">
+
+    <style>
+        /* CSS cho sidebar (giả định từ file layout) */
+        .main-content {
+            margin-left: 30px; 
+        width: calc(100% - 30px); 
+        box-sizing: border-box; 
+        min-height: 100vh;
+    
+    /* ĐỔI DÒNG NÀY */
+    background-color: #f8f9fc; /* Hoặc #f4f7f6, hoặc màu xám bạn muốn */
+    /* Hoặc dùng 'transparent' nếu muốn nó trong suốt */
+    /* background-color: transparent; */
+
+    padding-top: 20px; /* Giữ lại nếu header cố định */
+    /* Bạn vẫn cần padding cho content-wrapper hoặc ở đây */
+    /* padding: 70px 30px 30px 30px; */
+        }
+        
+        .top-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content-wrapper {
+            padding: 30px 30px 30px 0; /* top right bottom left */
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        /* CSS cho các thẻ thống kê (Stat Card) */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        .stat-card .icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+        }
+        .stat-card.primary .icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card.success .icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card.warning .icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 15px 0 5px 0;
+            color: #2c3e50;
+        }
+        .stat-card .label {
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* CSS cho bảng */
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-top: 25px;
+        }
+        .table { margin: 0; }
+        .table thead { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .table thead th {
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 15px;
+            text-align: center;
+        }
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+            text-align: center;
+        }
+        .table tbody tr:hover { background-color: #f8f9fa; }
+
+        /* CSS cho các nút trong bảng */
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: white;
+        }
+        .btn-action.edit { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-action.delete { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .btn-action.config { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* CSS cho Nhóm thiết bị (badge) */
+        .badge-group {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+        .badge-group.controller { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .badge-group.sensor { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .badge-group.actuator { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+        /* CSS cho Modal */
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        .btn-close-white { filter: invert(1) grayscale(100%) brightness(200%); }
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+    </style>
+</head>
+
+<body class="admin-device-management">
+    
+    <aside th:replace="~{admin/layout :: admin-sidebar}"></aside>
+
+    <div class="main-content">
+        
+        <div class="top-header">
+            <h5 class="mb-0" style="color: #2c3e50;">
+                <i class="fas fa-users-cog me-2"></i>
+                Quản lý Loại thiết bị
+            </h5>
+            
+            <div class="d-flex align-items-center">
+            
+                
+                <div class="user-info d-flex align-items-center">
+                    <div class="user-avatar-header" style="width: 35px; height: 35px; border-radius: 50%; background: #667eea; color: white; display: grid; place-items: center; font-weight: bold;">
+                        <span th:text="${username != null ? #strings.substring(username, 0, 1).toUpperCase() : 'A'}">A</span>
+                    </div>
+                    <div class="ms-2">
+                        <div style="font-size: 14px; color: #2c3e50;">
+                            <strong th:text="${username}">Admin</strong>
+                        </div>
+                        <div style="font-size: 12px; color: #7f8c8d;">
+                            Quản trị viên
+                        </div>
+                    </div>
+                    <button class="btn btn-link text-danger" onclick="logout()" title="Đăng xuất">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div>
+                <div class="page-title">Quản lý Loại thiết bị</div>
+                <div class="page-subtitle">Quản lý các loại thiết bị trong hệ thống IoT</div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card primary">
+                        <div class="d-flex align-items-center">
+                            <div class="icon">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div class="ms-3 flex-grow-1">
+                                <div class="number" id="totalDeviceTypes">0</div>
+                                <div class="label">Tổng số loại thiết bị</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="stat-card success">
+                        <div class="d-flex align-items-center">
+                            <div class="icon">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="ms-3 flex-grow-1">
+                                <div class="number" id="controllerCount">0</div>
+                                <div class="label">Thiết bị điều khiển</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="stat-card warning">
+                        <div class="d-flex align-items-center">
+                            <div class="icon">
+                                <i class="fas fa-temperature-high"></i>
+                            </div>
+                            <div class="ms-3 flex-grow-1">
+                                <div class="number" id="sensorCount">0</div>
+                                <div class="label">Cảm biến</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+        
+                    <h5 class="m-0"> 
+                        <i class="fas fa-list me-2"></i>Danh sách loại thiết bị
+                    </h5>
+                    
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#deviceTypeModal" onclick="openAddModal()">
+                        <i class="fas fa-plus me-2"></i>Thêm loại thiết bị
+                    </button>
+                    
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên loại</th>
+                                <th>Nhóm thiết bị</th>
+                                <th>Mô tả</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deviceTypeTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div> <div class="modal fade" id="deviceTypeModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Thêm loại thiết bị mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="deviceTypeForm">
+                        <input type="hidden" id="deviceTypeId">
+                        
+                        <div class="mb-3">
+                            <label for="tenLoai" class="form-label">Tên loại thiết bị <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="tenLoai" required placeholder="Ví dụ: Cảm biến nhiệt độ DHT11">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="nhomThietBi" class="form-label">Nhóm thiết bị <span class="text-danger">*</span></label>
+                            <select class="form-select" id="nhomThietBi" required>
+                                <option value="">-- Chọn nhóm thiết bị --</option>
+                                <option value="CONTROLLER">Thiết bị điều khiển</option>
+                                <option value="SENSOR">Cảm biến</option>
+                                <option value="ACTUATOR">Thiết bị chấp hành</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="moTa" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="moTa" rows="3" placeholder="Mô tả chi tiết về loại thiết bị này..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveDeviceType()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Field Configuration Modal -->
+    <div class="modal fade" id="fieldConfigModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cấu hình trường dữ liệu</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Danh sách trường</h6>
+                        <div>
+                            <button class="btn btn-sm btn-primary" onclick="openAddField()"><i class="fas fa-plus me-2"></i>Thêm trường</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Key</th>
+                                    <th>Tên hiển thị</th>
+                                    <th>Kiểu</th>
+                                    <th>Đơn vị</th>
+                                    <th>Giới hạn</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fieldsTableBody">
+                                <tr><td colspan="7" class="text-center text-muted">Chưa có trường nào</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Field Add/Edit Modal -->
+    <div class="modal fade" id="fieldModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fieldModalTitle">Thêm trường dữ liệu</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="fieldForm">
+                        <input type="hidden" id="fieldId">
+                        <div class="mb-3">
+                            <label class="form-label">Tên trường (key) <span class="text-danger">*</span></label>
+                            <input id="fieldName" class="form-control" placeholder="vd: temperature" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tên hiển thị <span class="text-danger">*</span></label>
+                            <input id="fieldDisplayName" class="form-control" placeholder="vd: Nhiệt độ" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Kiểu dữ liệu <span class="text-danger">*</span></label>
+                            <select id="fieldType" class="form-select" required>
+                                <option value="">-- Chọn kiểu --</option>
+                                <option value="integer">Integer</option>
+                                <option value="float">Float</option>
+                                <option value="double">Double</option>
+                                <option value="boolean">Boolean</option>
+                                <option value="string">String</option>
+                                <option value="enum">Enum</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Đơn vị</label>
+                                <input id="fieldUnit" class="form-control" placeholder="vd: °C">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Giá trị min</label>
+                                <input id="fieldMin" class="form-control" type="number" step="any">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Giá trị max</label>
+                                <input id="fieldMax" class="form-control" type="number" step="any">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Định nghĩa Enum (phân tách bằng dấu ,)</label>
+                            <input id="fieldEnum" class="form-control" placeholder="ON,OFF,UNKNOWN">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ghi chú</label>
+                            <input id="fieldNote" class="form-control">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveField()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Field configuration state
+        let currentDeviceTypeId = null;
+
+        function loadFields(deviceTypeId) {
+            // Clear table
+            $('#fieldsTableBody').html('<tr><td colspan="7" class="text-center">Đang tải...</td></tr>');
+            $.ajax({
+                url: '/api/admin/device-types/' + deviceTypeId + '/fields',
+                method: 'GET',
+                success: function(fields) {
+                    renderFieldsTable(fields);
+                },
+                error: function(xhr) {
+                    $('#fieldsTableBody').html('<tr><td colspan="7" class="text-center text-danger">Lỗi khi tải các trường: ' + xhr.responseText + '</td></tr>');
+                }
+            });
+        }
+
+        function renderFieldsTable(fields) {
+            if (!fields || fields.length === 0) {
+                $('#fieldsTableBody').html('<tr><td colspan="7" class="text-center text-muted">Chưa có trường nào</td></tr>');
+                return;
+            }
+
+            let html = '';
+            fields.forEach(function(f) {
+                html += `<tr>
+                    <td>${f.maCauHinhTruong}</td>
+                    <td>${f.tenTruong}</td>
+                    <td>${f.tenHienThi || ''}</td>
+                    <td>${f.kieuDuLieu}</td>
+                    <td>${f.donVi || ''}</td>
+                    <td>${f.giaTriMin ?? '-'} → ${f.giaTriMax ?? '-'}</td>
+                    <td>
+                        <button class="btn-action edit me-2" onclick="openEditField(${f.maCauHinhTruong})" title="Chỉnh sửa"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action delete" onclick="deleteField(${f.maCauHinhTruong})" title="Xóa"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+
+            $('#fieldsTableBody').html(html);
+        }
+
+        function openAddField() {
+            $('#fieldForm')[0].reset();
+            $('#fieldId').val('');
+            $('#fieldModalTitle').text('Thêm trường dữ liệu mới');
+            $('#fieldModal').modal('show');
+        }
+
+        function openEditField(fieldId) {
+            $.ajax({
+                url: '/api/admin/fields/' + fieldId,
+                method: 'GET',
+                success: function(field) {
+                    $('#fieldId').val(field.maCauHinhTruong);
+                    $('#fieldName').val(field.tenTruong);
+                    $('#fieldDisplayName').val(field.tenHienThi);
+                    $('#fieldType').val(field.kieuDuLieu);
+                    $('#fieldUnit').val(field.donVi);
+                    $('#fieldMin').val(field.giaTriMin);
+                    $('#fieldMax').val(field.giaTriMax);
+                    $('#fieldEnum').val(field.dinhNghiaEnum);
+                    $('#fieldNote').val(field.ghiChu);
+                    $('#fieldModalTitle').text('Chỉnh sửa trường');
+                    $('#fieldModal').modal('show');
+                },
+                error: function(xhr) {
+                    alert('Lỗi khi tải thông tin trường: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function saveField() {
+            let id = $('#fieldId').val();
+            let payload = {
+                tenTruong: $('#fieldName').val().trim(),
+                tenHienThi: $('#fieldDisplayName').val().trim(),
+                kieuDuLieu: $('#fieldType').val(),
+                donVi: $('#fieldUnit').val().trim(),
+                giaTriMin: $('#fieldMin').val() ? $('#fieldMin').val() : null,
+                giaTriMax: $('#fieldMax').val() ? $('#fieldMax').val() : null,
+                dinhNghiaEnum: $('#fieldEnum').val().trim(),
+                ghiChu: $('#fieldNote').val().trim()
+            };
+
+            // Basic validation
+            if (!payload.tenTruong) { alert('Vui lòng nhập tên trường (key)'); return; }
+            if (!payload.tenHienThi) { alert('Vui lòng nhập tên hiển thị'); return; }
+            if (!payload.kieuDuLieu) { alert('Vui lòng chọn kiểu dữ liệu'); return; }
+
+            let url = '/api/admin/device-types/' + currentDeviceTypeId + '/fields';
+            let method = id ? 'PUT' : 'POST';
+            if (id) {
+                url = '/api/admin/fields/' + id;
+            }
+
+            $.ajax({
+                url: url,
+                method: method,
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function(res) {
+                    alert(res.message || 'Lưu trường thành công');
+                    $('#fieldModal').modal('hide');
+                    loadFields(currentDeviceTypeId);
+                },
+                error: function(xhr) {
+                    let err = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : xhr.responseText;
+                    alert('Lỗi khi lưu trường: ' + err);
+                }
+            });
+        }
+
+        function deleteField(fieldId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa trường này?')) return;
+            $.ajax({
+                url: '/api/admin/fields/' + fieldId,
+                method: 'DELETE',
+                success: function(res) {
+                    alert(res.message || 'Xóa thành công');
+                    loadFields(currentDeviceTypeId);
+                },
+                error: function(xhr) {
+                    let err = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : xhr.responseText;
+                    alert('Lỗi khi xóa trường: ' + err);
+                }
+            });
+        }
+        let isEditMode = false;
+
+        $(document).ready(function() {
+            loadDeviceTypes();
+        });
+
+        // Logout function
+        function logout() {
+            document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            window.location.href = '/auth/login';
+        }
+
+        function loadDeviceTypes() {
+            $.ajax({
+                url: '/api/admin/device-types',
+                method: 'GET',
+                success: function(data) {
+                    updateStatistics(data);
+                    renderDeviceTypesTable(data);
+                },
+                error: function(xhr) {
+                    alert('Lỗi khi tải danh sách loại thiết bị: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function updateStatistics(deviceTypes) {
+            $('#totalDeviceTypes').text(deviceTypes.length);
+            
+            let controllerCount = deviceTypes.filter(dt => dt.nhomThietBi === 'CONTROLLER').length;
+            let sensorCount = deviceTypes.filter(dt => dt.nhomThietBi === 'SENSOR').length;
+            // let actuatorCount = deviceTypes.filter(dt => dt.nhomThietBi === 'ACTUATOR').length; // Bạn chưa có ID cho cái này
+            
+            $('#controllerCount').text(controllerCount);
+            $('#sensorCount').text(sensorCount);
+        }
+
+        function renderDeviceTypesTable(deviceTypes) {
+            let html = '';
+            
+            if (deviceTypes.length === 0) {
+                html = '<tr><td colspan="5" class="text-center text-muted">Chưa có loại thiết bị nào</td></tr>';
+            } else {
+                deviceTypes.forEach(function(deviceType) {
+                    let badgeClass = '';
+                    let groupLabel = '';
+                    
+                    switch(deviceType.nhomThietBi) {
+                        case 'CONTROLLER':
+                            badgeClass = 'controller';
+                            groupLabel = 'Thiết bị điều khiển';
+                            break;
+                        case 'SENSOR':
+                            badgeClass = 'sensor';
+                            groupLabel = 'Cảm biến';
+                            break;
+                        case 'ACTUATOR':
+                            badgeClass = 'actuator';
+                            groupLabel = 'Thiết bị chấp hành';
+                            break;
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td>${deviceType.maLoaiThietBi}</td>
+                            <td><strong>${deviceType.tenLoai}</strong></td>
+                            <td><span class="badge-group ${badgeClass}">${groupLabel}</span></td>
+                            <td>${deviceType.moTa || '<i class="text-muted">Chưa có mô tả</i>'}</td>
+                            <td>
+                                <button class="btn-action edit me-2" onclick="editDeviceType(${deviceType.maLoaiThietBi})" title="Chỉnh sửa">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-action config me-2" onclick="configFields(${deviceType.maLoaiThietBi})" title="Cấu hình trường dữ liệu">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <button class="btn-action delete" onclick="deleteDeviceType(${deviceType.maLoaiThietBi})" title="Xóa">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            $('#deviceTypeTableBody').html(html);
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            $('#modalTitle').text('Thêm loại thiết bị mới');
+            $('#deviceTypeForm')[0].reset();
+            $('#deviceTypeId').val('');
+            $('#deviceTypeModal').modal('show'); // Thêm dòng này để mở modal
+        }
+
+        function editDeviceType(id) {
+            isEditMode = true;
+            $('#modalTitle').text('Chỉnh sửa loại thiết bị');
+            
+            $.ajax({
+                url: '/api/admin/device-types/' + id,
+                method: 'GET',
+                success: function(deviceType) {
+                    $('#deviceTypeId').val(deviceType.maLoaiThietBi);
+                    $('#tenLoai').val(deviceType.tenLoai);
+                    $('#nhomThietBi').val(deviceType.nhomThietBi);
+                    $('#moTa').val(deviceType.moTa);
+                    
+                    $('#deviceTypeModal').modal('show');
+                },
+                error: function(xhr) {
+                    alert('Lỗi khi tải thông tin loại thiết bị: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function saveDeviceType() {
+            let data = {
+                tenLoai: $('#tenLoai').val().trim(),
+                nhomThietBi: $('#nhomThietBi').val(),
+                moTa: $('#moTa').val().trim()
+            };
+            
+            if (!data.tenLoai) {
+                alert('Vui lòng nhập tên loại thiết bị');
+                return;
+            }
+            
+            if (!data.nhomThietBi) {
+                alert('Vui lòng chọn nhóm thiết bị');
+                return;
+            }
+            
+            let url = '/api/admin/device-types';
+            let method = 'POST';
+            
+            if (isEditMode) {
+                let id = $('#deviceTypeId').val();
+                url = '/api/admin/device-types/' + id;
+                method = 'PUT';
+            }
+            
+            $.ajax({
+                url: url,
+                method: method,
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    // Xử lý response linh hoạt hơn
+                    let message = response.message || (response.success ? "Thao tác thành công" : JSON.stringify(response));
+                    alert(message);
+                    
+                    $('#deviceTypeModal').modal('hide');
+                    loadDeviceTypes();
+                },
+                error: function(xhr) {
+                    let errorMsg = 'Lỗi khi lưu loại thiết bị';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    } else {
+                        errorMsg = xhr.responseText;
+                    }
+                    alert(errorMsg);
+                }
+            });
+        }
+
+        function deleteDeviceType(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa loại thiết bị này?')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '/api/admin/device-types/' + id,
+                method: 'DELETE',
+                success: function(response) {
+                    let message = response.message || (response.success ? "Xóa thành công" : JSON.stringify(response));
+                    alert(message);
+                    loadDeviceTypes();
+                },
+                error: function(xhr) {
+                    let errorMsg = 'Lỗi khi xóa loại thiết bị';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    } else {
+                         errorMsg = xhr.responseText;
+                    }
+                    alert(errorMsg);
+                }
+            });
+        }
+
+        function configFields(id) {
+            // Mở modal cấu hình trường dữ liệu cho loại thiết bị
+            currentDeviceTypeId = id;
+            $('#fieldConfigModal').modal('show');
+            loadFields(id);
+        }
+    </script>
+</body>
+</html>

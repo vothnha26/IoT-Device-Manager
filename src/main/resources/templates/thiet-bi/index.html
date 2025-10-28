@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main}, ~{::scripts})}">
+
+<head>
+    <title>Quản lý Thiết bị - IoT Management</title>
+</head>
+<body>
+
+<main>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-gray-800">Quản lý Thiết bị</h1>
+                <p class="mb-0 text-gray-600">Tổng quan và quản lý tất cả thiết bị IoT của bạn</p>
+            </div>
+            <button class="btn btn-primary d-flex align-items-center gap-2" onclick="showAddModal()">
+                <i class="fas fa-plus"></i>
+                Thêm thiết bị
+            </button>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                 <div class="stat-icon blue"><i class="fas fa-microchip"></i></div>
+                 <div class="stat-info">
+                     <h3 th:text="${totalDevices}">0</h3><p>Tổng thiết bị</p>
+                 </div>
+             </div>
+             <div class="stat-card">
+                 <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                 <div class="stat-info">
+                     <h3 th:text="${activeDevices}">0</h3><p>Đang hoạt động</p>
+                 </div>
+             </div>
+             <div class="stat-card">
+                 <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+                 <div class="stat-info">
+                     <h3 th:text="${inactiveDevices}">0</h3><p>Không hoạt động</p>
+                 </div>
+             </div>
+        </div>
+
+        <div class="search-container mb-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" id="searchInput" placeholder="Tìm kiếm...">
+            </div>
+        </div>
+
+        <div class="toolbar mb-3 d-flex justify-content-end"> <div class="d-flex gap-2 align-items-center">
+                 <div class="view-toggles">
+                     <button class="view-btn active" id="gridViewBtn" onclick="switchView('grid')" title="Xem dạng lưới">
+                         <i class="fas fa-th"></i>
+                     </button>
+                     <button class="view-btn" id="tableViewBtn" onclick="switchView('table')" title="Xem dạng bảng">
+                         <i class="fas fa-list"></i>
+                     </button>
+                 </div>
+             </div>
+         </div>
+
+        <div th:if="${#lists.isEmpty(devices)}" class="empty-state text-center py-5">
+            <i class="fas fa-microchip display-1 text-muted mb-3"></i>
+            <h5>Chưa có thiết bị nào</h5>
+            <p class="text-muted">Bắt đầu bằng cách thêm thiết bị IoT đầu tiên của bạn.</p>
+            <button class="btn btn-primary mt-3" onclick="showAddModal()">
+                <i class="fas fa-plus me-2"></i>Thêm thiết bị đầu tiên
+            </button>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(devices)}">
+
+            <div class="devices-grid" id="gridView">
+                <div th:each="device : ${devices}" class="device-card">
+                    <div class="device-header">
+                        <div class="device-avatar"
+                             th:classappend="${device.loaiThietBi.nhomThietBi?.name() == 'SENSOR' ? 'sensor' : (device.loaiThietBi.nhomThietBi?.name() == 'ACTUATOR' ? 'actuator' : '')}">
+                            <i class="fas"
+                               th:classappend="${device.loaiThietBi.nhomThietBi?.name() == 'SENSOR' ? 'fa-temperature-high' :
+                                                (device.loaiThietBi.nhomThietBi?.name() == 'ACTUATOR' ? 'fa-cog' : 'fa-lightbulb')}"></i>
+                        </div>
+                        <div class="device-title">
+                            <h5 th:text="${device.tenThietBi}"></h5>
+                            <p class="device-type" th:text="${device.loaiThietBi.tenLoai}"></p>
+                        </div>
+                    </div>
+                    <div class="device-body">
+                         <div class="device-info-row">
+                             <i class="fas fa-map-marker-alt"></i>
+                             <span th:text="${device.khuVuc?.tenKhuVuc ?: 'Chưa gán'}"></span>
+                         </div>
+                         <div class="device-info-row">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="status-badge" th:classappend="${device.trangThai == 'hoat dong' ? 'active' : 'inactive'}">
+                                <span th:text="${device.trangThai == 'hoat dong' ? 'Hoạt động' : 'Không hoạt động'}"></span>
+                            </span>
+                         </div>
+                         <div class="device-info-row" th:if="${device.ngayLapDat != null}">
+                             <i class="fas fa-calendar-alt"></i>
+                             <span th:text="'Lắp đặt: ' + ${#temporals.format(device.ngayLapDat, 'dd/MM/yyyy')}"></span>
+                         </div>
+                         <div class="device-info-row" th:if="${device.lanHoatDongCuoi != null}">
+                             <i class="fas fa-clock"></i>
+                             <span th:text="'Cập nhật: ' + ${#temporals.format(device.lanHoatDongCuoi, 'dd/MM/yyyy HH:mm')}"></span>
+                         </div>
+                    </div>
+                    <div class="device-footer">
+                        <button class="btn btn-sm btn-outline-primary" th:attr="data-id=${device.maThietBi}" onclick="viewDevice(this)"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-outline-warning" th:attr="data-id=${device.maThietBi},data-name=${device.tenThietBi},data-type=${device.loaiThietBi.maLoaiThietBi},data-location=${device.khuVuc?.maKhuVuc},data-status=${device.trangThai},data-install-date=${device.ngayLapDat}" onclick="showEditModal(this)"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" th:attr="data-id=${device.maThietBi}" onclick="deleteDevice(this)"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="devices-table" id="tableView" style="display: none;">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive"> <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tên thiết bị</th>
+                                        <th>Loại</th>
+                                        <th>Khu vực</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="device : ${devices}">
+                                        <td th:text="${device.tenThietBi}"></td>
+                                        <td th:text="${device.loaiThietBi.tenLoai}"></td>
+                                        <td th:text="${device.khuVuc?.tenKhuVuc}"></td>
+                                        <td>
+                                            <span class="status-badge" th:classappend="${device.trangThai == 'hoat dong' ? 'active' : 'inactive'}">
+                                                <span th:text="${device.trangThai == 'hoat dong' ? 'Hoạt động' : 'Không hoạt động'}"></span>
+                                            </span>
+                                        </td>
+                                        <td>
+                                             <button class="btn btn-sm btn-info" th:attr="data-id=${device.maThietBi}" onclick="viewDevice(this)"><i class="bi bi-eye"></i></button>
+                                             <button class="btn btn-sm btn-primary" th:attr="data-id=${device.maThietBi},data-name=${device.tenThietBi},data-type=${device.loaiThietBi.maLoaiThietBi},data-location=${device.khuVuc?.maKhuVuc},data-status=${device.trangThai},data-install-date=${device.ngayLapDat}" onclick="showEditModal(this)"><i class="bi bi-pencil"></i></button>
+                                             <button class="btn btn-sm btn-danger" th:attr="data-id=${device.maThietBi}" onclick="deleteDevice(this)"><i class="bi bi-trash"></i></button>
+                                         </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div> </div> </div> </div> </div> </div> <div class="modal fade" id="deviceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Thêm thiết bị mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="deviceForm">
+                     <div class="modal-body">
+                         <input type="hidden" id="deviceId">
+                         <div class="mb-3">
+                             <label for="tenThietBi" class="form-label">Tên thiết bị <span class="text-danger">*</span></label>
+                             <input type="text" class="form-control" id="tenThietBi" required>
+                         </div>
+                         <div class="mb-3">
+                             <label for="loaiThietBi" class="form-label">Loại thiết bị <span class="text-danger">*</span></label>
+                             <select class="form-select" id="loaiThietBi" required>
+                                 <option value="">-- Chọn loại thiết bị --</option>
+                                 <option th:each="type : ${deviceTypes}" th:value="${type.maLoaiThietBi}" th:text="${type.tenLoai}"></option>
+                             </select>
+                         </div>
+                         <div class="mb-3">
+                             <label for="khuVuc" class="form-label">Khu vực</label>
+                             <select class="form-select" id="khuVuc">
+                                 <option value="">-- Chọn khu vực (không bắt buộc) --</option>
+                                 <option th:each="loc : ${locations}" th:value="${loc.maKhuVuc}" th:text="${loc.tenKhuVuc}"></option>
+                             </select>
+                         </div>
+                         <div class="mb-3">
+                             <label for="ngayLapDat" class="form-label">Ngày lắp đặt</label>
+                             <input type="date" class="form-control" id="ngayLapDat">
+                         </div>
+                         <div class="mb-3">
+                             <label for="trangThai" class="form-label">Trạng thái</label>
+                             <select class="form-select" id="trangThai">
+                                 <option value="hoat dong">Hoạt động</option>
+                                 <option value="khong_hoat_dong">Không hoạt động</option>
+                             </select>
+                         </div>
+                     </div>
+                     <div class="modal-footer">
+                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                         <button type="submit" class="btn btn-primary">Lưu</button>
+                     </div>
+                 </form>
+            </div>
+        </div>
+    </div> </main> <th:block th:fragment="scripts">
+    <script th:inline="javascript">
+        // Khai báo modal ở phạm vi rộng hơn
+        let modal;
+        $(document).ready(function() {
+            // Khởi tạo modal sau khi DOM sẵn sàng
+            const deviceModalElement = document.getElementById('deviceModal');
+            if (deviceModalElement) {
+                modal = new bootstrap.Modal(deviceModalElement);
+            }
+            // Khởi tạo view mặc định
+            switchView('grid');
+        });
+
+        function logout() { /* ... giữ nguyên ... */ }
+
+        function switchView(view) {
+            const gridView = $('#gridView');
+            const tableView = $('#tableView'); // Div chứa bảng
+            const tableBtn = $('#tableViewBtn');
+            const gridBtn = $('#gridViewBtn');
+
+            if (view === 'grid') {
+                gridView.show();
+                tableView.hide();
+                gridBtn.addClass('active');
+                tableBtn.removeClass('active');
+            } else {
+                gridView.hide();
+                tableView.show();
+                gridBtn.removeClass('active');
+                tableBtn.addClass('active');
+            }
+        }
+
+        function showAddModal() {
+             $('#modalTitle').text('Thêm thiết bị mới');
+             $('#deviceForm')[0].reset();
+             $('#deviceId').val('');
+             if(modal) modal.show();
+        }
+
+        function showEditModal(button) {
+             const $btn = $(button);
+             $('#modalTitle').text('Sửa thiết bị');
+             $('#deviceId').val($btn.data('id'));
+             $('#tenThietBi').val($btn.data('name'));
+             $('#loaiThietBi').val($btn.data('type'));
+             $('#khuVuc').val($btn.data('location') || '');
+             $('#trangThai').val($btn.data('status'));
+             $('#ngayLapDat').val($btn.data('install-date') || '');
+             if(modal) modal.show();
+        }
+
+        function viewDevice(button) { /* ... giữ nguyên ... */ }
+
+        function deleteDevice(button) {
+            const id = $(button).data('id');
+            if (confirm('Bạn có chắc chắn muốn xóa thiết bị này?')) {
+                $.ajax({
+                    url: '/api/devices/' + id,
+                    type: 'DELETE',
+                    success: function(response) { location.reload(); },
+                    error: function(xhr) { alert('Lỗi: ' + xhr.responseText); }
+                });
+            }
+        }
+
+        $('#deviceForm').on('submit', function(e) {
+             e.preventDefault();
+             const id = $('#deviceId').val();
+             const ngayLapDat = $('#ngayLapDat').val();
+             const data = {
+                 tenThietBi: $('#tenThietBi').val(),
+                 loaiThietBi: { maLoaiThietBi: parseInt($('#loaiThietBi').val()) },
+                 khuVuc: $('#khuVuc').val() ? { maKhuVuc: parseInt($('#khuVuc').val()) } : null,
+                 trangThai: $('#trangThai').val(),
+                 ngayLapDat: ngayLapDat || null
+             };
+             const url = id ? '/api/devices/' + id : '/api/devices';
+             const method = id ? 'PUT' : 'POST';
+
+             $.ajax({
+                 url: url, type: method, contentType: 'application/json', data: JSON.stringify(data),
+                 success: function(response) {
+                     if(modal) modal.hide();
+                     location.reload();
+                 },
+                 error: function(xhr) { alert('Lỗi: ' + xhr.responseText); }
+             });
+         });
+
+        $('#searchInput').on('input', function(e) {
+             const searchTerm = $(this).val().toLowerCase();
+             const cards = $('.device-card');
+             const rows = $('#tableView .table-hover tbody tr'); // Selector chính xác hơn
+
+             cards.each(function() {
+                 $(this).toggle($(this).text().toLowerCase().includes(searchTerm));
+             });
+             rows.each(function() {
+                 $(this).toggle($(this).text().toLowerCase().includes(searchTerm));
+             });
+         });
+    </script>
+</th:block>

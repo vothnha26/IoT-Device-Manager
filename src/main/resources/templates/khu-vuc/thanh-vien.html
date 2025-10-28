@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main})}">
+<head>
+    <title th:fragment="title">Quản lý thành viên khu vực</title>
+</head>
+<body>
+<main th:fragment="main">
+    <div class="container-fluid px-4 py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <li class="breadcrumb-item">
+                            <a th:href="@{/du-an}">Dự án</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a th:href="@{/du-an/{id}/khu-vuc(id=${khuVuc.duAn.maDuAn})}" 
+                               th:text="${khuVuc.duAn.tenDuAn}">Tên dự án</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a th:href="@{/du-an/{id}/khu-vuc(id=${khuVuc.duAn.maDuAn})}">Khu vực</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            Thành viên - <span th:text="${khuVuc.tenKhuVuc}">Tên khu vực</span>
+                        </li>
+                    </ol>
+                </nav>
+                <h4 class="mb-0">
+                    <i class="bi bi-people-fill text-primary me-2"></i>
+                    Quản lý thành viên khu vực: <span th:text="${khuVuc.tenKhuVuc}" class="text-primary"></span>
+                </h4>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#moiThanhVienModal">
+                <i class="bi bi-person-plus me-2"></i>Mời thành viên
+            </button>
+        </div>
+
+        <!-- Thống kê -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-people fs-1 text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-muted mb-1">Tổng thành viên</h6>
+                                <h3 class="mb-0" th:text="${#lists.size(danhSachQuyen)}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-shield-check fs-1 text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-muted mb-1">Quản lý</h6>
+                                <h3 class="mb-0" th:text="${#lists.size(danhSachQuyen.?[vaiTro == 'QUAN_LY_KHU_VUC'])}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-eye fs-1 text-info"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-muted mb-1">Xem</h6>
+                                <h3 class="mb-0" th:text="${#lists.size(danhSachQuyen.?[vaiTro == 'XEM'])}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng danh sách thành viên -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">Danh sách thành viên</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="px-4">Tên đăng nhập</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Ngày cấp quyền</th>
+                            <th class="text-end px-4">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(danhSachQuyen)}">
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Chưa có thành viên nào
+                            </td>
+                        </tr>
+                        <tr th:each="quyen : ${danhSachQuyen}">
+                            <td class="px-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-primary text-white me-2">
+                                        <span th:text="${#strings.substring(quyen.nguoiDung.tenDangNhap, 0, 1).toUpperCase()}">U</span>
+                                    </div>
+                                    <strong th:text="${quyen.nguoiDung.tenDangNhap}">username</strong>
+                                </div>
+                            </td>
+                            <td th:text="${quyen.nguoiDung.email}">email@example.com</td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${quyen.vaiTro == 'QUAN_LY_KHU_VUC'} ? 'bg-success' : 'bg-info'"
+                                      th:text="${quyen.vaiTro == 'QUAN_LY_KHU_VUC' ? 'Quản lý' : 'Xem'}">
+                                    Vai trò
+                                </span>
+                            </td>
+                            <td th:text="${#temporals.format(quyen.ngayCapQuyen, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</td>
+                            <td class="text-end px-4">
+                                <!-- Không cho xóa chủ sở hữu -->
+                                <div th:if="${quyen.nguoiDung.maNguoiDung == khuVuc.chuSoHuu.maNguoiDung}">
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-star-fill me-1"></i>Chủ sở hữu
+                                    </span>
+                                </div>
+                                <div th:unless="${quyen.nguoiDung.maNguoiDung == khuVuc.chuSoHuu.maNguoiDung}">
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            th:onclick="'xoaThanhVien(' + ${quyen.maPhanQuyen} + ', \'' + ${quyen.nguoiDung.tenDangNhap} + '\')'">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Mời Thành Viên -->
+    <div class="modal fade" id="moiThanhVienModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-plus me-2"></i>Mời thành viên vào khu vực
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formMoiThanhVien">
+                        <div class="mb-3">
+                            <label class="form-label">Email hoặc tên đăng nhập <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="emailNguoiDung" 
+                                   placeholder="Nhập email hoặc username"
+                                   required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Vai trò <span class="text-danger">*</span></label>
+                            <div class="d-grid gap-2">
+                                <input type="radio" class="btn-check" name="vaiTro" id="vaiTroQuanLy" value="QUAN_LY_KHU_VUC" checked>
+                                <label class="btn btn-outline-success py-3" for="vaiTroQuanLy">
+                                    <i class="bi bi-shield-check fs-4 d-block mb-2"></i>
+                                    <strong>Quản lý khu vực</strong>
+                                    <small class="d-block text-muted">Có quyền thêm/xóa thiết bị, điều khiển, và cấp quyền cho người khác</small>
+                                </label>
+
+                                <input type="radio" class="btn-check" name="vaiTro" id="vaiTroXem" value="XEM">
+                                <label class="btn btn-outline-info py-3" for="vaiTroXem">
+                                    <i class="bi bi-eye fs-4 d-block mb-2"></i>
+                                    <strong>Xem</strong>
+                                    <small class="d-block text-muted">Chỉ có quyền xem thông tin và dữ liệu cảm biến</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Người được mời phải đã có tài khoản trong hệ thống.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="moiThanhVien()">
+                        <i class="bi bi-send me-2"></i>Gửi lời mời
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .avatar-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+
+    <script th:inline="javascript">
+        const maKhuVuc = /*[[${khuVuc.maKhuVuc}]]*/ 0;
+
+        function moiThanhVien() {
+            const email = document.getElementById('emailNguoiDung').value.trim();
+            const vaiTro = document.querySelector('input[name="vaiTro"]:checked').value;
+
+            if (!email) {
+                alert('Vui lòng nhập email hoặc username');
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+
+            fetch(`/khu-vuc/${maKhuVuc}/thanh-vien/moi`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, vaiTro: vaiTro })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.message);
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-send me-2"></i>Gửi lời mời';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ Có lỗi xảy ra khi mời thành viên');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-send me-2"></i>Gửi lời mời';
+                });
+        }
+
+        function xoaThanhVien(maPhanQuyen, tenNguoiDung) {
+            if (!confirm(`Bạn có chắc muốn xóa "${tenNguoiDung}" khỏi khu vực này?`)) {
+                return;
+            }
+
+            fetch(`/khu-vuc/thanh-vien/xoa/${maPhanQuyen}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ Có lỗi xảy ra khi xóa thành viên');
+                });
+        }
+    </script>
+</main>
+</body>
+</html>

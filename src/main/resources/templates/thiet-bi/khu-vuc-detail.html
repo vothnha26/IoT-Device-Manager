@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=~{::title}, content=~{::main}, scripts=~{::scripts})}">
+
+<head>
+    <title th:inline="text">Quản lý thiết bị khu vực [[${khuVuc.tenKhuVuc}]]</title>
+</head>
+
+<body>
+<main th:fragment="main" class="bg-light py-4">
+    <div class="container-fluid px-4">
+        <!-- Weather-like header -->
+        <!-- Weather-like header -->
+            <div class="weather-header position-relative bg-white rounded-4 shadow-sm p-3 mb-4 mt-5 mx-auto" style="max-width: 98%;">
+                <div class="d-flex align-items-center">
+                    <!-- Room icon with gradient background -->
+                    <div class="weather-icon me-4">
+                        <div class="rounded-circle p-3" style="background: linear-gradient(135deg, rgba(0,123,255,0.1) 0%, rgba(0,123,255,0.2) 100%);">
+                            <i class="bi bi-house-door fs-2 text-primary"></i>
+                        </div>
+                    </div>
+                    <!-- Room info -->
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center">
+                            <h3 class="mb-0 fw-bold" style="background: linear-gradient(45deg, #2048bb, #4e73df); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                                [[${khuVuc.tenKhuVuc}]]
+                            </h3>
+                            <span class="badge bg-info bg-opacity-10 text-info ms-2 px-2 py-1 rounded-pill">
+                                <i class="bi bi-clock me-1"></i>[[${#temporals.format(T(java.time.LocalDateTime).now(), 'HH:mm')}]]
+                            </span>
+                        </div>
+                        <p class="mb-0 text-muted small">[[${#temporals.format(T(java.time.LocalDateTime).now(), 'EEEE, dd/MM/yyyy')}]]</p>
+                    </div>
+                    <!-- Temperature display -->
+                    <div class="temperature-display ms-4 text-end">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="d-flex align-items-baseline">
+                                    <h3 id="current-temp-value" class="mb-0 fw-light display-6 text-info">--</h3>
+                                    <span class="fs-5 text-info">°C</span>
+                                </div>
+                                <small class="text-muted d-block">Nhiệt độ hiện tại</small>
+                            </div>
+                            <div class="temperature-icon rounded-circle p-2" style="background: linear-gradient(135deg, rgba(23,162,184,0.1) 0%, rgba(23,162,184,0.2) 100%);">
+                                <i class="bi bi-thermometer-half fs-3 text-info"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-end">
+                            <a th:href="@{'/thiet-bi/khu-vuc/' + ${khuVuc.maKhuVuc} + '/thong-ke'}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-graph-up-arrow me-1"></i> Xem thống kê
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Decorative bottom border -->
+                <div class="position-absolute bottom-0 start-0 end-0 mx-4" style="height: 3px; background: linear-gradient(90deg, transparent, #4e73df, transparent);"></div>
+            </div>
+
+            <!-- Main content scroll area -->
+            <div class="main-content overflow-y-auto" style="height: calc(100vh - 70px);">
+
+                <!-- Device Groups -->
+                <div class="device-groups py-4">
+                    <!-- Loop through each device type -->
+                    <div th:each="loai : ${loaiThietBis}" class="device-type-group mb-5" 
+                         th:if="${not #lists.isEmpty(khuVuc.thietBis.?[loaiThietBi.maLoaiThietBi == __${loai.maLoaiThietBi}__])}">
+                        <h4 class="text-primary mb-4" th:text="${loai.tenLoai}">Loại thiết bị</h4>
+                        <div class="row g-4">
+                            <div class="col-xl-4 col-md-6" 
+                                 th:each="thietBi : ${khuVuc.thietBis.?[loaiThietBi.maLoaiThietBi == __${loai.maLoaiThietBi}__]}">
+                                <div class="card device-card border-0 shadow-sm hover-lift overflow-hidden">
+                                    <!-- Card Header với Gradient -->
+                                    <div class="card-header border-0 p-3" th:with="isActive=${thietBi.trangThai == 'hoat_dong'}"
+                                         th:style="${isActive ? 
+                                                   'background: linear-gradient(135deg, rgba(255,193,7,0.1) 0%, rgba(255,193,7,0.2) 100%)' :
+                                                   'background: linear-gradient(135deg, rgba(108,117,125,0.1) 0%, rgba(108,117,125,0.2) 100%)'}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <!-- Device Icon với Animation -->
+                                            <div class="device-status d-flex align-items-center">
+                                                <div class="device-icon position-relative me-3">
+                                                    <div class="icon-wrapper rounded-circle p-2"
+                                                         th:style="${isActive ? 
+                                                                   'background: linear-gradient(45deg, rgba(255,193,7,0.1), rgba(255,193,7,0.3))' :
+                                                                   'background: linear-gradient(45deg, rgba(108,117,125,0.1), rgba(108,117,125,0.3))'}">
+                                                        <i class="bi bi-lightbulb-fill fs-4"
+                                                           th:class="${isActive ? 'text-warning' : 'text-secondary'}"
+                                                           th:classappend="${isActive ? 'glow' : ''}"></i>
+                                                    </div>
+                                                    <!-- Status Indicator -->
+                                                    <span class="status-dot position-absolute bottom-0 end-0 rounded-circle border border-white"
+                                                          th:classappend="${isActive ? 'bg-success' : 'bg-danger'}"
+                                                          style="width: 10px; height: 10px;"></span>
+                                                </div>
+                                                <div>
+                                                    <h6 class="fw-semibold mb-0" th:text="${thietBi.tenThietBi}">Tên thiết bị</h6>
+                                                    <small class="text-muted" th:text="${thietBi.moTa}">Mô tả thiết bị</small>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Dropdown Menu với Style Mới -->
+                                            <div class="dropdown">
+                                                <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                                    <!-- Chỉ hiện các option nếu có quyền điều khiển thiết bị này -->
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
+                                                        <a class="dropdown-item d-flex align-items-center" href="#" 
+                                                           onclick="showEditModal(this)"
+                                                           th:data-id="${thietBi.maThietBi}"
+                                                           th:data-name="${thietBi.tenThietBi}"
+                                                           th:data-desc="${thietBi.moTa}">
+                                                            <i class="bi bi-pencil me-2 text-primary"></i>
+                                                            Chỉnh sửa
+                                                        </a>
+                                                    </li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}"><hr class="dropdown-divider"></li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
+                                                        <a class="dropdown-item d-flex align-items-center" 
+                                                           th:href="@{'/thiet-bi/' + ${thietBi.maThietBi} + '/rules'}">
+                                                            <i class="bi bi-gear me-2 text-success"></i>
+                                                            <span>Quản lý luật</span>
+                                                        </a>
+                                                    </li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}"><hr class="dropdown-divider"></li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
+                                                        <a class="dropdown-item d-flex align-items-center" href="#"
+                                                           th:onclick="|showConfigModal(${thietBi.maThietBi})|">
+                                                            <i class="bi bi-sliders me-2 text-info"></i>
+                                                            <span>Cấu hình</span>
+                                                        </a>
+                                                    </li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}"><hr class="dropdown-divider"></li>
+                                                    <li th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
+                                                        <a class="dropdown-item d-flex align-items-center" href="#"
+                                                           th:onclick="|deleteDevice(${thietBi.maThietBi})|">
+                                                            <i class="bi bi-trash me-2 text-danger"></i>
+                                                            <span class="text-danger">Xóa</span>
+                                                        </a>
+                                                    </li>
+                                                    
+                                                    <!-- Thông báo nếu chỉ có quyền xem -->
+                                                    <li th:unless="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
+                                                        <span class="dropdown-item text-muted">
+                                                            <i class="bi bi-eye me-2"></i>
+                                                            Chỉ xem (không có quyền điều khiển)
+                                                        </span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                            
+                                    <div class="card-body p-3">
+                                        <!-- Status and Time -->
+                                        <div class="device-activity mb-3 d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <span class="status-indicator me-2" 
+                                                      th:classappend="${thietBi.trangThai == 'hoat_dong' ? 'active' : 'inactive'}"
+                                                      style="width: 8px; height: 8px; border-radius: 50%; display: inline-block;">
+                                                </span>
+                                                <small class="text-muted" 
+                                                       th:text="${thietBi.trangThai == 'hoat_dong' ? 'Đang chạy' : 'Đã tắt'}">
+                                                </small>
+                                            </div>
+                                            <small class="text-muted d-flex align-items-center">
+                                                <i class="bi bi-clock me-1 opacity-50"></i>
+                                                <span th:text="${#temporals.format(thietBi.lanHoatDongCuoi, 'HH:mm')}">
+                        
+                                                </span>
+                                            </small>
+                                        </div>
+
+                                        <!-- Controls Section -->
+                                        <div class="device-controls">
+                                            <!-- Power Control -->
+                                            <div class="control-item mb-3 p-2 rounded-3" 
+                                                 style="background: linear-gradient(135deg, rgba(248,249,250,0.5) 0%, rgba(248,249,250,1) 100%)">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <label class="d-flex align-items-center mb-0">
+                                                        <i class="bi bi-power me-2 text-primary"></i>
+                                                        <span class="text-muted small">Điều khiển</span>
+                                                    </label>
+                                                    <!-- Kiểm tra quyền điều khiển từng thiết bị -->
+                                                    <div class="form-check form-switch" th:if="${quyenDieuKhienThietBi[thietBi.maThietBi]}">
+                                                        <input class="form-check-input" type="checkbox" role="switch"
+                                                               style="width: 2.5rem; height: 1.25rem;"
+                                                               th:id="'switch-' + ${thietBi.maThietBi}"
+                                                               th:checked="${thietBi.trangThai == 'hoat_dong'}"
+                                                               onchange="toggleDevice(this)">
+                                                    </div>
+                                                    <!-- Hiển thị badge trạng thái nếu không có quyền điều khiển -->
+                                                    <span th:unless="${quyenDieuKhienThietBi[thietBi.maThietBi]}" 
+                                                          class="badge"
+                                                          th:classappend="${thietBi.trangThai == 'hoat_dong' ? 'bg-success' : 'bg-secondary'}"
+                                                          th:text="${thietBi.trangThai == 'hoat_dong' ? 'Đang bật' : 'Đã tắt'}">
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Brightness Control for Lights -->
+                                            <div class="control-item mb-3 p-2 rounded-3" 
+                                                 th:if="${loai.tenLoai == 'Đèn' && quyenDieuKhienThietBi[thietBi.maThietBi]}"
+                                                 style="background: linear-gradient(135deg, rgba(248,249,250,0.5) 0%, rgba(248,249,250,1) 100%)">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label class="d-flex align-items-center mb-0">
+                                                        <i class="bi bi-brightness-high me-2 text-warning"></i>
+                                                        <span class="text-muted small">Độ sáng</span>
+                                                    </label>
+                                                    <span class="badge bg-light text-dark brightness-value">75%</span>
+                                                </div>
+                                                <div class="brightness-slider position-relative">
+                                                    <input type="range" class="form-range custom-range" 
+                                                           min="0" max="100" value="75"
+                                                           th:id="'brightness-' + ${thietBi.maThietBi}"
+                                                           onchange="adjustBrightness(this)"
+                                                           oninput="this.nextElementSibling.style.width = this.value + '%'">
+                                                    <div class="range-progress position-absolute" 
+                                                         style="height: 4px; width: 75%; background: linear-gradient(90deg, #ffc107 0%, #ffcd39 100%); 
+                                                                border-radius: 2px; bottom: 0; pointer-events: none;"></div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Schedules Section -->
+                                            <div class="schedules-section">
+                                                <!-- Section Header -->
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="bi bi-clock me-2 text-primary"></i>
+                                                        <span class="text-muted small">Lịch trình</span>
+                                                    </div>
+                                                    <button class="btn btn-sm btn-outline-primary"
+                                                            th:onclick="|showScheduleModal(${thietBi.maThietBi})|">
+                                                        <i class="bi bi-plus-lg"></i>
+                                                    </button>
+                                                </div>
+
+                                                <!-- Schedule List -->
+                                                <div th:id="'schedules-' + ${thietBi.maThietBi}" class="schedules-list">
+                                                    <!-- Schedule items will be loaded dynamically -->
+                                                    <div class="text-center text-muted small py-2">
+                                                        <i class="bi bi-clock me-1"></i>
+                                                        <span>Chưa có lịch trình</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Floating Action Button -->
+            <button type="button" 
+                    class="add-device-btn" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#addDeviceModal">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div class="modal fade" id="addDeviceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm thiết bị mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDeviceForm">
+                        <div class="mb-3">
+                            <label class="form-label">Loại thiết bị</label>
+                            <select class="form-select" name="loaiThietBi" required>
+                                <option value="">Chọn loại thiết bị...</option>
+                                <option th:each="loai : ${loaiThietBis}" 
+                                        th:value="${loai.maLoaiThietBi}"
+                                        th:text="${loai.tenLoai}">Tên loại</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tên thiết bị</label>
+                            <input type="text" class="form-control" name="tenThietBi" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" name="moTa" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="addDevice()">Thêm thiết bị</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Device Modal -->
+    <div class="modal fade" id="editDeviceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa thiết bị</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDeviceForm">
+                        <input type="hidden" name="maThietBi">
+                        <div class="mb-3">
+                            <label class="form-label">Tên thiết bị</label>
+                            <input type="text" class="form-control" name="tenThietBi" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" name="moTa" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="updateDevice()">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div class="modal fade" id="scheduleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clock me-2 text-primary"></i>
+                        Hẹn giờ thiết bị
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="scheduleForm">
+                        <input type="hidden" name="deviceId">
+                        
+                        <!-- Schedule Name -->
+                        <div class="mb-3">
+                            <label class="form-label">Tên lịch trình</label>
+                            <input type="text" class="form-control" name="tenLichTrinh" placeholder="VD: Bật đèn buổi sáng" required>
+                        </div>
+
+                        <!-- Time Range -->
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">Thời gian bắt đầu</label>
+                                <input type="time" class="form-control" name="thoiGianBatDau" required>
+                            </div>
+                            <div class="col">
+                                <label class="form-label">Thời gian kết thúc</label>
+                                <input type="time" class="form-control" name="thoiGianKetThuc" required>
+                            </div>
+                        </div>
+
+                        <!-- Repeat Days -->
+                        <div class="mb-3">
+                            <label class="form-label d-block">Lặp lại vào</label>
+                            <div class="btn-group" role="group">
+                                <input type="checkbox" class="btn-check" name="days" value="1" id="day1" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="day1">T2</label>
+                                
+                                <input type="checkbox" class="btn-check" name="days" value="2" id="day2" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="day2">T3</label>
+                                
+                                <input type="checkbox" class="btn-check" name="days" value="3" id="day3" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="day3">T4</label>
+                                
+                                <input type="checkbox" class="btn-check" name="days" value="4" id="day4" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="day4">T5</label>
+                                
+                                <input type="checkbox" class="btn-check" name="days" value="5" id="day5" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="day5">T6</label>
+                                
+                                <input type="checkbox" class="btn-check" name="days" value="6" id="day6" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="day6">T7</label>
+                                
+                                <input type="checkbox" class="btn-check" name="days" value="0" id="day0" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="day0">CN</label>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">Hành động khi bắt đầu</label>
+                                <select class="form-select" name="lenhKhiBatDau" required>
+                                    <option value="hoat_dong">Bật thiết bị</option>
+                                    <option value="tat">Tắt thiết bị</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label class="form-label">Hành động khi kết thúc</label>
+                                <select class="form-select" name="lenhKhiKetThuc" required>
+                                    <option value="hoat_dong">Bật thiết bị</option>
+                                    <option value="tat">Tắt thiết bị</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Enable/Disable -->
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="kichHoat" id="scheduleEnabled" checked>
+                            <label class="form-check-label" for="scheduleEnabled">Kích hoạt lịch trình</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSchedule()">Lưu lịch trình</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Configuration Modal -->
+    <div class="modal fade" id="configModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title">
+                        <i class="bi bi-sliders me-2 text-primary"></i>
+                        Cấu hình thiết bị
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Device Info -->
+                    <div class="device-info-section mb-4">
+                        <h6 class="device-name mb-2"></h6>
+                        <div class="device-status d-flex align-items-center">
+                            <span class="status-indicator me-2"></span>
+                            <small class="status-text text-muted"></small>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Fields -->
+                    <div class="config-fields">
+                        <!-- Dynamic fields will be added here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="saveConfiguration()">Lưu cấu hình</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<th:block th:fragment="scripts">
+    <script th:inline="javascript">
+        // Add device
+        function showAddModal() {
+            $('#addDeviceModal').modal('show');
+        }
+
+        function addDevice() {
+            const maxDevicesAllowed = /*[[${userPackage != null ? userPackage.slThietBiToiDa : 10}]]*/ 10;
+            const currentDevicesCount = /*[[${#lists.size(khuVuc.thietBis)}]]*/ 0;
+            
+            if (currentDevicesCount >= maxDevicesAllowed) {
+                showToast('warning', 'Giới hạn thiết bị', 'Bạn đã đạt đến giới hạn số lượng thiết bị tối đa của gói. Vui lòng nâng cấp gói để thêm thiết bị mới.');
+                return;
+            }
+
+            const form = document.getElementById('addDeviceForm');
+            const formData = new FormData(form);
+            const data = {
+                loaiThietBi: { maLoaiThietBi: formData.get('loaiThietBi') },
+                khuVuc: { maKhuVuc: /*[[${khuVuc.maKhuVuc}]]*/ 1 },
+                tenThietBi: formData.get('tenThietBi'),
+                moTa: formData.get('moTa')
+            };
+
+            fetch('/thiet-bi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra khi thêm thiết bị');
+                }
+            });
+        }
+
+        // Edit device
+        function showEditModal(element) {
+            const modal = $('#editDeviceModal');
+            const form = document.getElementById('editDeviceForm');
+            
+            form.maThietBi.value = element.dataset.id;
+            form.tenThietBi.value = element.dataset.name;
+            form.moTa.value = element.dataset.desc;
+            
+            modal.modal('show');
+        }
+
+        function updateDevice() {
+            const form = document.getElementById('editDeviceForm');
+            const formData = new FormData(form);
+            const data = {
+                maThietBi: formData.get('maThietBi'),
+                tenThietBi: formData.get('tenThietBi'),
+                moTa: formData.get('moTa')
+            };
+
+            fetch('/thiet-bi/' + data.maThietBi, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra khi cập nhật thiết bị');
+                }
+            });
+        }
+
+        // Delete device
+        function deleteDevice(deviceId) {
+            if (confirm('Bạn có chắc chắn muốn xóa thiết bị này?')) {
+                fetch('/thiet-bi/' + deviceId, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra khi xóa thiết bị');
+                    }
+                });
+            }
+        }
+
+        // Toggle device state
+        function updateDeviceUI(deviceId, isActive) {
+            const card = $(`#switch-${deviceId}`).closest('.card');
+            if (!card.length) return;
+            
+            const icon = card.find('.bi-lightbulb-fill');
+            const header = card.find('.card-header');
+            const statusDot = card.find('.status-dot');
+            const statusText = card.find('.device-activity small.text-muted').first();
+            const timeText = card.find('.device-activity small.text-muted:last span');
+
+            if (isActive) {
+                header.css('background', 'linear-gradient(135deg, rgba(255,193,7,0.1), rgba(255,193,7,0.2))');
+                icon.removeClass('glow text-warning text-secondary');
+                icon.addClass('text-warning glow');
+                statusDot.removeClass('bg-danger').addClass('bg-success');
+                statusText.text('Đang chạy');
+            } else {
+                header.css('background', 'linear-gradient(135deg, rgba(108,117,125,0.1), rgba(108,117,125,0.2))');
+                icon.removeClass('glow text-warning').addClass('text-secondary');
+                statusDot.removeClass('bg-success').addClass('bg-danger');
+                statusText.text('Đã tắt');
+            }
+
+            // Update last activity time
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            timeText.text(currentTime);
+        }
+
+        // Debounce map để tránh spam toggle
+        const toggleDebounce = {};
+        const TOGGLE_DELAY = 1500; // 1.5 giây delay
+
+        function toggleDevice(element, skipAjax = false) {
+            const deviceId = element.id.split('-')[1];
+            const state = element.checked ? 'hoat_dong' : 'tat';
+
+            if (skipAjax) {
+                updateDeviceUI(deviceId, state === 'hoat_dong');
+                return;
+            }
+
+            // Kiểm tra debounce - nếu đang trong thời gian chờ, chặn request
+            const now = Date.now();
+            if (toggleDebounce[deviceId] && (now - toggleDebounce[deviceId] < TOGGLE_DELAY)) {
+                const remainingTime = Math.ceil((TOGGLE_DELAY - (now - toggleDebounce[deviceId])) / 1000);
+                showToast(`Vui lòng đợi ${remainingTime}s trước khi thao tác lại`, 'warning');
+                element.checked = !element.checked; // Rollback
+                return;
+            }
+
+            // Disable nút và lưu timestamp
+            toggleDebounce[deviceId] = now;
+            element.disabled = true;
+
+            $.ajax({
+                url: '/thiet-bi/' + deviceId + '/state',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ trangThai: state }),
+                success: function(response) {
+                    updateDeviceUI(deviceId, state === 'hoat_dong');
+                    showToast(`Thiết bị đã ${state === 'hoat_dong' ? 'bật' : 'tắt'}`, 'success');
+                    
+                    // Re-enable sau delay
+                    setTimeout(() => {
+                        element.disabled = false;
+                    }, TOGGLE_DELAY);
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Error:', error);
+                    showToast('Có lỗi xảy ra khi thay đổi trạng thái thiết bị', 'error');
+                    element.checked = !element.checked;
+                    element.disabled = false;
+                    delete toggleDebounce[deviceId]; // Xóa debounce khi lỗi
+                }
+            });
+        }
+
+        // Real-time state sync - Poll backend mỗi 2 giây
+        function pollDeviceStates() {
+            $('.device-card').each(function() {
+                const card = $(this);
+                const switchElement = card.find('.form-check-input[type="checkbox"]');
+                if (!switchElement.length) return;
+                
+                const deviceId = switchElement.attr('id').split('-')[1];
+                
+                // Lấy trạng thái hiện tại từ backend
+                $.ajax({
+                    url: '/thiet-bi/' + deviceId,
+                    type: 'GET',
+                    success: function(device) {
+                        const isOn = device.trangThai === 'hoat_dong';
+                        const currentChecked = switchElement.prop('checked');
+                        
+                        // Chỉ update nếu khác
+                        if (currentChecked !== isOn) {
+                            console.log('� [Poll] Device', deviceId, 'state changed:', device.trangThai);
+                            switchElement.prop('checked', isOn);
+                            updateDeviceUI(deviceId, isOn);
+                        }
+                    },
+                    error: function() {
+                        // Bỏ qua lỗi polling
+                    }
+                });
+            });
+        }
+        
+        // Poll mỗi 2 giây
+        setInterval(pollDeviceStates, 2000);
+
+        // Real-time sensor data (temperature) subscription
+        (function initSensorRealtime() {
+            try {
+                const tempEl = document.getElementById('current-temp-value');
+                if (!tempEl) return;
+
+                // Hardcoded sensor deviceId for now; adjust if dynamic mapping is available
+                const SENSOR_DEVICE_ID = 4;
+
+                // Initialize with latest value (optional)
+                fetch(`/api/data-logs/device/${SENSOR_DEVICE_ID}`)
+                    .then(r => r.ok ? r.json() : [])
+                    .then(list => {
+                        if (Array.isArray(list)) {
+                            const latestTemp = list.find(it => (it.tenTruong || '').toLowerCase() === 'nhiet_do');
+                            if (latestTemp && typeof latestTemp.giaTriSo === 'number') {
+                                tempEl.textContent = latestTemp.giaTriSo.toFixed(1);
+                            }
+                        }
+                    })
+                    .catch(() => {});
+
+                if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                    console.warn('SockJS/STOMP not available; skipping sensor realtime');
+                    return;
+                }
+                const socket = new SockJS('/stomp');
+                const stompClient = Stomp.over(socket);
+                if (stompClient && stompClient.debug) stompClient.debug = null;
+                stompClient.connect({}, function () {
+                    // Subscribe to this sensor's topic
+                    stompClient.subscribe(`/topic/sensor/${SENSOR_DEVICE_ID}`, function (msg) {
+                        try {
+                            const data = JSON.parse(msg.body);
+                            // Expect payload: { deviceId, fieldName, value, type, timestamp }
+                            if ((data.fieldName || '').toLowerCase() === 'nhiet_do' && typeof data.value === 'number') {
+                                tempEl.textContent = Number(data.value).toFixed(1);
+                            }
+                        } catch (e) {
+                            // ignore parse errors
+                        }
+                    });
+                }, function (err) {
+                    console.warn('STOMP sensor connect failed:', err && err.body ? err.body : err);
+                });
+            } catch (e) {
+                console.warn('Sensor realtime init error:', e);
+            }
+        })();
+            // Helper function to update device status display
+            function updateDeviceStatus(container, isActive) {
+                const statusIndicator = container.find('.status-indicator');
+                const statusText = container.find('.status-text');
+                
+                if (isActive) {
+                    statusIndicator.removeClass('bg-secondary').addClass('bg-success');
+                    statusText.text('Đang hoạt động');
+                } else {
+                    statusIndicator.removeClass('bg-success').addClass('bg-secondary');
+                    statusText.text('Không hoạt động');
+                }
+            }
+        
+        // Device configuration
+        function showConfigModal(deviceId) {
+            const modal = $('#configModal');
+            
+            // Fetch device data using AJAX
+            $.ajax({
+                url: '/thiet-bi/' + deviceId,
+                method: 'GET',
+                success: function(device) {
+                    // Update device info
+                    modal.find('.device-name').text(device.tenThietBi);
+                    updateDeviceStatus(modal, device.trangThai === 'hoat_dong');
+                    // Store deviceId for later use
+                    modal.data('deviceId', deviceId);
+                    
+                    // Clear existing fields
+                    const configFields = modal.find('.config-fields').empty();
+                    
+                    // Fetch configuration fields
+                    $.ajax({
+                        url: '/thiet-bi/' + deviceId + '/config',
+                        method: 'GET',
+
+                        success: function(config) {
+                            if (config && config.fields) {
+                                config.fields.forEach(function(field) {
+                                    const fieldElement = createConfigField(field);
+                                    configFields.append(fieldElement);
+                                });
+                                
+                                // Initialize special controls
+                                initializeControls();
+                            } else {
+                                showToast('Không có cấu hình cho thiết bị này', 'error');
+                            }
+                            modal.modal('show');
+                        },
+                        error: function(xhr, status, error) {
+                            showToast('Không thể tải cấu hình thiết bị', 'error');
+                            modal.modal('show');
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    showToast('Không thể tải thông tin thiết bị', 'error');
+                }
+            });
+        }
+        
+        function createConfigField(field) {
+            const wrapper = $('<div>').addClass('config-field mb-4').attr('data-key', field.key);;
+            
+            // Field label
+            const label = $('<label>').addClass('form-label d-flex justify-content-between align-items-center mb-2')
+                .append($('<span>').text(field.label))
+                .append($('<small>').addClass('text-muted').text(field.value + field.unit));
+            
+            // Field input based on type
+            let input;
+            switch (field.type) {
+                case 'range':
+                    input = createRangeInput(field);
+                    break;
+                case 'select':
+                    input = createSelectInput(field);
+                    break;
+                case 'toggle':
+                    input = createToggleInput(field);
+                    break;
+                default:
+                    input = createTextInput(field);
+            }
+            
+            return wrapper.append(label).append(input);
+        }
+        
+        function createRangeInput(field) {
+            const container = $('<div>').addClass('position-relative');
+            
+            const range = $('<input>').attr({
+                type: 'range',
+                min: field.min || 0,
+                max: field.max || 100,
+                value: field.value,
+                class: 'form-range custom-range'
+            }).on('input', function() {
+                updateFieldValue(this, field);
+            });
+            
+            const progress = $('<div>').addClass('range-progress position-absolute')
+                .css({
+                    width: field.value + '%',
+                    height: '4px',
+                    background: 'linear-gradient(90deg, #4e73df 0%, #224abe 100%)',
+                    borderRadius: '2px',
+                    bottom: '0',
+                    pointerEvents: 'none'
+                });
+            
+            return container.append(range).append(progress);
+        }
+        
+        function createSelectInput(field) {
+            return $('<select>').addClass('form-select')
+                .append(field.options.map(opt => 
+                    $('<option>').val(opt.value).text(opt.label)
+                ));
+        }
+        
+        function createToggleInput(field) {
+            return $('<div>').addClass('form-check form-switch')
+                .append(
+                    $('<input>').addClass('form-check-input').attr({
+                        type: 'checkbox',
+                        role: 'switch',
+                        checked: field.value
+                    })
+                );
+        }
+        
+        function createTextInput(field) {
+            return $('<input>').addClass('form-control').attr({
+                type: 'text',
+                value: field.value
+            });
+        }
+        
+        function updateFieldValue(element, field) {
+            const value = element.value;
+            const label = $(element).closest('.config-field').find('small');
+            label.text(value + field.unit);
+            
+            // Update progress bar for range inputs
+            if (field.type === 'range') {
+                $(element).next('.range-progress').css('width', value + '%');
+            }
+        }
+        
+        function saveConfiguration() {
+            const modal = $('#configModal');
+            const deviceId = modal.data('deviceId');
+            const config = {};
+            
+            // Collect all field values
+            modal.find('.config-field').each(function() {
+                const field = $(this);
+                const key = field.data('key');
+                const input = field.find('input, select').first();
+                config[key] = input.val();
+            });
+            
+            // Save to server using AJAX
+            $.ajax({
+                url: '/thiet-bi/' + deviceId + '/config',
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(config),
+                success: function() {
+                    modal.modal('hide');
+                    showToast('Cấu hình đã được lưu');
+                },
+                error: function(xhr, status, error) {
+                    showToast('Có lỗi xảy ra khi lưu cấu hình', 'error');
+                }
+            });
+        }
+        
+        function showToast(message, type = 'success') {
+            const toast = $('<div>').addClass('toast align-items-center border-0')
+                .addClass(type === 'success' ? 'bg-success' : 'bg-danger')
+                .attr('role', 'alert');
+                
+            const body = $('<div>').addClass('d-flex')
+                .append($('<div>').addClass('toast-body text-white').text(message))
+                .append($('<button>').addClass('btn-close btn-close-white me-2 m-auto')
+                    .attr({
+                        type: 'button',
+                        'data-bs-dismiss': 'toast'
+                    }));
+                    
+            toast.append(body);
+            
+            $('.toast-container').append(toast);
+            const bsToast = new bootstrap.Toast(toast[0]);
+            bsToast.show();
+            
+            // Remove after hiding
+            toast.on('hidden.bs.toast', () => toast.remove());
+        }
+        
+        // Brightness control with debouncing
+        let brightnessTimeout;
+        function adjustBrightness(element) {
+            const deviceId = element.id.split('-')[1];
+            const brightness = element.value;
+            const label = element.previousElementSibling.lastElementChild;
+            
+            // Update UI immediately
+            label.textContent = brightness + '%';
+            updateRangeProgress(element);
+            
+            // Debounce API call
+            clearTimeout(brightnessTimeout);
+            brightnessTimeout = setTimeout(function() {
+                $.ajax({
+                    url: '/thiet-bi/' + deviceId + '/brightness',
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ brightness: parseInt(brightness) }),
+                    success: function() {
+                        // Success - nothing to do as UI is already updated
+                    },
+                    error: function(xhr, status, error) {
+                        showToast('Có lỗi xảy ra khi điều chỉnh độ sáng', 'error');
+                        label.textContent = '75%';
+                        element.value = 75;
+                        updateRangeProgress(element);
+                    }
+                });
+            }, 300);
+        }
+        
+        function updateRangeProgress(element) {
+            const progress = $(element).next('.range-progress');
+            if (progress.length) {
+                progress.css('width', element.value + '%');
+            }
+        }
+
+        // Schedule management
+        function showScheduleModal(deviceId) {
+            const modal = $('#scheduleModal');
+            
+            // Reset form and set device ID
+            const form = document.getElementById('scheduleForm');
+            form.reset();
+            form.deviceId.value = deviceId;
+            
+            // Get existing schedules
+            $.ajax({
+                url: '/api/thiet-bi/' + deviceId + '/lich-trinh',
+                method: 'GET',
+                success: function(schedules) {
+                    // TODO: Add schedule list UI
+                    modal.modal('show');
+                },
+                error: function() {
+                    showToast('Không thể tải lịch trình', 'error');
+                }
+            });
+        }
+
+        function saveSchedule() {
+            const form = document.getElementById('scheduleForm');
+            const formData = new FormData(form);
+            
+            // Collect selected days
+            const selectedDays = [];
+            form.querySelectorAll('input[name="days"]:checked').forEach(checkbox => {
+                selectedDays.push(checkbox.value);
+            });
+            
+            const data = {
+                thietBi: { maThietBi: formData.get('deviceId') },
+                tenLichTrinh: formData.get('tenLichTrinh'),
+                thoiGianBatDau: formData.get('thoiGianBatDau'),
+                thoiGianKetThuc: formData.get('thoiGianKetThuc'),
+                ngayTrongTuan: selectedDays.join(',') || '*',
+                lenhKhiBatDau: formData.get('lenhKhiBatDau'),
+                lenhKhiKetThuc: formData.get('lenhKhiKetThuc'),
+                kichHoat: form.kichHoat.checked
+            };
+
+            $.ajax({
+                url: '/api/lich-trinh',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function() {
+                    $('#scheduleModal').modal('hide');
+                    showToast('Đã lưu lịch trình thành công');
+                },
+                error: function() {
+                    showToast('Có lỗi xảy ra khi lưu lịch trình', 'error');
+                }
+            });
+        }
+
+        // Schedule Management
+        function showScheduleModal(deviceId, scheduleId = null) {
+            const modal = $('#scheduleModal');
+            const form = $('#scheduleForm');
+            
+            // Reset form
+            form[0].reset();
+            form.find('[name="deviceId"]').val(deviceId);
+            
+            // Update modal title and mode
+            if (scheduleId) {
+                modal.find('.modal-title').text('Chỉnh sửa lịch trình');
+                modal.data('editMode', scheduleId);
+                $('#formTabLabel').text('Chỉnh sửa');
+                $('#saveScheduleBtn').text('Cập nhật');
+                
+                // Show form tab
+                $('#form-tab').tab('show');
+                
+                // Load schedule data for editing
+                $.ajax({
+                    url: '/api/schedules/' + scheduleId,
+                    method: 'GET',
+                    success: function(schedule) {
+                        form.find('[name="tenLichTrinh"]').val(schedule.tenLichTrinh);
+                        form.find('[name="thoiGianBatDau"]').val(schedule.thoiGianBatDau);
+                        form.find('[name="thoiGianKetThuc"]').val(schedule.thoiGianKetThuc);
+                        form.find('[name="lenhKhiBatDau"]').val(schedule.lenhKhiBatDau);
+                        form.find('[name="lenhKhiKetThuc"]').val(schedule.lenhKhiKetThuc);
+                        form.find('[name="kichHoat"]').prop('checked', schedule.kichHoat);
+                        
+                        // Set selected days
+                        if (schedule.ngayTrongTuan !== '*') {
+                            const days = schedule.ngayTrongTuan.split(',');
+                            days.forEach(function(day) {
+                                form.find('[name="days"][value="' + day + '"]').prop('checked', true);
+                            });
+                        } else {
+                            // Select all days for '*'
+                            form.find('[name="days"]').prop('checked', true);
+                        }
+                    },
+                    error: function() {
+                        showToast('Không thể tải thông tin lịch trình', 'error');
+                    }
+                });
+            } else {
+                modal.find('.modal-title').text('Quản lý lịch trình');
+                modal.removeData('editMode');
+                $('#formTabLabel').text('Thêm mới');
+                $('#saveScheduleBtn').text('Lưu lịch trình');
+                
+                // Show list tab by default when adding new
+                $('#list-tab').tab('show');
+            }
+            
+            modal.modal('show');
+            
+            // Load and show schedules list in modal
+            loadModalSchedulesList(deviceId);
+        }
+
+        // Handle tab switching to reset edit mode when switching to form tab for new schedule
+        $('#form-tab').on('shown.bs.tab', function() {
+            const modal = $('#scheduleModal');
+            if (!modal.data('editMode')) {
+                $('#formTabLabel').text('Thêm mới');
+                $('#saveScheduleBtn').text('Lưu lịch trình');
+            }
+        });
+
+        // Handle save button visibility based on active tab
+        $('#scheduleTabs button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+            const target = $(e.target).attr('data-bs-target');
+            if (target === '#list-panel') {
+                $('#saveScheduleBtn').hide();
+            } else {
+                $('#saveScheduleBtn').show();
+            }
+        });
+
+        function loadModalSchedulesList(deviceId) {
+            const container = $('#modalSchedulesList');
+            
+            $.ajax({
+                url: '/api/schedules/device/' + deviceId,
+                method: 'GET',
+                success: function(schedules) {
+                    if (schedules && schedules.length > 0) {
+                        container.empty();
+                        schedules.forEach(function(schedule) {
+                            container.append(createModalScheduleItem(schedule));
+                        });
+                    } else {
+                        container.html(`
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-clock-history fs-1"></i>
+                                <p class="mb-0 mt-2">Chưa có lịch trình nào</p>
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    container.html(`
+                        <div class="text-center text-danger py-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <p class="mb-0">Không thể tải danh sách lịch trình</p>
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function createModalScheduleItem(schedule) {
+            const days = schedule.ngayTrongTuan === '*' ? 'Mỗi ngày' : 
+                        schedule.ngayTrongTuan.split(',').map(d => 'CN,T2,T3,T4,T5,T6,T7'.split(',')[d]).join(', ');
+            
+            const statusBadge = schedule.kichHoat 
+                ? '<span class="badge bg-success-subtle text-success">Đang hoạt động</span>'
+                : '<span class="badge bg-secondary-subtle text-secondary">Đã tắt</span>';
+            
+            const startAction = schedule.lenhKhiBatDau === 'hoat_dong' ? 'Bật' : 'Tắt';
+            const endAction = schedule.lenhKhiKetThuc === 'hoat_dong' ? 'Bật' : 'Tắt';
+            
+            return $(`
+                <div class="schedule-list-item p-3 mb-3 border rounded-3 bg-white">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <h6 class="mb-0 fw-bold">${schedule.tenLichTrinh}</h6>
+                                ${statusBadge}
+                            </div>
+                            
+                            <div class="row g-2 text-muted small">
+                                <div class="col-12">
+                                    <i class="bi bi-clock text-primary"></i>
+                                    <span class="fw-semibold">${schedule.thoiGianBatDau}</span>
+                                    <i class="bi bi-arrow-right mx-1"></i>
+                                    <span class="fw-semibold">${schedule.thoiGianKetThuc}</span>
+                                </div>
+                                <div class="col-12">
+                                    <i class="bi bi-calendar3 text-primary"></i>
+                                    <span>${days}</span>
+                                </div>
+                                <div class="col-12">
+                                    <i class="bi bi-lightning-charge text-primary"></i>
+                                    <span>Bắt đầu: <strong>${startAction}</strong> | Kết thúc: <strong>${endAction}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex flex-column gap-1 ms-3">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="editSchedule(${schedule.maLichTrinh}, ${schedule.thietBi.maThietBi})"
+                                    title="Chỉnh sửa">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       ${schedule.kichHoat ? 'checked' : ''}
+                                       onchange="toggleSchedule(${schedule.maLichTrinh}, this.checked, ${schedule.thietBi.maThietBi})"
+                                       title="Bật/Tắt">
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="deleteSchedule(${schedule.maLichTrinh}, ${schedule.thietBi.maThietBi})"
+                                    title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+
+        function loadDeviceSchedules(deviceId) {
+            const container = $('#schedules-' + deviceId);
+            
+            $.ajax({
+                url: '/api/schedules/device/' + deviceId,
+                method: 'GET',
+                success: function(schedules) {
+                    if (schedules && schedules.length > 0) {
+                        container.empty();
+                        schedules.forEach(function(schedule) {
+                            container.append(createScheduleItem(schedule));
+                        });
+                    } else {
+                        container.html(`
+                            <div class="text-center text-muted small py-2">
+                                <i class="bi bi-clock me-1"></i>
+                                <span>Chưa có lịch trình</span>
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    showToast('Không thể tải lịch trình', 'error');
+                }
+            });
+        }
+
+        function createScheduleItem(schedule) {
+            const days = schedule.ngayTrongTuan === '*' ? 'Mỗi ngày' : 
+                        schedule.ngayTrongTuan.split(',').map(d => 'CN,T2,T3,T4,T5,T6,T7'.split(',')[d]).join(', ');
+            
+            return $(`
+                <div class="schedule-item p-2 rounded-3 mb-2" style="background: rgba(248,249,250,0.5);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1" style="cursor: pointer;" 
+                             onclick="showScheduleModal(${schedule.thietBi.maThietBi}, ${schedule.maLichTrinh})">
+                            <div class="fw-semibold small">${schedule.tenLichTrinh}</div>
+                            <div class="text-muted small">
+                                <i class="bi bi-clock me-1"></i>
+                                ${schedule.thoiGianBatDau} - ${schedule.thoiGianKetThuc}
+                            </div>
+                            <div class="text-muted small">
+                                <i class="bi bi-calendar me-1"></i>
+                                ${days}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <button class="btn btn-sm btn-link text-primary p-1" 
+                                    onclick="event.stopPropagation(); showScheduleModal(${schedule.thietBi.maThietBi}, ${schedule.maLichTrinh})"
+                                    title="Chỉnh sửa">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <div class="form-check form-switch me-1">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       ${schedule.kichHoat ? 'checked' : ''}
+                                       onchange="event.stopPropagation(); toggleSchedule(${schedule.maLichTrinh}, this.checked, ${schedule.thietBi.maThietBi})">
+                            </div>
+                            <button class="btn btn-sm btn-link text-danger p-1" 
+                                    onclick="event.stopPropagation(); deleteSchedule(${schedule.maLichTrinh}, ${schedule.thietBi.maThietBi})"
+                                    title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+
+        function editSchedule(scheduleId, deviceId) {
+            showScheduleModal(deviceId, scheduleId);
+        }
+
+        function saveSchedule() {
+            const modal = $('#scheduleModal');
+            const form = $('#scheduleForm');
+            const selectedDays = [];
+            form.find('input[name="days"]:checked').each(function() {
+                selectedDays.push($(this).val());
+            });
+
+            const deviceId = form.find('[name="deviceId"]').val();
+            const editMode = modal.data('editMode');
+
+            const data = {
+                maThietBi: deviceId,
+                tenLichTrinh: form.find('[name="tenLichTrinh"]').val(),
+                thoiGianBatDau: form.find('[name="thoiGianBatDau"]').val(),
+                thoiGianKetThuc: form.find('[name="thoiGianKetThuc"]').val(),
+                ngayTrongTuan: selectedDays.length > 0 ? selectedDays.join(',') : '*',
+                lenhKhiBatDau: form.find('[name="lenhKhiBatDau"]').val(),
+                lenhKhiKetThuc: form.find('[name="lenhKhiKetThuc"]').val(),
+                kichHoat: form.find('[name="kichHoat"]').prop('checked')
+            };
+
+            // Check if in edit mode or create mode
+            const url = editMode ? '/api/schedules/' + editMode : '/api/schedules';
+            const method = editMode ? 'PUT' : 'POST';
+            const successMessage = editMode ? 'Đã cập nhật lịch trình thành công' : 'Đã tạo lịch trình thành công';
+
+            $.ajax({
+                url: url,
+                method: method,
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    modal.modal('hide');
+                    showToast(successMessage);
+                    loadDeviceSchedules(deviceId);
+                    loadModalSchedulesList(deviceId);
+                },
+                error: function(xhr) {
+                    const errorMsg = editMode ? 'Không thể cập nhật lịch trình' : 'Không thể tạo lịch trình';
+                    showToast(errorMsg, 'error');
+                }
+            });
+        }
+
+        function toggleSchedule(scheduleId, enabled, deviceId) {
+            $.ajax({
+                url: '/api/schedules/' + scheduleId,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ kichHoat: enabled }),
+                success: function() {
+                    showToast(enabled ? 'Đã kích hoạt lịch trình' : 'Đã vô hiệu hóa lịch trình');
+                    if (deviceId) {
+                        loadDeviceSchedules(deviceId);
+                        loadModalSchedulesList(deviceId);
+                    }
+                },
+                error: function() {
+                    showToast('Không thể thay đổi trạng thái lịch trình', 'error');
+                }
+            });
+        }
+
+        function deleteSchedule(scheduleId, deviceId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch trình này?')) {
+                $.ajax({
+                    url: '/api/schedules/' + scheduleId,
+                    method: 'DELETE',
+                    success: function() {
+                        showToast('Đã xóa lịch trình');
+                        loadDeviceSchedules(deviceId);
+                        // Refresh modal list if modal is open
+                        if ($('#scheduleModal').hasClass('show')) {
+                            loadModalSchedulesList(deviceId);
+                        }
+                    },
+                    error: function() {
+                        showToast('Không thể xóa lịch trình', 'error');
+                    }
+                });
+            }
+        }
+
+        // Initialize special controls after creating configuration fields
+        function initializeControls() {
+            // Initialize range sliders
+            $('.custom-range').each(function() {
+                updateRangeProgress(this);
+            });
+
+            // Initialize select2 if available
+            if ($.fn.select2) {
+                $('.config-fields select').select2({
+                    width: '100%',
+                    theme: 'bootstrap4'
+                });
+            }
+
+            // Initialize any tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // Initialize color pickers if available
+            if ($.fn.colorpicker) {
+                $('.color-picker').colorpicker();
+            }
+        }
+
+        // So sánh HH:mm (định dạng 0-padded) theo từ điển tương đương theo thời gian
+        function isWithinInterval(startHHmm, endHHmm, nowHHmm) {
+            // Lịch trong ngày (không qua đêm)
+            if (startHHmm <= endHHmm) {
+                return nowHHmm >= startHHmm && nowHHmm < endHHmm;
+            }
+            // Lịch qua đêm (ví dụ 22:00 -> 06:00)
+            return nowHHmm >= startHHmm || nowHHmm < endHHmm;
+        }
+
+        // Kiểm tra và thực thi lịch trình (idempotent theo trạng thái mong muốn)
+        function checkAndExecuteSchedules() {
+            // Tránh gọi khi offline hoặc server đang restart (devtools)
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                console.warn('Skip schedule check: offline');
+                return;
+            }
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            const currentDay = now.getDay().toString(); // 0 = CN, 1-6 = T2-T7
+            
+            $('.device-card').each(function() {
+                const card = $(this);
+                const deviceId = card.find('.form-check-input[type="checkbox"]').attr('id').split('-')[1];
+                const deviceSwitch = card.find('.form-check-input[type="checkbox"]');
+
+                $.ajax({
+                    url: '/api/schedules/device/' + deviceId,
+                    method: 'GET',
+                    success: function(schedules) {
+                        
+                        schedules.forEach(function(schedule) {
+                            if (!schedule.kichHoat) {
+                                return;
+                            }
+
+                            const days = schedule.ngayTrongTuan === '*' ? 
+                                       [...Array(7).keys()].map(i => i.toString()) : 
+                                       schedule.ngayTrongTuan.split(',');
+                            if (!days.includes(currentDay)) {
+                                return;
+                            }
+
+                            // Chuẩn hóa về HH:mm (bỏ giây nếu có)
+                            const scheduledStartTime = (schedule.thoiGianBatDau || '00:00').substring(0, 5);
+                            const scheduledEndTime = (schedule.thoiGianKetThuc || '23:59').substring(0, 5);
+
+                            // Tính trạng thái mong muốn dựa trên khoảng thời gian
+                            const activeNow = isWithinInterval(scheduledStartTime, scheduledEndTime, currentTime);
+                            // Mặc định: đang trong khoảng -> mong muốn bật nếu lenhKhiBatDau='hoat_dong'; ngoài khoảng -> tắt
+                            const desiredOn = activeNow ? (schedule.lenhKhiBatDau === 'hoat_dong') : false;
+
+                            const currentOn = deviceSwitch.prop('checked');
+                            if (currentOn === desiredOn) {
+                                return;
+                            }
+
+                            // Gọi backend để áp dụng thay đổi trạng thái (idempotent)
+                            const prevOn = currentOn;
+                            const newState = desiredOn ? 'hoat_dong' : 'tat';
+                            // Cập nhật UI lạc quan để mượt mà, sẽ rollback nếu lỗi
+                            deviceSwitch.prop('checked', desiredOn);
+                            toggleDevice(deviceSwitch[0], true); // cập nhật UI, bỏ qua AJAX bên trong nếu có
+                            $.ajax({
+                                url: '/thiet-bi/' + deviceId + '/state',
+                                type: 'PUT',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ trangThai: newState }),
+                                success: function() {
+                                    showToast(`${desiredOn ? 'Tự động bật' : 'Tự động tắt'} thiết bị theo lịch trình "${schedule.tenLichTrinh}"`);
+                                },
+                                error: function(err) {
+                                    console.error('Failed to update device state:', err);
+                                    // Rollback UI nếu backend thất bại
+                                    deviceSwitch.prop('checked', prevOn);
+                                    toggleDevice(deviceSwitch[0], true);
+                                    showToast(`Không thể ${desiredOn ? 'bật' : 'tắt'} thiết bị theo lịch trình "${schedule.tenLichTrinh}"`, 'danger');
+                                }
+                            });
+                        });
+                    }
+                ,
+                    error: function(xhr, status, err) {
+                        // Network/server unavailable -> bỏ qua, tránh spam lỗi console
+                        if (!xhr || xhr.status === 0) {
+                            console.warn('Schedule poll skipped (server unreachable) for device', deviceId);
+                            return;
+                        }
+                        console.warn('Schedule poll error for device', deviceId, 'status:', xhr.status, status || '', err || '');
+                    }
+                });
+            });
+        }
+
+        // Load schedules và khởi động kiểm tra lịch trình
+        $(document).ready(function() {
+            // Load lịch trình cho tất cả thiết bị
+            $('.device-card').each(function() {
+                const deviceId = $(this).find('.form-check-input[type="checkbox"]').attr('id').split('-')[1];
+                loadDeviceSchedules(deviceId);
+            });
+
+            // Kiểm tra lịch trình mỗi 15 giây
+            checkAndExecuteSchedules();
+            setInterval(checkAndExecuteSchedules, 15000);
+        });
+    </script>
+
+    <!-- Toast Container -->
+    <!-- Schedule Modal -->
+    <div class="modal fade" id="scheduleModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Quản lý lịch trình</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="scheduleTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="form-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#form-panel" type="button" role="tab">
+                                <i class="bi bi-pencil-square me-1"></i>
+                                <span id="formTabLabel">Thêm mới</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="list-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#list-panel" type="button" role="tab">
+                                <i class="bi bi-list-ul me-1"></i>
+                                Danh sách lịch trình
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="scheduleTabContent">
+                        <!-- Form Panel -->
+                        <div class="tab-pane fade show active" id="form-panel" role="tabpanel">
+                            <form id="scheduleForm" class="needs-validation" novalidate>
+                                <input type="hidden" name="deviceId">
+                                
+                                <!-- Tên lịch trình -->
+                                <div class="mb-3">
+                                    <label class="form-label">Tên lịch trình</label>
+                                    <input type="text" class="form-control" name="tenLichTrinh" required>
+                                </div>
+                                
+                                <!-- Thời gian -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Thời gian bắt đầu</label>
+                                        <input type="time" class="form-control" name="thoiGianBatDau" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Thời gian kết thúc</label>
+                                        <input type="time" class="form-control" name="thoiGianKetThuc" required>
+                                    </div>
+                                </div>
+                                
+                                <!-- Ngày trong tuần -->
+                                <div class="mb-3">
+                                    <label class="form-label d-block">Chọn ngày</label>
+                                    <div class="btn-group" role="group">
+                                        <input type="checkbox" class="btn-check" name="days" value="0" id="day0">
+                                        <label class="btn btn-outline-primary" for="day0">CN</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="1" id="day1">
+                                        <label class="btn btn-outline-primary" for="day1">T2</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="2" id="day2">
+                                        <label class="btn btn-outline-primary" for="day2">T3</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="3" id="day3">
+                                        <label class="btn btn-outline-primary" for="day3">T4</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="4" id="day4">
+                                        <label class="btn btn-outline-primary" for="day4">T5</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="5" id="day5">
+                                        <label class="btn btn-outline-primary" for="day5">T6</label>
+                                        
+                                        <input type="checkbox" class="btn-check" name="days" value="6" id="day6">
+                                        <label class="btn btn-outline-primary" for="day6">T7</label>
+                                    </div>
+                                </div>
+
+                                <!-- Lệnh điều khiển -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Lệnh khi bắt đầu</label>
+                                        <select class="form-select" name="lenhKhiBatDau" required>
+                                            <option value="hoat_dong">Bật thiết bị</option>
+                                            <option value="tat">Tắt thiết bị</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Lệnh khi kết thúc</label>
+                                        <select class="form-select" name="lenhKhiKetThuc" required>
+                                            <option value="tat">Tắt thiết bị</option>
+                                            <option value="hoat_dong">Bật thiết bị</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Kích hoạt -->
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="kichHoat" checked>
+                                        <label class="form-check-label">Kích hoạt lịch trình</label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- List Panel -->
+                        <div class="tab-pane fade" id="list-panel" role="tabpanel">
+                            <div id="modalSchedulesList" class="schedules-list">
+                                <!-- Schedules will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSchedule()" id="saveScheduleBtn">Lưu lịch trình</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+</th:block>
+</body>
+</html>
