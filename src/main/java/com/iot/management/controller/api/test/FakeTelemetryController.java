@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.iot.management.dto.TelemetryMessage;
+import com.iot.management.model.dto.device.TelemetryMessage;
 import com.iot.management.service.TelemetryPublisher;
 
 @RestController

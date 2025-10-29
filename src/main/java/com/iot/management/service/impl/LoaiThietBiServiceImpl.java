@@ -1,7 +1,7 @@
 package com.iot.management.service.impl;
 
 import com.iot.management.model.entity.LoaiThietBi;
-import com.iot.management.model.repository.LoaiThietBiRepository;
+import com.iot.management.repository.LoaiThietBiRepository;
 import com.iot.management.service.LoaiThietBiService;
 import org.springframework.stereotype.Service;
 

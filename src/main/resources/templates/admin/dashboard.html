@@ -71,6 +71,17 @@
                     </div>
                 </div>
                 
+                <!-- Total Revenue Stats -->
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background: #2ecc71">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <h4 id="totalRevenue">0 đ</h4>
+                        <p>Tổng doanh thu</p>
+                    </div>
+                </div>
+                
                 <!-- Notifications Today Stats -->
                 <div class="admin-stat-card">
                     <div class="admin-stat-icon" style="background: #9b59b6">
@@ -331,6 +342,16 @@
                         revenueChart.data.labels = data.months;
                         revenueChart.data.datasets[0].data = data.revenues;
                         revenueChart.update();
+                        
+                        // Calculate and display total revenue
+                        const totalRevenue = data.revenues.reduce((sum, value) => sum + parseFloat(value), 0);
+                        const revenueElement = document.getElementById('totalRevenue');
+                        if (revenueElement) {
+                            revenueElement.textContent = new Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND'
+                            }).format(totalRevenue);
+                        }
                     }
                 })
                 .catch(error => console.error('Error loading revenue data:', error));

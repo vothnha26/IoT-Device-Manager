@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.entity.VaiTro;
-import com.iot.management.model.repository.NguoiDungRepository;
-import com.iot.management.model.repository.VaiTroRepository;
+import com.iot.management.repository.NguoiDungRepository;
+import com.iot.management.repository.VaiTroRepository;
 import com.iot.management.service.NguoiDungService;
 
 import java.util.List;

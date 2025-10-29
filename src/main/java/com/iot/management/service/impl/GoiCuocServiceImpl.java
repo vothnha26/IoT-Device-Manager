@@ -2,7 +2,7 @@ package com.iot.management.service.impl;
 
 import com.iot.management.model.dto.request.GoiCuocRequest;
 import com.iot.management.model.entity.GoiCuoc;
-import com.iot.management.model.repository.GoiCuocRepository;
+import com.iot.management.repository.GoiCuocRepository;
 import com.iot.management.service.GoiCuocService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;

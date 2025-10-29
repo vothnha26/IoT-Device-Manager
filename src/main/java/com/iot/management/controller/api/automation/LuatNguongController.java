@@ -72,7 +72,6 @@ public class LuatNguongController {
             }
             luat.setThietBi(maybeDevice.get());
 
-            // TODO: verify user permission on device
             LuatNguong savedRule = tuDongHoaService.saveRule(luat);
             return new ResponseEntity<>(savedRule, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -86,14 +85,12 @@ public class LuatNguongController {
 
     @GetMapping("/device/{deviceId}")
     public ResponseEntity<?> getRulesForDevice(@PathVariable Long deviceId, Principal principal) {
-        // TODO: check permissions
         java.util.List<LuatNguong> rules = tuDongHoaService.findRulesByDevice(deviceId);
         return ResponseEntity.ok(rules);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getRuleById(@PathVariable Long id, Principal principal) {
-        // TODO: check permissions
         java.util.Optional<LuatNguong> rule = tuDongHoaService.findRuleById(id);
         if (rule.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rule not found");

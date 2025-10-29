@@ -25,7 +25,7 @@ public class DuAnController {
 
     private final DuAnService duAnService;
     private final NguoiDungService nguoiDungService;
-    
+
     @Autowired
     private DuAnAuthorizationService duAnAuthorizationService;
 
@@ -41,41 +41,42 @@ public class DuAnController {
                 System.out.println("⚠️ User not authenticated, redirecting to login");
                 return "redirect:/auth/login";
             }
-            
+
             System.out.println("✅ User authenticated: " + userDetails.getUsername());
             NguoiDung nguoiDung = nguoiDungService.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
             List<DuAn> duAns = duAnService.findAllByNguoiDung(nguoiDung);
             System.out.println("📊 Found " + duAns.size() + " projects for user: " + nguoiDung.getEmail());
-            
+
             // Tạo Map để lưu các quyền cho từng dự án
             Map<Long, Boolean> deletePermissions = new HashMap<>();
             Map<Long, Boolean> managePermissions = new HashMap<>();
             Map<Long, Boolean> editPermissions = new HashMap<>();
             Map<Long, String> userRoles = new HashMap<>();
-            
+
             for (DuAn duAn : duAns) {
                 Long maDuAn = duAn.getMaDuAn();
                 Long maNguoiDung = nguoiDung.getMaNguoiDung();
-                
+
                 // Quyền xóa (chỉ CHU_SO_HUU)
                 boolean coQuyenXoa = duAnAuthorizationService.coQuyenXoaDuAn(maDuAn, maNguoiDung);
                 deletePermissions.put(maDuAn, coQuyenXoa);
-                
+
                 // Quyền quản lý thành viên và mời thành viên (chỉ CHU_SO_HUU)
                 boolean coQuyenQuanLy = duAnAuthorizationService.laChuSoHuu(maDuAn, maNguoiDung);
                 managePermissions.put(maDuAn, coQuyenQuanLy);
-                
+
                 // Quyền chỉnh sửa (CHU_SO_HUU và QUAN_LY)
                 boolean coQuyenChinhSua = duAnAuthorizationService.laQuanLyTroLen(maDuAn, maNguoiDung);
                 editPermissions.put(maDuAn, coQuyenChinhSua);
-                
+
                 // Lấy vai trò của user trong dự án
-                com.iot.management.model.enums.DuAnRole vaiTro = duAnAuthorizationService.layVaiTroTrongDuAn(maDuAn, maNguoiDung);
+                com.iot.management.model.enums.DuAnRole vaiTro = duAnAuthorizationService.layVaiTroTrongDuAn(maDuAn,
+                        maNguoiDung);
                 userRoles.put(maDuAn, vaiTro != null ? vaiTro.name() : "NGUOI_DUNG");
             }
-            
+
             model.addAttribute("duAns", duAns);
             model.addAttribute("deletePermissions", deletePermissions);
             model.addAttribute("managePermissions", managePermissions);
@@ -96,11 +97,6 @@ public class DuAnController {
             @RequestBody DuAnRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            NguoiDung nguoiDung = nguoiDungService.findByEmail(userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-
-            DuAn duAn = duAnService.create(request, nguoiDung);
-
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Tạo dự án thành công");
@@ -147,11 +143,6 @@ public class DuAnController {
             @RequestBody DuAnRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            NguoiDung nguoiDung = nguoiDungService.findByEmail(userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-
-            DuAn duAn = duAnService.update(maDuAn, request, nguoiDung);
-
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Cập nhật dự án thành công");

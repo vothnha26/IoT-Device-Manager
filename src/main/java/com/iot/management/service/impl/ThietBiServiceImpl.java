@@ -5,10 +5,10 @@ import com.iot.management.model.entity.LoaiThietBi;
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.entity.ThietBi;
 import com.iot.management.model.enums.DuAnRole;
-import com.iot.management.model.repository.KhuVucRepository;
-import com.iot.management.model.repository.LoaiThietBiRepository;
-import com.iot.management.model.repository.NguoiDungRepository;
-import com.iot.management.model.repository.ThietBiRepository;
+import com.iot.management.repository.KhuVucRepository;
+import com.iot.management.repository.LoaiThietBiRepository;
+import com.iot.management.repository.NguoiDungRepository;
+import com.iot.management.repository.ThietBiRepository;
 import com.iot.management.service.ThietBiService;
 import com.iot.management.service.ThietBiAuthorizationService;
 import com.iot.management.service.DuAnAuthorizationService;
@@ -34,18 +34,18 @@ public class ThietBiServiceImpl implements ThietBiService {
     private final LoaiThietBiRepository loaiThietBiRepository;
     private final KhuVucRepository khuVucRepository;
     private final DeviceSessionRegistry deviceSessionRegistry;
-    
+
     @Autowired
     private ThietBiAuthorizationService thietBiAuthorizationService;
-    
+
     @Autowired
     private DuAnAuthorizationService duAnAuthorizationService;
 
     public ThietBiServiceImpl(ThietBiRepository thietBiRepository,
-                              NguoiDungRepository nguoiDungRepository,
-                              LoaiThietBiRepository loaiThietBiRepository,
-                              KhuVucRepository khuVucRepository,
-                              DeviceSessionRegistry deviceSessionRegistry) {
+            NguoiDungRepository nguoiDungRepository,
+            LoaiThietBiRepository loaiThietBiRepository,
+            KhuVucRepository khuVucRepository,
+            DeviceSessionRegistry deviceSessionRegistry) {
         this.thietBiRepository = thietBiRepository;
         this.nguoiDungRepository = nguoiDungRepository;
         this.loaiThietBiRepository = loaiThietBiRepository;
@@ -59,15 +59,15 @@ public class ThietBiServiceImpl implements ThietBiService {
         NguoiDung owner = nguoiDungRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + ownerId));
         thietBi.setChuSoHuu(owner);
-        
+
         // 2. (Tùy chọn) Tìm và gán Loại thiết bị
         if (thietBi.getLoaiThietBi() != null && thietBi.getLoaiThietBi().getMaLoaiThietBi() != null) {
             Long loaiThietBiId = thietBi.getLoaiThietBi().getMaLoaiThietBi();
-            
+
             // --- SỬA LỖI Ở ĐÂY ---
             // Bỏ .intValue() và truyền trực tiếp biến Long
             LoaiThietBi type = loaiThietBiRepository.findById(loaiThietBiId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy loại thiết bị với ID: " + loaiThietBiId));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy loại thiết bị với ID: " + loaiThietBiId));
             thietBi.setLoaiThietBi(type);
         }
 
@@ -75,23 +75,23 @@ public class ThietBiServiceImpl implements ThietBiService {
         if (thietBi.getKhuVuc() != null && thietBi.getKhuVuc().getMaKhuVuc() != null) {
             Long khuVucId = thietBi.getKhuVuc().getMaKhuVuc();
             KhuVuc location = khuVucRepository.findById(khuVucId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy khu vực với ID: " + khuVucId));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khu vực với ID: " + khuVucId));
             thietBi.setKhuVuc(location);
         }
 
         // 4. Các logic khác
         thietBi.setTokenThietBi(UUID.randomUUID().toString());
-        
+
         // Nếu không có trạng thái được set từ client, mặc định là "hoat_dong"
         if (thietBi.getTrangThai() == null || thietBi.getTrangThai().trim().isEmpty()) {
             thietBi.setTrangThai("hoat_dong");
         }
-        
+
         // Nếu không có ngày lắp đặt, set ngày hiện tại
         if (thietBi.getNgayLapDat() == null) {
             thietBi.setNgayLapDat(LocalDate.now());
         }
-        
+
         thietBi.setLanHoatDongCuoi(LocalDateTime.now());
 
         return thietBiRepository.save(thietBi);
@@ -106,31 +106,33 @@ public class ThietBiServiceImpl implements ThietBiService {
     public List<ThietBi> findDevicesByKhuVuc(Long maKhuVuc) {
         return thietBiRepository.findByKhuVuc_MaKhuVuc(maKhuVuc);
     }
-    
+
     @Override
     public List<ThietBi> findThietBiCoQuyenXemTrongKhuVuc(Long maKhuVuc, Long maNguoiDung) {
         // Lấy tất cả thiết bị trong khu vực
         List<ThietBi> allDevices = thietBiRepository.findByKhuVuc_MaKhuVuc(maKhuVuc);
-        
+
         if (allDevices.isEmpty()) {
             return allDevices;
         }
-        
-        // Lấy maDuAn từ thiết bị đầu tiên (tất cả thiết bị trong cùng khu vực thuộc cùng dự án)
+
+        // Lấy maDuAn từ thiết bị đầu tiên (tất cả thiết bị trong cùng khu vực thuộc
+        // cùng dự án)
         Long maDuAn = allDevices.get(0).getKhuVuc().getDuAn().getMaDuAn();
-        
+
         // Kiểm tra vai trò
         DuAnRole role = duAnAuthorizationService.layVaiTroTrongDuAn(maDuAn, maNguoiDung);
-        
+
         // CHU_SO_HUU và QUAN_LY thấy tất cả thiết bị
         if (role == DuAnRole.CHU_SO_HUU || role == DuAnRole.QUAN_LY) {
             return allDevices;
         }
-        
+
         // NGUOI_DUNG chỉ thấy thiết bị có bất kỳ quyền nào (VIEW, CONTROL, MANAGE)
         // Kiểm tra qua coQuyenTruyCapThietBi (trả về true nếu có bất kỳ quyền nào)
         return allDevices.stream()
-                .filter(thietBi -> thietBiAuthorizationService.coQuyenTruyCapThietBi(thietBi.getMaThietBi(), maNguoiDung))
+                .filter(thietBi -> thietBiAuthorizationService.coQuyenTruyCapThietBi(thietBi.getMaThietBi(),
+                        maNguoiDung))
                 .collect(Collectors.toList());
     }
 
@@ -143,14 +145,14 @@ public class ThietBiServiceImpl implements ThietBiService {
     public void deleteDevice(Long deviceId) {
         ThietBi thietBi = thietBiRepository.findById(deviceId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thiết bị với ID: " + deviceId));
-        
+
         logger.info("🗑️ Xóa thiết bị ID: {} - Cascade sẽ tự động xóa lịch trình và nhật ký dữ liệu", deviceId);
-        
+
         // Cascade sẽ tự động xóa:
         // - LichTrinh (cascade = CascadeType.ALL, orphanRemoval = true)
         // - NhatKyDuLieu (cascade = CascadeType.ALL, orphanRemoval = true)
         thietBiRepository.delete(thietBi);
-        
+
         logger.info("✅ Đã xóa thiết bị ID: {} thành công", deviceId);
     }
 
@@ -177,11 +179,11 @@ public class ThietBiServiceImpl implements ThietBiService {
                 finalState = "tat";
                 break;
         }
-        
+
         thietBi.setTrangThai(finalState);
         thietBi.setLanHoatDongCuoi(LocalDateTime.now());
         thietBiRepository.save(thietBi);
-        
+
         // GỬI LỆNH ĐIỀU KHIỂN ĐẾN THIẾT BỊ THẬT QUA RAW WEBSOCKET
         try {
             boolean sent = deviceSessionRegistry.sendCommand(deviceId, finalState);
@@ -204,7 +206,7 @@ public class ThietBiServiceImpl implements ThietBiService {
         if (thietBiMoi.getTenThietBi() != null) {
             thietBiCu.setTenThietBi(thietBiMoi.getTenThietBi());
         }
-        
+
         // Cập nhật loại thiết bị nếu có thay đổi
         if (thietBiMoi.getLoaiThietBi() != null && thietBiMoi.getLoaiThietBi().getMaLoaiThietBi() != null) {
             LoaiThietBi loaiThietBi = loaiThietBiRepository.findById(thietBiMoi.getLoaiThietBi().getMaLoaiThietBi())
@@ -233,7 +235,7 @@ public class ThietBiServiceImpl implements ThietBiService {
         }
 
         thietBiCu.setLanHoatDongCuoi(LocalDateTime.now());
-        
+
         return thietBiRepository.save(thietBiCu);
     }
 }

@@ -1,17 +1,17 @@
 package com.iot.management.service.impl;
 
 import com.iot.management.model.dto.DashboardStatsDTO;
-import com.iot.management.model.dto.DeviceDTO;
 import com.iot.management.model.dto.PackageUsageDTO;
-import com.iot.management.model.dto.RoomDTO;
+import com.iot.management.model.dto.device.DeviceDTO;
+import com.iot.management.model.dto.device.RoomDTO;
 import com.iot.management.model.entity.*;
-import com.iot.management.model.repository.DangKyGoiRepository;
-import com.iot.management.model.repository.DuAnRepository;
-import com.iot.management.model.repository.KhuVucRepository;
-import com.iot.management.model.repository.NguoiDungRepository;
-import com.iot.management.model.repository.NhatKyDuLieuRepository;
-import com.iot.management.model.repository.PhanQuyenDuAnRepository;
-import com.iot.management.model.repository.ThietBiRepository;
+import com.iot.management.repository.DangKyGoiRepository;
+import com.iot.management.repository.DuAnRepository;
+import com.iot.management.repository.KhuVucRepository;
+import com.iot.management.repository.NguoiDungRepository;
+import com.iot.management.repository.NhatKyDuLieuRepository;
+import com.iot.management.repository.PhanQuyenDuAnRepository;
+import com.iot.management.repository.ThietBiRepository;
 import com.iot.management.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

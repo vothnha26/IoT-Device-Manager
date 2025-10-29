@@ -2,7 +2,8 @@ package com.iot.management.service;
 
 import com.iot.management.model.dto.DashboardStatsDTO;
 import com.iot.management.model.dto.PackageUsageDTO;
-import com.iot.management.model.dto.RoomDTO;
+import com.iot.management.model.dto.device.RoomDTO;
+
 import java.util.List;
 
 /**

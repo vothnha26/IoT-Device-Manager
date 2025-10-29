@@ -34,7 +34,6 @@ public class DashboardController {
     public String areas(Model model, HttpServletRequest request) {
         model.addAttribute("title", "Quản lý khu vực - IoT Management");
         model.addAttribute("currentUri", request.getRequestURI());
-        // TODO: Add areas data
         return "khu-vuc/index";
     }
 
@@ -42,7 +41,6 @@ public class DashboardController {
     public String devices(Model model, HttpServletRequest request) {
         model.addAttribute("title", "Quản lý thiết bị - IoT Management");
         model.addAttribute("currentUri", request.getRequestURI());
-        // TODO: Add devices data
         return "thiet-bi/index";
     }
 
@@ -50,14 +48,12 @@ public class DashboardController {
     public String statistics(Model model, HttpServletRequest request) {
         model.addAttribute("title", "Thống kê - IoT Management");
         model.addAttribute("currentUri", request.getRequestURI());
-        // TODO: Add statistics data
         return "thong-ke/index";
     }
 
     @GetMapping("/dashboard/du-lieu-cam-bien")
     public String sensorData(Model model) {
         model.addAttribute("title", "Dữ liệu cảm biến - IoT Management");
-        // TODO: Add sensor data
         return "du-lieu-cam-bien/index";
     }
 }

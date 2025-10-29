@@ -5,10 +5,10 @@ import com.iot.management.model.entity.PhanQuyenThietBi;
 import com.iot.management.model.entity.PhanQuyenKhuVuc;
 import com.iot.management.model.entity.QuyenHeThong;
 import com.iot.management.model.entity.VaiTroQuyen;
+import com.iot.management.model.dto.device.AreaPermissionDTO;
+import com.iot.management.model.dto.device.DevicePermissionDTO;
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.enums.DuAnRole;
-import com.iot.management.dto.AreaPermissionDTO;
-import com.iot.management.dto.DevicePermissionDTO;
 
 import java.util.List;
 

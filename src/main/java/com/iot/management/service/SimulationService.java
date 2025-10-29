@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Service;
 
-import com.iot.management.dto.TelemetryMessage;
+import com.iot.management.model.dto.device.TelemetryMessage;
 
 @Service
 public class SimulationService {

@@ -1,11 +1,8 @@
 package com.iot.management.service.impl;
 
 import com.iot.management.model.entity.CauHinhTruongDuLieu;
-import com.iot.management.model.entity.GiaTriThietBi;
-import com.iot.management.model.entity.LoaiThietBi;
 import com.iot.management.model.entity.ThietBi;
-import com.iot.management.model.repository.CauHinhTruongDuLieuRepository;
-import com.iot.management.model.repository.GiaTriThietBiRepository;
+import com.iot.management.repository.CauHinhTruongDuLieuRepository;
 import com.iot.management.service.CauHinhTruongDuLieuService;
 import com.iot.management.service.GiaTriThietBiService;
 import org.springframework.beans.factory.annotation.Autowired;

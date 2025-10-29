@@ -12,12 +12,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.iot.management.model.repository.DuAnRepository;
-import com.iot.management.model.repository.KhuVucRepository;
-import com.iot.management.model.repository.LoaiThietBiRepository;
-import com.iot.management.model.repository.NguoiDungRepository;
-import com.iot.management.model.repository.ThietBiRepository;
-import com.iot.management.model.repository.ThongBaoRepository;
+import com.iot.management.repository.DuAnRepository;
+import com.iot.management.repository.KhuVucRepository;
+import com.iot.management.repository.LoaiThietBiRepository;
+import com.iot.management.repository.NguoiDungRepository;
+import com.iot.management.repository.ThietBiRepository;
+import com.iot.management.repository.ThongBaoRepository;
 
 @RestController
 @RequestMapping("/api/admin/stats")

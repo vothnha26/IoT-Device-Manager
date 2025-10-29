@@ -2,8 +2,8 @@ package com.iot.management.service.impl;
 
 import com.iot.management.model.entity.NhatKyDuLieu;
 import com.iot.management.model.entity.ThietBi;
-import com.iot.management.model.repository.NhatKyDuLieuRepository;
-import com.iot.management.model.repository.ThietBiRepository;
+import com.iot.management.repository.NhatKyDuLieuRepository;
+import com.iot.management.repository.ThietBiRepository;
 import com.iot.management.service.NhatKyDuLieuService;
 import com.iot.management.service.TuDongHoaService;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

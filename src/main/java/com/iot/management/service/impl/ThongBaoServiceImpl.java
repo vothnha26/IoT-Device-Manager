@@ -4,7 +4,7 @@ import com.iot.management.model.entity.KhuVuc;
 import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.entity.ThietBi;
 import com.iot.management.model.entity.ThongBao;
-import com.iot.management.model.repository.ThongBaoRepository;
+import com.iot.management.repository.ThongBaoRepository;
 import com.iot.management.service.ThongBaoService;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;

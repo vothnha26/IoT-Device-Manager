@@ -1,3 +1,4 @@
+package com.iot.management.config;
 // package com.iot.management.config;
 
 // import java.math.BigDecimal;

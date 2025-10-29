@@ -11,12 +11,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.iot.management.model.entity.GoiCuoc;
+import com.iot.management.repository.DangKyGoiRepository;
 import com.iot.management.model.dto.payment.PaymentRequest;
 import com.iot.management.model.dto.payment.PaymentResponse;
 import com.iot.management.security.SecurityUser;
 import com.iot.management.service.GoiCuocService;
 import com.iot.management.service.impl.PaymentService;
-import com.iot.management.model.repository.DangKyGoiRepository;
 import com.iot.management.model.entity.DangKyGoi;
 import java.time.LocalDateTime;
 import com.iot.management.service.VietQRService;
@@ -28,7 +28,6 @@ public class PaymentController {
 
     private final GoiCuocService goiCuocService;
     private final PaymentService paymentService;
-    private final VietQRService vietQRService;
     private final DangKyGoiRepository dangKyGoiRepository;
     
     public PaymentController(GoiCuocService goiCuocService,
@@ -37,7 +36,6 @@ public class PaymentController {
                              DangKyGoiRepository dangKyGoiRepository) {
         this.goiCuocService = goiCuocService;
         this.paymentService = paymentService;
-        this.vietQRService = vietQRService;
         this.dangKyGoiRepository = dangKyGoiRepository;
     }
 

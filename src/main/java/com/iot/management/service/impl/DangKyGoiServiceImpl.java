@@ -1,7 +1,7 @@
 package com.iot.management.service.impl;
 
 import com.iot.management.model.entity.DangKyGoi;
-import com.iot.management.model.repository.DangKyGoiRepository;
+import com.iot.management.repository.DangKyGoiRepository;
 import com.iot.management.service.DangKyGoiService;
 import org.springframework.stereotype.Service;
 

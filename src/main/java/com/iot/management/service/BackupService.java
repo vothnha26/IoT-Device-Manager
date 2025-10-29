@@ -5,7 +5,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.iot.management.model.dto.backup.*;
 import com.iot.management.model.entity.*;
 import com.iot.management.model.enums.DuAnRole;
-import com.iot.management.model.repository.*;
+import com.iot.management.repository.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,9 +24,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class BackupService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(BackupService.class);
-    
+
     private final NguoiDungRepository nguoiDungRepository;
     private final DuAnRepository duAnRepository;
     private final KhuVucRepository khuVucRepository;
@@ -35,11 +36,11 @@ public class BackupService {
     private final ObjectMapper objectMapper;
 
     public BackupService(NguoiDungRepository nguoiDungRepository,
-                        DuAnRepository duAnRepository,
-                        KhuVucRepository khuVucRepository,
-                        ThietBiRepository thietBiRepository,
-                        PhanQuyenDuAnRepository phanQuyenDuAnRepository,
-                        LoaiThietBiRepository loaiThietBiRepository) {
+            DuAnRepository duAnRepository,
+            KhuVucRepository khuVucRepository,
+            ThietBiRepository thietBiRepository,
+            PhanQuyenDuAnRepository phanQuyenDuAnRepository,
+            LoaiThietBiRepository loaiThietBiRepository) {
         this.nguoiDungRepository = nguoiDungRepository;
         this.duAnRepository = duAnRepository;
         this.khuVucRepository = khuVucRepository;
@@ -56,16 +57,16 @@ public class BackupService {
     @Transactional(readOnly = true)
     public String exportUserData(String email) throws IOException {
         logger.info("Exporting data for user: {}", email);
-        
+
         NguoiDung user = nguoiDungRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Tạo backup data
         BackupDataDTO backupData = new BackupDataDTO();
         backupData.setUserInfo(new BackupDataDTO.UserInfoDTO(
-            user.getTenDangNhap(),
-            user.getEmail(),
-            user.getTenDangNhap() // Dùng tenDangNhap thay vì hoTen
+                user.getTenDangNhap(),
+                user.getEmail(),
+                user.getTenDangNhap() // Dùng tenDangNhap thay vì hoTen
         ));
         backupData.setBackupDate(LocalDateTime.now());
 
@@ -86,15 +87,15 @@ public class BackupService {
             if (duAn.getKhuVucs() != null) {
                 logger.info("  Found {} zones in project {}", duAn.getKhuVucs().size(), duAn.getTenDuAn());
                 khuVucBackups = duAn.getKhuVucs().stream()
-                    .map(kv -> {
-                        KhuVucBackupDTO dto = new KhuVucBackupDTO();
-                        dto.setTenKhuVuc(kv.getTenKhuVuc());
-                        dto.setMoTa(kv.getMoTa());
-                        dto.setViTri(""); // Không có field viTri
-                        dto.setNgayTao(LocalDateTime.now()); // Không có field ngayTao
-                        return dto;
-                    })
-                    .collect(Collectors.toList());
+                        .map(kv -> {
+                            KhuVucBackupDTO dto = new KhuVucBackupDTO();
+                            dto.setTenKhuVuc(kv.getTenKhuVuc());
+                            dto.setMoTa(kv.getMoTa());
+                            dto.setViTri(""); // Không có field viTri
+                            dto.setNgayTao(LocalDateTime.now()); // Không có field ngayTao
+                            return dto;
+                        })
+                        .collect(Collectors.toList());
             }
             duAnBackup.setKhuVucs(khuVucBackups);
 
@@ -132,7 +133,7 @@ public class BackupService {
         // Convert to JSON
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(backupData);
         logger.info("Export completed. Data size: {} bytes, projects: {}", json.length(), duAnBackups.size());
-        
+
         return json;
     }
 
@@ -143,15 +144,15 @@ public class BackupService {
     public synchronized void importUserData(String email, MultipartFile file) throws IOException {
         logger.info("=== IMPORT START: User={}, Thread={} ===", email, Thread.currentThread().getName());
         logger.info("Importing data for user: {}", email);
-        
+
         NguoiDung user = nguoiDungRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Kiểm tra xem user có gói cước active không
-        boolean hasActivePackage = user.getDangKyGois() != null && 
-            user.getDangKyGois().stream()
-                .anyMatch(dkg -> "ACTIVE".equals(dkg.getTrangThai()));
-        
+        boolean hasActivePackage = user.getDangKyGois() != null &&
+                user.getDangKyGois().stream()
+                        .anyMatch(dkg -> "ACTIVE".equals(dkg.getTrangThai()));
+
         if (!hasActivePackage) {
             throw new RuntimeException("Bạn cần đăng ký gói cước trước khi khôi phục dữ liệu");
         }
@@ -159,7 +160,7 @@ public class BackupService {
         // Parse JSON
         BackupDataDTO backupData = objectMapper.readValue(file.getBytes(), BackupDataDTO.class);
         logger.info("Parsed backup data: {} projects", backupData.getDuAn() != null ? backupData.getDuAn().size() : 0);
-        
+
         if (backupData.getDuAn() == null || backupData.getDuAn().isEmpty()) {
             throw new RuntimeException("No project data found in backup file");
         }
@@ -167,10 +168,10 @@ public class BackupService {
         // Import từng dự án
         int restoredCount = 0;
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        
+
         for (DuAnBackupDTO duAnBackup : backupData.getDuAn()) {
             logger.info("Restoring project: {}", duAnBackup.getTenDuAn());
-            
+
             // Tạo dự án mới với timestamp để tránh trùng lặp
             DuAn duAn = new DuAn();
             duAn.setTenDuAn(duAnBackup.getTenDuAn() + " (Restored " + timestamp + ")");
@@ -222,24 +223,26 @@ public class BackupService {
                         thietBi.setTrangThai(tbBackup.getTrangThai());
                         thietBi.setNgayLapDat(tbBackup.getNgayLapDat());
                         thietBi.setLanHoatDongCuoi(tbBackup.getLanHoatDongCuoi());
-                        
+
                         // Generate token mới cho thiết bị (không restore token cũ)
                         thietBi.setTokenThietBi(java.util.UUID.randomUUID().toString());
-                        
+
                         // Tìm loại thiết bị từ DB
                         if (tbBackup.getLoaiThietBi() != null && !tbBackup.getLoaiThietBi().isEmpty()) {
                             LoaiThietBi loaiThietBi = loaiThietBiRepository.findByTenLoai(tbBackup.getLoaiThietBi())
-                                .orElse(null);
+                                    .orElse(null);
                             if (loaiThietBi != null) {
                                 thietBi.setLoaiThietBi(loaiThietBi);
                                 logger.info("Device type found: {}", loaiThietBi.getTenLoai());
                             } else {
-                                logger.warn("Device type not found: {}, device will be created without type", tbBackup.getLoaiThietBi());
+                                logger.warn("Device type not found: {}, device will be created without type",
+                                        tbBackup.getLoaiThietBi());
                             }
                         }
-                        
+
                         thietBi = thietBiRepository.save(thietBi);
-                        logger.info("Device saved: {} in zone {} with new token", thietBi.getTenThietBi(), khuVuc.getTenKhuVuc());
+                        logger.info("Device saved: {} in zone {} with new token", thietBi.getTenThietBi(),
+                                khuVuc.getTenKhuVuc());
                     } else {
                         logger.warn("Zone not found for device {}, skipping", tbBackup.getTenThietBi());
                     }

@@ -25,8 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.iot.management.config.SePayProperties;
 import com.iot.management.model.entity.DangKyGoi;
 import com.iot.management.model.entity.ThanhToan;
-import com.iot.management.model.repository.DangKyGoiRepository;
-import com.iot.management.model.repository.ThanhToanRepository;
+import com.iot.management.repository.DangKyGoiRepository;
+import com.iot.management.repository.ThanhToanRepository;
 import com.iot.management.service.SePayService;
 
 @Service
@@ -42,10 +42,10 @@ public class SePayServiceImpl implements SePayService {
     private final com.iot.management.service.EmailService emailService;
 
     public SePayServiceImpl(SePayProperties props,
-                            DangKyGoiRepository dangKyGoiRepository,
-                            ThanhToanRepository thanhToanRepository,
-                            SimpMessagingTemplate messagingTemplate,
-                            com.iot.management.service.EmailService emailService) {
+            DangKyGoiRepository dangKyGoiRepository,
+            ThanhToanRepository thanhToanRepository,
+            SimpMessagingTemplate messagingTemplate,
+            com.iot.management.service.EmailService emailService) {
         this.props = props;
         this.dangKyGoiRepository = dangKyGoiRepository;
         this.thanhToanRepository = thanhToanRepository;
@@ -60,9 +60,9 @@ public class SePayServiceImpl implements SePayService {
 
         String endpoint = props.getApiBaseUrl().replaceAll("/+$", "") + "/v1/transactions/create";
 
-    // Log the URLs used for debugging (do not log secrets)
-    log.info("SePay createPaymentUrl called: orderId={}, amount={}, callbackUrl={}, returnUrl={}, endpoint={}",
-        orderId, amount, callbackUrl, returnUrl, endpoint);
+        // Log the URLs used for debugging (do not log secrets)
+        log.info("SePay createPaymentUrl called: orderId={}, amount={}, callbackUrl={}, returnUrl={}, endpoint={}",
+                orderId, amount, callbackUrl, returnUrl, endpoint);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -77,12 +77,13 @@ public class SePayServiceImpl implements SePayService {
 
         HttpEntity<MultiValueMap<String, String>> req = new HttpEntity<>(form, headers);
         try {
-            @SuppressWarnings({"unchecked", "rawtypes"})
+            @SuppressWarnings({ "unchecked", "rawtypes" })
             ResponseEntity<Map<String, Object>> raw = restTemplate.postForEntity(endpoint, req, (Class) Map.class);
             Map<String, Object> body = raw != null ? raw.getBody() : null;
             if (raw != null && raw.getStatusCode().is2xxSuccessful() && body != null) {
                 Object url = body.get("checkout_url");
-                if (url == null) url = body.get("payUrl");
+                if (url == null)
+                    url = body.get("payUrl");
                 String checkoutUrl = Objects.toString(url, null);
                 log.info("SePay createPaymentUrl response checkoutUrl={}", checkoutUrl);
                 return checkoutUrl;
@@ -102,10 +103,10 @@ public class SePayServiceImpl implements SePayService {
         try {
             String content = Objects.toString(payload.get("content"), "");
             log.info("Extracted content: '{}'", content);
-            
+
             Integer orderId = extractOrderIdFromContent(content);
             log.info("Extracted orderId: {}", orderId);
-            
+
             if (orderId == null) {
                 log.warn("Could not extract order ID from content: {}", content);
                 return;
@@ -121,93 +122,95 @@ public class SePayServiceImpl implements SePayService {
             // orderId là maThanhToan, không phải maDangKy
             log.info("Looking for ThanhToan with ID: {}", orderId);
             Optional<ThanhToan> thanhToanOpt = thanhToanRepository.findById(orderId.longValue());
-            
+
             if (!thanhToanOpt.isPresent()) {
                 log.error("❌ ThanhToan not found with ID: {}", orderId);
                 return;
             }
-            
+
             if (thanhToanOpt.isPresent()) {
                 ThanhToan thanhToan = thanhToanOpt.get();
-                log.info("✅ Found ThanhToan: ID={}, CurrentStatus={}, Amount={}", 
-                    thanhToan.getMaThanhToan(), thanhToan.getTrangThai(), thanhToan.getSoTien());
-                
+                log.info("✅ Found ThanhToan: ID={}, CurrentStatus={}, Amount={}",
+                        thanhToan.getMaThanhToan(), thanhToan.getTrangThai(), thanhToan.getSoTien());
+
                 // Kiểm tra xem đã thanh toán chưa
                 if ("DA_THANH_TOAN".equals(thanhToan.getTrangThai())) {
                     log.warn("⚠️ ThanhToan {} already paid, skipping", orderId);
                     return;
                 }
-                
+
                 DangKyGoi dk = thanhToan.getDangKyGoi();
-                
+
                 if (dk == null) {
                     log.error("❌ ThanhToan {} has no associated DangKyGoi", orderId);
                     return;
                 }
-                
+
                 log.info("✅ Found DangKyGoi: ID={}, CurrentStatus={}", dk.getMaDangKy(), dk.getTrangThai());
-                
+
                 // Cập nhật thông tin thanh toán
                 log.info("🔄 Updating ThanhToan from {} to DA_THANH_TOAN", thanhToan.getTrangThai());
                 thanhToan.setSoTien(transferAmount != null ? transferAmount : thanhToan.getSoTien());
                 thanhToan.setNgayThanhToan(LocalDateTime.now());
                 thanhToan.setPhuongThuc("QR Transfer - SePay");
-                
+
                 // map SePay referenceCode or id to maGiaoDichCongThanhToan
                 String ref = Objects.toString(payload.get("referenceCode"), null);
-                if (ref == null) ref = Objects.toString(payload.get("id"), null);
+                if (ref == null)
+                    ref = Objects.toString(payload.get("id"), null);
                 thanhToan.setMaGiaoDichCongThanhToan(ref);
                 thanhToan.setTrangThai("DA_THANH_TOAN");
-                
+
                 log.info("💾 Saving ThanhToan with new status: DA_THANH_TOAN");
                 thanhToanRepository.save(thanhToan);
                 log.info("✅ ThanhToan saved successfully");
-                
+
                 // EXPIRE tất cả gói ACTIVE cũ của user trước khi kích hoạt gói mới
                 Long userId = dk.getNguoiDung().getMaNguoiDung();
                 log.info("🔍 Checking for existing ACTIVE packages for user {}", userId);
-                
+
                 List<DangKyGoi> activePackages = dangKyGoiRepository
-                    .findByTrangThai(DangKyGoi.TRANG_THAI_ACTIVE)
-                    .stream()
-                    .filter(d -> d.getNguoiDung().getMaNguoiDung().equals(userId))
-                    .filter(d -> !d.getMaDangKy().equals(dk.getMaDangKy())) // Không expire gói hiện tại
-                    .collect(java.util.stream.Collectors.toList());
-                
+                        .findByTrangThai(DangKyGoi.TRANG_THAI_ACTIVE)
+                        .stream()
+                        .filter(d -> d.getNguoiDung().getMaNguoiDung().equals(userId))
+                        .filter(d -> !d.getMaDangKy().equals(dk.getMaDangKy())) // Không expire gói hiện tại
+                        .collect(java.util.stream.Collectors.toList());
+
                 if (!activePackages.isEmpty()) {
-                    log.info("⚠️ Found {} existing ACTIVE package(s) for user {}, expiring them...", 
-                        activePackages.size(), userId);
-                    
+                    log.info("⚠️ Found {} existing ACTIVE package(s) for user {}, expiring them...",
+                            activePackages.size(), userId);
+
                     for (DangKyGoi oldPackage : activePackages) {
-                        log.info("🔄 Expiring old package: ID={}, Package={}", 
-                            oldPackage.getMaDangKy(), 
-                            oldPackage.getGoiCuoc().getTenGoi());
+                        log.info("🔄 Expiring old package: ID={}, Package={}",
+                                oldPackage.getMaDangKy(),
+                                oldPackage.getGoiCuoc().getTenGoi());
                         oldPackage.setTrangThai("EXPIRED");
                         oldPackage.setNgayKetThuc(LocalDateTime.now()); // Set end date to now
                         dangKyGoiRepository.save(oldPackage);
                     }
                     log.info("✅ Expired {} old package(s)", activePackages.size());
                 }
-                
-                // Kích hoạt gói cước mới: Update DangKyGoi từ PENDING → ACTIVE và set ngày kết thúc
-                log.info("🔄 Activating new package: DangKyGoi {} from {} to ACTIVE", dk.getMaDangKy(), dk.getTrangThai());
+
+                // Kích hoạt gói cước mới: Update DangKyGoi từ PENDING → ACTIVE và set ngày kết
+                // thúc
+                log.info("🔄 Activating new package: DangKyGoi {} from {} to ACTIVE", dk.getMaDangKy(),
+                        dk.getTrangThai());
                 dk.setTrangThai(DangKyGoi.TRANG_THAI_ACTIVE);
                 dk.setNgayBatDau(LocalDateTime.now());
                 dk.setNgayKetThuc(LocalDateTime.now().plusDays(30)); // 30 ngày
                 dangKyGoiRepository.save(dk);
                 log.info("✅ DangKyGoi activated successfully");
 
-                log.info("🎉 Payment {} completed, Package {} activated", 
-                    orderId, dk.getMaDangKy());
+                log.info("🎉 Payment {} completed, Package {} activated",
+                        orderId, dk.getMaDangKy());
 
                 // Notify via websocket (topic: /topic/payment/{orderId})
                 try {
-            Map<String, Object> notificationPayload = Map.of(
-                "type", "PAYMENT_SUCCESS",
-                "orderId", orderId,
-                "amount", transferAmount,
-                "userId", dk.getNguoiDung() != null ? dk.getNguoiDung().getMaNguoiDung() : null
-            );
+                    Map<String, Object> notificationPayload = Map.of(
+                            "type", "PAYMENT_SUCCESS",
+                            "orderId", orderId,
+                            "amount", transferAmount,
+                            "userId", dk.getNguoiDung() != null ? dk.getNguoiDung().getMaNguoiDung() : null);
 
                     // per-order topic (for clients subscribed to this order)
                     messagingTemplate.convertAndSend("/topic/payment/" + orderId, notificationPayload);
@@ -219,7 +222,9 @@ public class SePayServiceImpl implements SePayService {
                     if (dk.getNguoiDung() != null && dk.getNguoiDung().getEmail() != null) {
                         String to = dk.getNguoiDung().getEmail();
                         String subject = "[IoT-Manager] Thanh toan thanh cong cho don " + orderId;
-                        String text = "Don hang #" + orderId + " da duoc thanh toan. So tien: " + (transferAmount != null ? transferAmount.toPlainString() : "0") + "\nMa tham chieu: " + payload.get("referenceCode");
+                        String text = "Don hang #" + orderId + " da duoc thanh toan. So tien: "
+                                + (transferAmount != null ? transferAmount.toPlainString() : "0") + "\nMa tham chieu: "
+                                + payload.get("referenceCode");
                         try {
                             emailService.sendSimpleEmail(to, subject, text);
                         } catch (Exception ex) {
@@ -265,8 +270,10 @@ public class SePayServiceImpl implements SePayService {
     private String buildCallbackUrl() {
         String base = props.getPublicBaseUrl();
         String path = props.getCallbackPath();
-        if (base == null) base = "";
-        if (path == null) path = "/api/payments/webhook";
+        if (base == null)
+            base = "";
+        if (path == null)
+            path = "/api/payments/webhook";
         return base.replaceAll("/+$", "") + path;
     }
 }

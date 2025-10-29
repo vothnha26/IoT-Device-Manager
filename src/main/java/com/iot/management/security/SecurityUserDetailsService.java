@@ -1,7 +1,8 @@
 package com.iot.management.security;
 
 import com.iot.management.model.entity.NguoiDung;
-import com.iot.management.model.repository.NguoiDungRepository;
+import com.iot.management.repository.NguoiDungRepository;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

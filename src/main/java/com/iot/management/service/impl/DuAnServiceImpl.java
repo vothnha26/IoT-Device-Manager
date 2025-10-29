@@ -7,10 +7,11 @@ import com.iot.management.model.entity.NguoiDung;
 import com.iot.management.model.entity.PhanQuyenDuAn;
 import com.iot.management.model.entity.ThietBi;
 import com.iot.management.model.enums.DuAnRole;
-import com.iot.management.model.repository.DuAnRepository;
-import com.iot.management.model.repository.KhuVucRepository;
-import com.iot.management.model.repository.PhanQuyenDuAnRepository;
-import com.iot.management.model.repository.ThietBiRepository;
+import com.iot.management.repository.DuAnRepository;
+import com.iot.management.repository.KhuVucRepository;
+import com.iot.management.repository.PhanQuyenDuAnRepository;
+import com.iot.management.repository.ThietBiRepository;
+
 import java.util.stream.Collectors;
 import com.iot.management.service.DuAnService;
 import jakarta.persistence.EntityNotFoundException;

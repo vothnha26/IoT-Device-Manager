@@ -1,7 +1,7 @@
 package com.iot.management.service.impl;
 
 import com.iot.management.model.entity.ThanhToan;
-import com.iot.management.model.repository.ThanhToanRepository;
+import com.iot.management.repository.ThanhToanRepository;
 import com.iot.management.service.ThanhToanService;
 import org.springframework.stereotype.Service;
 import java.util.Optional;

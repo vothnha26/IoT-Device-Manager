@@ -1,7 +1,8 @@
 package com.iot.management.controller.api.user;
 
 import com.iot.management.model.entity.GoiCuoc;
-import com.iot.management.model.repository.GoiCuocRepository;
+import com.iot.management.repository.GoiCuocRepository;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

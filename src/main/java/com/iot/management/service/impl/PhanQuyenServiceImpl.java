@@ -1,11 +1,21 @@
 package com.iot.management.service.impl;
 
+import com.iot.management.model.dto.device.AreaPermissionDTO;
+import com.iot.management.model.dto.device.DevicePermissionDTO;
 import com.iot.management.model.entity.*;
 import com.iot.management.model.enums.DuAnRole;
-import com.iot.management.model.repository.*;
+import com.iot.management.repository.DuAnRepository;
+import com.iot.management.repository.KhuVucRepository;
+import com.iot.management.repository.NguoiDungRepository;
+import com.iot.management.repository.PhanQuyenDuAnRepository;
+import com.iot.management.repository.PhanQuyenKhuVucRepository;
+import com.iot.management.repository.PhanQuyenThietBiRepository;
+import com.iot.management.repository.QuyenHeThongRepository;
+import com.iot.management.repository.ThietBiRepository;
+import com.iot.management.repository.VaiTroQuyenRepository;
+import com.iot.management.repository.VaiTroRepository;
 import com.iot.management.service.PhanQuyenService;
-import com.iot.management.dto.AreaPermissionDTO;
-import com.iot.management.dto.DevicePermissionDTO;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

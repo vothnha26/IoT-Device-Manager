@@ -1,10 +1,6 @@
 package com.iot.management.service.impl;
 
-import com.iot.management.model.entity.DuAn;
-import com.iot.management.model.entity.ThietBi;
 import com.iot.management.model.enums.DuAnRole;
-import com.iot.management.model.repository.DuAnRepository;
-import com.iot.management.model.repository.ThietBiRepository;
 import com.iot.management.service.DuAnAuthorizationService;
 import com.iot.management.service.PhanQuyenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +11,6 @@ public class DuAnAuthorizationServiceImpl implements DuAnAuthorizationService {
 
     @Autowired
     private PhanQuyenService phanQuyenService;
-    
-    @Autowired
-    private DuAnRepository duAnRepository;
-    
-    @Autowired
-    private ThietBiRepository thietBiRepository;
 
     // ==================== Quyền quản lý dự án ====================
 
@@ -53,13 +43,14 @@ public class DuAnAuthorizationServiceImpl implements DuAnAuthorizationService {
     @Override
     public boolean coQuyenXemKhuVuc(Long maDuAn, Long maNguoiDung) {
         DuAnRole role = layVaiTroTrongDuAn(maDuAn, maNguoiDung);
-        
+
         // CHU_SO_HUU và QUAN_LY được xem tất cả khu vực
         if (role == DuAnRole.CHU_SO_HUU || role == DuAnRole.QUAN_LY) {
             return true;
         }
-        
-        // NGUOI_DUNG chỉ xem khu vực được phân quyền cụ thể (kiểm tra ở KhuVucAuthorizationService)
+
+        // NGUOI_DUNG chỉ xem khu vực được phân quyền cụ thể (kiểm tra ở
+        // KhuVucAuthorizationService)
         return role == DuAnRole.NGUOI_DUNG;
     }
 

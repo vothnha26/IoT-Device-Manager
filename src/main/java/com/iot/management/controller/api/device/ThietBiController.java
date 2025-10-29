@@ -3,8 +3,6 @@ package com.iot.management.controller.api.device;
 import com.iot.management.exception.ErrorResponse;
 import com.iot.management.exception.PackageLimitExceededException;
 import com.iot.management.model.entity.*;
-import com.iot.management.model.repository.KhuVucRepository;
-import com.iot.management.model.repository.NguoiDungRepository;
 import com.iot.management.service.CauHinhTruongDuLieuService;
 import com.iot.management.service.KhuVucService;
 import com.iot.management.service.LoaiThietBiService;
@@ -12,6 +10,10 @@ import com.iot.management.service.NhatKyDuLieuService;
 import com.iot.management.service.PackageLimitService;
 import com.iot.management.service.ThietBiService;
 import com.iot.management.model.enums.DuAnRole;
+import com.iot.management.repository.KhuVucRepository;
+import com.iot.management.repository.LenhDieuKhienRepository;
+import com.iot.management.repository.NguoiDungRepository;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +29,6 @@ import java.util.Map;
 import java.util.Arrays;
 
 import com.iot.management.websocket.DeviceMessagingService;
-import com.iot.management.model.repository.LenhDieuKhienRepository;
 import com.iot.management.model.entity.LenhDieuKhien;
 
 @Controller
@@ -66,7 +67,7 @@ public class ThietBiController {
     private com.iot.management.service.DuAnAuthorizationService duAnAuthorizationService;
     
     @Autowired
-    private com.iot.management.model.repository.ThietBiRepository thietBiRepository;
+    private com.iot.management.repository.ThietBiRepository thietBiRepository;
 
     private final KhuVucRepository khuVucRepository;
     private final NguoiDungRepository nguoiDungRepository;

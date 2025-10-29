@@ -5,7 +5,7 @@ import com.iot.management.exception.PackageLimitExceededException;
 import com.iot.management.model.entity.DangKyGoi;
 import com.iot.management.model.entity.DuAn;
 import com.iot.management.model.entity.NguoiDung;
-import com.iot.management.model.repository.NguoiDungRepository;
+import com.iot.management.repository.NguoiDungRepository;
 import com.iot.management.security.JwtUtil;
 import com.iot.management.service.DangKyGoiService;
 import com.iot.management.service.DuAnService;

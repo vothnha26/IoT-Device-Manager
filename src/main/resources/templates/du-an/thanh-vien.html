@@ -206,14 +206,7 @@
                         <i class="bi bi-geo-alt me-2"></i>Quyền truy cập khu vực
                     </h6>
                     
-                    <!-- Tìm kiếm khu vực -->
-                    <div class="mb-3">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" id="areaSearchInput" 
-                                   placeholder="Tìm kiếm khu vực theo tên...">
-                        </div>
-                    </div>
+                    <!-- Tìm kiếm khu vực: đã loại bỏ theo yêu cầu -->
                     
                     <div class="mb-4" id="areaPermissionsContainer">
                         <div class="list-group" id="areaPermissionsList">
@@ -230,22 +223,11 @@
                         <i class="bi bi-cpu me-2"></i>Quyền truy cập thiết bị
                     </h6>
                     
-                    <!-- Bộ lọc và tìm kiếm -->
+                    <!-- Bộ lọc khu vực (đã bỏ ô tìm kiếm thiết bị theo yêu cầu) -->
                     <div class="mb-3">
-                        <div class="row g-2">
-                            <div class="col-md-8">
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                    <input type="text" class="form-control" id="deviceSearchInput" 
-                                           placeholder="Tìm kiếm thiết bị theo tên...">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <select class="form-select" id="deviceAreaFilter">
-                                    <option value="">Tất cả khu vực</option>
-                                </select>
-                            </div>
-                        </div>
+                        <select class="form-select" id="deviceAreaFilter">
+                            <option value="">Tất cả khu vực</option>
+                        </select>
                     </div>
                     
                     <div id="devicePermissionsContainer">
@@ -639,7 +621,8 @@
         
         // Tìm kiếm khu vực
         function filterAreas() {
-            const searchTerm = document.getElementById('areaSearchInput').value.toLowerCase();
+            const areaSearchEl = document.getElementById('areaSearchInput');
+            const searchTerm = areaSearchEl ? areaSearchEl.value.toLowerCase() : '';
             const areaItems = document.querySelectorAll('#areaPermissionsList .permission-item');
             const noAreasMessage = document.getElementById('noAreasMessage');
             
@@ -784,7 +767,8 @@
         
         // Tìm kiếm và lọc thiết bị
         function filterAndSearchDevices() {
-            const searchTerm = document.getElementById('deviceSearchInput').value.toLowerCase();
+            const deviceSearchEl = document.getElementById('deviceSearchInput');
+            const searchTerm = deviceSearchEl ? deviceSearchEl.value.toLowerCase() : '';
             const selectedAreaId = document.getElementById('deviceAreaFilter').value;
             const deviceItems = document.querySelectorAll('#devicePermissionsList .permission-item');
             const noDevicesMessage = document.getElementById('noDevicesMessage');

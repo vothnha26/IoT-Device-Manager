@@ -21,6 +21,6 @@ public class WebSocketDeviceConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
         // Raw WebSocket endpoint for devices: ws://host:port/ws/device?deviceId={id}&token=...
         registry.addHandler(deviceWebSocketHandler, "/ws/device")
-                .setAllowedOrigins("*"); // TODO tighten origins/tokens in production
+                .setAllowedOrigins("*");
     }
 }

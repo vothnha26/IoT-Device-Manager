@@ -2,9 +2,9 @@ package com.iot.management.controller.api.device;
 
 import com.iot.management.model.entity.NhatKyDuLieu;
 import com.iot.management.model.entity.ThietBi;
+import com.iot.management.repository.KhuVucRepository;
+import com.iot.management.repository.ThietBiRepository;
 import com.iot.management.model.entity.KhuVuc;
-import com.iot.management.model.repository.ThietBiRepository;
-import com.iot.management.model.repository.KhuVucRepository;
 import com.iot.management.service.NhatKyDuLieuService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -33,9 +33,9 @@ public class NhatKyDuLieuController {
     private final ThietBiRepository thietBiRepository;
     private final KhuVucRepository khuVucRepository;
 
-    public NhatKyDuLieuController(NhatKyDuLieuService nhatKyDuLieuService, 
-                                  ThietBiRepository thietBiRepository,
-                                  KhuVucRepository khuVucRepository) {
+    public NhatKyDuLieuController(NhatKyDuLieuService nhatKyDuLieuService,
+            ThietBiRepository thietBiRepository,
+            KhuVucRepository khuVucRepository) {
         this.nhatKyDuLieuService = nhatKyDuLieuService;
         this.thietBiRepository = thietBiRepository;
         this.khuVucRepository = khuVucRepository;
@@ -44,15 +44,15 @@ public class NhatKyDuLieuController {
     // Endpoint cho thiết bị gửi dữ liệu lên (hỗ trợ cả deviceId và deviceToken)
     @PostMapping("/{deviceIdentifier}")
     public ResponseEntity<?> saveDataLog(@PathVariable String deviceIdentifier,
-                                         @RequestBody NhatKyDuLieu dataLog,
-                                         Principal principal) {
+            @RequestBody NhatKyDuLieu dataLog,
+            Principal principal) {
         try {
             // Thử parse deviceIdentifier thành Long (deviceId)
             try {
                 Long deviceId = Long.parseLong(deviceIdentifier);
                 ThietBi device = thietBiRepository.findById(deviceId)
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy thiết bị với id: " + deviceId));
-                
+
                 dataLog.setThietBi(device);
                 if (dataLog.getThoiGian() == null) {
                     dataLog.setThoiGian(LocalDateTime.now());
@@ -85,11 +85,13 @@ public class NhatKyDuLieuController {
             // 2) If still null and request contains deviceToken -> load by token
             if (device == null && request.getDeviceToken() != null && !request.getDeviceToken().isBlank()) {
                 device = thietBiRepository.findByTokenThietBi(request.getDeviceToken())
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy thiết bị với token: " + request.getDeviceToken()));
+                        .orElseThrow(() -> new RuntimeException(
+                                "Không tìm thấy thiết bị với token: " + request.getDeviceToken()));
             }
 
             if (device == null) {
-                return ResponseEntity.badRequest().body("Thiếu thông tin thiết bị. Vui lòng cung cấp 'maThietBi' (hoặc 'deviceId') hoặc 'deviceToken' trong request body.");
+                return ResponseEntity.badRequest().body(
+                        "Thiếu thông tin thiết bị. Vui lòng cung cấp 'maThietBi' (hoặc 'deviceId') hoặc 'deviceToken' trong request body.");
             }
 
             // Map request -> entity
@@ -104,8 +106,10 @@ public class NhatKyDuLieuController {
             } else {
                 dataLog.setTenTruong("unknown_field");
             }
-            if (request.getGiaTri() != null) dataLog.setGiaTriSo(request.getGiaTri());
-            // We don't set kieuGiaTri/giaTriChuoi/giaTriLogic here — service can infer if needed
+            if (request.getGiaTri() != null)
+                dataLog.setGiaTriSo(request.getGiaTri());
+            // We don't set kieuGiaTri/giaTriChuoi/giaTriLogic here — service can infer if
+            // needed
 
             nhatKyDuLieuService.saveDataLog(device.getTokenThietBi(), dataLog);
             return ResponseEntity.ok().build();
@@ -124,14 +128,14 @@ public class NhatKyDuLieuController {
         List<NhatKyDuLieu> history = nhatKyDuLieuService.getHistory(deviceId, startTime, endTime);
         return ResponseEntity.ok(history);
     }
-    
+
     @GetMapping("/device/{deviceId}")
     public ResponseEntity<List<NhatKyDuLieu>> getLatestDeviceData(@PathVariable Long deviceId) {
         // Lấy dữ liệu mới nhất của thiết bị
         List<NhatKyDuLieu> latestData = nhatKyDuLieuService.getLatestData(deviceId);
         return ResponseEntity.ok(latestData);
     }
-    
+
     // Endpoint lấy dữ liệu cảm biến theo khoảng thời gian
     @GetMapping("/device/{deviceId}/range")
     public ResponseEntity<List<NhatKyDuLieu>> getDeviceDataByTimeRange(
@@ -139,26 +143,28 @@ public class NhatKyDuLieuController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
             @RequestParam(required = false, defaultValue = "100") int limit) {
-        
+
         if (startTime == null) {
             startTime = LocalDateTime.now().minusDays(7); // Mặc định 7 ngày trước
         }
         if (endTime == null) {
             endTime = LocalDateTime.now();
         }
-        
+
         List<NhatKyDuLieu> data = nhatKyDuLieuService.getHistory(deviceId, startTime, endTime);
-        
+
         // Giới hạn số lượng kết quả
         if (data.size() > limit) {
             data = data.subList(0, limit);
         }
-        
+
         return ResponseEntity.ok(data);
     }
 
-    // API timeseries: gộp dữ liệu theo bucket phút (mặc định 2 phút) cho một hoặc nhiều trường
-    // Trả về cấu trúc phù hợp biểu đồ: { bucketMinutes, startTime, endTime, series: [ { field, data: [[timestamp,value], ...] } ] }
+    // API timeseries: gộp dữ liệu theo bucket phút (mặc định 2 phút) cho một hoặc
+    // nhiều trường
+    // Trả về cấu trúc phù hợp biểu đồ: { bucketMinutes, startTime, endTime, series:
+    // [ { field, data: [[timestamp,value], ...] } ] }
     @GetMapping("/device/{deviceId}/timeseries")
     public ResponseEntity<?> getDeviceTimeSeries(
             @PathVariable Long deviceId,
@@ -166,9 +172,9 @@ public class NhatKyDuLieuController {
             @RequestParam(required = false) String endTime,
             @RequestParam(required = false, defaultValue = "2") int bucketMinutes,
             @RequestParam(required = false, defaultValue = "avg") String agg,
-            @RequestParam(required = false) String fields
-    ) {
-        if (bucketMinutes < 1) bucketMinutes = 2;
+            @RequestParam(required = false) String fields) {
+        if (bucketMinutes < 1)
+            bucketMinutes = 2;
         LocalDateTime start = startTime != null ? parseToLocalDateTime(startTime) : LocalDateTime.now().minusHours(2);
         LocalDateTime end = endTime != null ? parseToLocalDateTime(endTime) : LocalDateTime.now();
         if (end.isBefore(start)) {
@@ -185,8 +191,8 @@ public class NhatKyDuLieuController {
         }
 
         long bucketMs = bucketMinutes * 60L * 1000L;
-    long startMs = java.sql.Timestamp.valueOf(start).getTime();
-    long endMs = java.sql.Timestamp.valueOf(end).getTime();
+        long startMs = java.sql.Timestamp.valueOf(start).getTime();
+        long endMs = java.sql.Timestamp.valueOf(end).getTime();
         int bucketCount = (int) Math.max(1, Math.ceil((endMs - startMs) / (double) bucketMs));
 
         // Chuẩn bị mốc thời gian cho tất cả bucket
@@ -204,17 +210,21 @@ public class NhatKyDuLieuController {
             int[] count = new int[bucketCount];
 
             // Lấy dữ liệu theo trường, sắp xếp tăng dần theo thời gian
-        List<NhatKyDuLieu> rows = nhatKyDuLieuService
-            .getHistory(deviceId, start, end); // lấy tất cả rồi lọc theo field để giữ tương thích
+            List<NhatKyDuLieu> rows = nhatKyDuLieuService
+                    .getHistory(deviceId, start, end); // lấy tất cả rồi lọc theo field để giữ tương thích
 
             for (NhatKyDuLieu log : rows) {
-                if (log.getTenTruong() == null) continue;
-                if (!log.getTenTruong().equalsIgnoreCase(field)) continue;
+                if (log.getTenTruong() == null)
+                    continue;
+                if (!log.getTenTruong().equalsIgnoreCase(field))
+                    continue;
                 // Chỉ lấy số
-                if (log.getGiaTriSo() == null) continue;
+                if (log.getGiaTriSo() == null)
+                    continue;
                 long t = java.sql.Timestamp.valueOf(log.getThoiGian()).getTime();
                 int idx = (int) ((t - startMs) / bucketMs);
-                if (idx < 0 || idx >= bucketCount) continue;
+                if (idx < 0 || idx >= bucketCount)
+                    continue;
                 sum[idx] += log.getGiaTriSo().doubleValue();
                 count[idx] += 1;
             }
@@ -252,17 +262,18 @@ public class NhatKyDuLieuController {
     }
 
     // API tính tổng thời gian hoạt động của thiết bị (dành cho công tắc/relay)
-    // Trả về: { deviceId, deviceName, totalOnHours, totalOnMinutes, startTime, endTime }
+    // Trả về: { deviceId, deviceName, totalOnHours, totalOnMinutes, startTime,
+    // endTime }
     @GetMapping("/device/{deviceId}/operating-time")
     public ResponseEntity<?> getDeviceOperatingTime(
             @PathVariable Long deviceId,
             @RequestParam(required = false) String startTime,
-            @RequestParam(required = false) String endTime
-    ) {
+            @RequestParam(required = false) String endTime) {
         // Mặc định: từ 00:00:00 hôm nay đến hiện tại
-        LocalDateTime start = startTime != null ? parseToLocalDateTime(startTime) : LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime start = startTime != null ? parseToLocalDateTime(startTime)
+                : LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime end = endTime != null ? parseToLocalDateTime(endTime) : LocalDateTime.now();
-        
+
         if (end.isBefore(start)) {
             return ResponseEntity.badRequest().body("endTime must be after startTime");
         }
@@ -275,7 +286,7 @@ public class NhatKyDuLieuController {
 
         // Lấy logs trạng thái (boolean) trong khoảng thời gian
         List<NhatKyDuLieu> logs = nhatKyDuLieuService.getHistory(deviceId, start, end);
-        
+
         // Lọc chỉ lấy logs có kiểu boolean (kieuGiaTri = 2)
         logs = logs.stream()
                 .filter(log -> {
@@ -289,25 +300,26 @@ public class NhatKyDuLieuController {
         long totalOnMs = 0;
         boolean currentState = false; // Giả sử thiết bị OFF ở đầu khoảng thời gian
         LocalDateTime lastTimestamp = start;
-        
+
         long rangeStartMs = java.sql.Timestamp.valueOf(start).getTime();
         long rangeEndMs = java.sql.Timestamp.valueOf(end).getTime();
 
         for (NhatKyDuLieu log : logs) {
             long logTime = java.sql.Timestamp.valueOf(log.getThoiGian()).getTime();
-            
-            if (logTime < rangeStartMs) continue;
-            
+
+            if (logTime < rangeStartMs)
+                continue;
+
             // Tích lũy thời gian ON từ lastTimestamp đến logTime
             if (currentState) {
                 totalOnMs += (logTime - java.sql.Timestamp.valueOf(lastTimestamp).getTime());
             }
-            
+
             // Cập nhật trạng thái
             currentState = log.getGiaTriLogic() != null && log.getGiaTriLogic();
             lastTimestamp = log.getThoiGian();
         }
-        
+
         // Tính phần còn lại đến endTime nếu thiết bị đang ON
         if (currentState && lastTimestamp.isBefore(end)) {
             totalOnMs += (rangeEndMs - java.sql.Timestamp.valueOf(lastTimestamp).getTime());
@@ -325,7 +337,7 @@ public class NhatKyDuLieuController {
         response.put("totalOnMs", totalOnMs);
         response.put("startTime", start.toString());
         response.put("endTime", end.toString());
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -335,12 +347,12 @@ public class NhatKyDuLieuController {
     public ResponseEntity<?> getMultipleDevicesOperatingTime(
             @RequestParam String deviceIds, // Chuỗi id cách nhau bởi dấu phẩy, vd: "2,3"
             @RequestParam(required = false) String startTime,
-            @RequestParam(required = false) String endTime
-    ) {
+            @RequestParam(required = false) String endTime) {
         // Mặc định: từ 00:00:00 hôm nay đến hiện tại
-        LocalDateTime start = startTime != null ? parseToLocalDateTime(startTime) : LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime start = startTime != null ? parseToLocalDateTime(startTime)
+                : LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime end = endTime != null ? parseToLocalDateTime(endTime) : LocalDateTime.now();
-        
+
         if (end.isBefore(start)) {
             return ResponseEntity.badRequest().body("endTime must be after startTime");
         }
@@ -356,10 +368,11 @@ public class NhatKyDuLieuController {
         }
 
         List<Map<String, Object>> results = new ArrayList<>();
-        
+
         for (Long deviceId : ids) {
             ThietBi device = thietBiRepository.findById(deviceId).orElse(null);
-            if (device == null) continue;
+            if (device == null)
+                continue;
 
             // Lấy logs trạng thái
             List<NhatKyDuLieu> logs = nhatKyDuLieuService.getHistory(deviceId, start, end);
@@ -375,22 +388,23 @@ public class NhatKyDuLieuController {
             long totalOnMs = 0;
             boolean currentState = false;
             LocalDateTime lastTimestamp = start;
-            
+
             long rangeStartMs = java.sql.Timestamp.valueOf(start).getTime();
             long rangeEndMs = java.sql.Timestamp.valueOf(end).getTime();
 
             for (NhatKyDuLieu log : logs) {
                 long logTime = java.sql.Timestamp.valueOf(log.getThoiGian()).getTime();
-                if (logTime < rangeStartMs) continue;
-                
+                if (logTime < rangeStartMs)
+                    continue;
+
                 if (currentState) {
                     totalOnMs += (logTime - java.sql.Timestamp.valueOf(lastTimestamp).getTime());
                 }
-                
+
                 currentState = log.getGiaTriLogic() != null && log.getGiaTriLogic();
                 lastTimestamp = log.getThoiGian();
             }
-            
+
             if (currentState && lastTimestamp.isBefore(end)) {
                 totalOnMs += (rangeEndMs - java.sql.Timestamp.valueOf(lastTimestamp).getTime());
             }
@@ -412,51 +426,50 @@ public class NhatKyDuLieuController {
     public ResponseEntity<byte[]> exportReport(
             @RequestParam Long khuVucId,
             @RequestParam String startTime,
-            @RequestParam String endTime
-    ) {
+            @RequestParam String endTime) {
         try {
             LocalDateTime start = parseToLocalDateTime(startTime);
             LocalDateTime end = parseToLocalDateTime(endTime);
-            
+
             // Lấy thông tin khu vực
             KhuVuc khuVuc = khuVucRepository.findById(khuVucId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy khu vực"));
-            
+
             // Lấy danh sách thiết bị trong khu vực
             List<ThietBi> devices = thietBiRepository.findByKhuVuc_MaKhuVuc(khuVucId);
-            
+
             // Tạo workbook Excel
             Workbook workbook = new XSSFWorkbook();
-            
+
             // Sheet 1: Tổng quan
             Sheet summarySheet = workbook.createSheet("Tổng quan");
             createSummarySheet(summarySheet, khuVuc, devices, start, end);
-            
+
             // Sheet 2: Dữ liệu cảm biến
             Sheet sensorSheet = workbook.createSheet("Dữ liệu cảm biến");
             createSensorDataSheet(sensorSheet, devices, start, end);
-            
+
             // Sheet 3: Thời gian hoạt động thiết bị
             Sheet deviceTimeSheet = workbook.createSheet("Thời gian hoạt động");
             createDeviceOperatingTimeSheet(deviceTimeSheet, devices, start, end);
-            
+
             // Xuất file
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
             workbook.close();
-            
-            String fileName = String.format("BaoCao_%s_%s.xlsx", 
+
+            String fileName = String.format("BaoCao_%s_%s.xlsx",
                     khuVuc.getTenKhuVuc().replaceAll("[^a-zA-Z0-9]", "_"),
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment", fileName);
-            
+
             return ResponseEntity.ok()
                     .headers(headers)
                     .body(outputStream.toByteArray());
-                    
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -468,23 +481,22 @@ public class NhatKyDuLieuController {
     public ResponseEntity<byte[]> exportRawData(
             @RequestParam Long khuVucId,
             @RequestParam String startTime,
-            @RequestParam String endTime
-    ) {
+            @RequestParam String endTime) {
         try {
             LocalDateTime start = parseToLocalDateTime(startTime);
             LocalDateTime end = parseToLocalDateTime(endTime);
-            
+
             // Lấy thông tin khu vực
             KhuVuc khuVuc = khuVucRepository.findById(khuVucId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy khu vực"));
-            
+
             // Lấy danh sách thiết bị trong khu vực
             List<ThietBi> devices = thietBiRepository.findByKhuVuc_MaKhuVuc(khuVucId);
-            
+
             // Tạo workbook Excel
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("Dữ liệu thô");
-            
+
             // Style cho header
             CellStyle headerStyle = workbook.createCellStyle();
             Font headerFont = workbook.createFont();
@@ -497,185 +509,191 @@ public class NhatKyDuLieuController {
             headerStyle.setBorderTop(BorderStyle.THIN);
             headerStyle.setBorderLeft(BorderStyle.THIN);
             headerStyle.setBorderRight(BorderStyle.THIN);
-            
+
             int rowNum = 0;
-            
+
             // Header row
             Row headerRow = sheet.createRow(rowNum++);
-            String[] columnHeaders = {"Thời gian", "Thiết bị", "Loại thiết bị", "Trường dữ liệu", "Giá trị số", "Giá trị chuỗi", "Giá trị logic", "Kiểu dữ liệu"};
+            String[] columnHeaders = { "Thời gian", "Thiết bị", "Loại thiết bị", "Trường dữ liệu", "Giá trị số",
+                    "Giá trị chuỗi", "Giá trị logic", "Kiểu dữ liệu" };
             for (int i = 0; i < columnHeaders.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columnHeaders[i]);
                 cell.setCellStyle(headerStyle);
             }
-            
+
             // Date format style
             CellStyle dateStyle = workbook.createCellStyle();
             CreationHelper createHelper = workbook.getCreationHelper();
             dateStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd/mm/yyyy hh:mm:ss"));
-            
+
             // Lấy tất cả dữ liệu từ các thiết bị
             for (ThietBi device : devices) {
                 List<NhatKyDuLieu> logs = nhatKyDuLieuService.getHistory(device.getMaThietBi(), start, end);
-                
+
                 for (NhatKyDuLieu log : logs) {
                     Row row = sheet.createRow(rowNum++);
-                    
+
                     // Thời gian
                     Cell timeCell = row.createCell(0);
                     timeCell.setCellValue(log.getThoiGian().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
-                    
+
                     // Thiết bị
                     row.createCell(1).setCellValue(device.getTenThietBi());
-                    
+
                     // Loại thiết bị
-                    row.createCell(2).setCellValue(device.getLoaiThietBi() != null ? 
-                            device.getLoaiThietBi().getTenLoai() : "");
-                    
+                    row.createCell(2)
+                            .setCellValue(device.getLoaiThietBi() != null ? device.getLoaiThietBi().getTenLoai() : "");
+
                     // Trường dữ liệu
                     row.createCell(3).setCellValue(log.getTenTruong() != null ? log.getTenTruong() : "");
-                    
+
                     // Giá trị số
                     if (log.getGiaTriSo() != null) {
                         row.createCell(4).setCellValue(log.getGiaTriSo().doubleValue());
                     } else {
                         row.createCell(4).setCellValue("");
                     }
-                    
+
                     // Giá trị chuỗi
                     row.createCell(5).setCellValue(log.getGiaTriChuoi() != null ? log.getGiaTriChuoi() : "");
-                    
+
                     // Giá trị logic
                     if (log.getGiaTriLogic() != null) {
                         row.createCell(6).setCellValue(log.getGiaTriLogic() ? "TRUE" : "FALSE");
                     } else {
                         row.createCell(6).setCellValue("");
                     }
-                    
+
                     // Kiểu dữ liệu
                     String dataType = "";
                     Byte kieuGiaTri = log.getKieuGiaTri();
                     if (kieuGiaTri != null) {
                         switch (kieuGiaTri) {
-                            case 0: dataType = "Số"; break;
-                            case 1: dataType = "Chuỗi"; break;
-                            case 2: dataType = "Logic"; break;
-                            default: dataType = "Không xác định";
+                            case 0:
+                                dataType = "Số";
+                                break;
+                            case 1:
+                                dataType = "Chuỗi";
+                                break;
+                            case 2:
+                                dataType = "Logic";
+                                break;
+                            default:
+                                dataType = "Không xác định";
                         }
                     }
                     row.createCell(7).setCellValue(dataType);
                 }
             }
-            
+
             // Auto-size columns
             for (int i = 0; i < columnHeaders.length; i++) {
                 sheet.autoSizeColumn(i);
             }
-            
+
             // Xuất file
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
             workbook.close();
-            
-            String fileName = String.format("DuLieuTho_%s_%s.xlsx", 
+
+            String fileName = String.format("DuLieuTho_%s_%s.xlsx",
                     khuVuc.getTenKhuVuc().replaceAll("[^a-zA-Z0-9]", "_"),
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
-            
+
             HttpHeaders responseHeaders = new HttpHeaders();
             responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             responseHeaders.setContentDispositionFormData("attachment", fileName);
-            
+
             return ResponseEntity.ok()
                     .headers(responseHeaders)
                     .body(outputStream.toByteArray());
-                    
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
-    private void createSummarySheet(Sheet sheet, KhuVuc khuVuc, List<ThietBi> devices, 
-                                     LocalDateTime start, LocalDateTime end) {
+
+    private void createSummarySheet(Sheet sheet, KhuVuc khuVuc, List<ThietBi> devices,
+            LocalDateTime start, LocalDateTime end) {
         // Header
         CellStyle headerStyle = sheet.getWorkbook().createCellStyle();
         Font headerFont = sheet.getWorkbook().createFont();
         headerFont.setBold(true);
         headerFont.setFontHeightInPoints((short) 14);
         headerStyle.setFont(headerFont);
-        
+
         int rowNum = 0;
-        
+
         // Tiêu đề báo cáo
         Row titleRow = sheet.createRow(rowNum++);
         Cell titleCell = titleRow.createCell(0);
         titleCell.setCellValue("BÁO CÁO THỐNG KÊ KHU VỰC");
         titleCell.setCellStyle(headerStyle);
-        
+
         rowNum++; // Dòng trống
-        
+
         // Thông tin khu vực
         createInfoRow(sheet, rowNum++, "Khu vực:", khuVuc.getTenKhuVuc());
         createInfoRow(sheet, rowNum++, "Mô tả:", khuVuc.getMoTa() != null ? khuVuc.getMoTa() : "");
         createInfoRow(sheet, rowNum++, "Từ ngày:", start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
         createInfoRow(sheet, rowNum++, "Đến ngày:", end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
         createInfoRow(sheet, rowNum++, "Số lượng thiết bị:", String.valueOf(devices.size()));
-        
+
         rowNum++; // Dòng trống
-        
+
         // Danh sách thiết bị
         Row deviceHeaderRow = sheet.createRow(rowNum++);
         deviceHeaderRow.createCell(0).setCellValue("STT");
         deviceHeaderRow.createCell(1).setCellValue("Tên thiết bị");
         deviceHeaderRow.createCell(2).setCellValue("Loại thiết bị");
         deviceHeaderRow.createCell(3).setCellValue("Trạng thái");
-        
+
         for (int i = 0; i < devices.size(); i++) {
             ThietBi device = devices.get(i);
             Row row = sheet.createRow(rowNum++);
             row.createCell(0).setCellValue(i + 1);
             row.createCell(1).setCellValue(device.getTenThietBi());
-            row.createCell(2).setCellValue(device.getLoaiThietBi() != null ? 
-                    device.getLoaiThietBi().getTenLoai() : "");
-            row.createCell(3).setCellValue(device.getTrangThai() != null ? 
-                    device.getTrangThai().toString() : "");
+            row.createCell(2).setCellValue(device.getLoaiThietBi() != null ? device.getLoaiThietBi().getTenLoai() : "");
+            row.createCell(3).setCellValue(device.getTrangThai() != null ? device.getTrangThai().toString() : "");
         }
-        
+
         // Auto-size columns
         for (int i = 0; i < 4; i++) {
             sheet.autoSizeColumn(i);
         }
     }
-    
-    private void createSensorDataSheet(Sheet sheet, List<ThietBi> devices, 
-                                        LocalDateTime start, LocalDateTime end) {
+
+    private void createSensorDataSheet(Sheet sheet, List<ThietBi> devices,
+            LocalDateTime start, LocalDateTime end) {
         // Lọc thiết bị sensor
         List<ThietBi> sensors = devices.stream()
-                .filter(d -> d.getLoaiThietBi() != null && 
+                .filter(d -> d.getLoaiThietBi() != null &&
                         d.getLoaiThietBi().getNhomThietBi() != null &&
                         d.getLoaiThietBi().getNhomThietBi().name().equals("SENSOR"))
                 .toList();
-        
+
         int rowNum = 0;
-        
+
         // Header
         Row headerRow = sheet.createRow(rowNum++);
         headerRow.createCell(0).setCellValue("Thời gian");
         headerRow.createCell(1).setCellValue("Thiết bị");
         headerRow.createCell(2).setCellValue("Trường dữ liệu");
         headerRow.createCell(3).setCellValue("Giá trị");
-        
+
         // Lấy dữ liệu từng sensor
         for (ThietBi sensor : sensors) {
             List<NhatKyDuLieu> logs = nhatKyDuLieuService.getHistory(sensor.getMaThietBi(), start, end);
-            
+
             for (NhatKyDuLieu log : logs) {
                 Row row = sheet.createRow(rowNum++);
                 row.createCell(0).setCellValue(log.getThoiGian().format(
                         DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
                 row.createCell(1).setCellValue(sensor.getTenThietBi());
                 row.createCell(2).setCellValue(log.getTenTruong() != null ? log.getTenTruong() : "");
-                
+
                 // Giá trị
                 String value = "";
                 if (log.getGiaTriSo() != null) {
@@ -688,34 +706,34 @@ public class NhatKyDuLieuController {
                 row.createCell(3).setCellValue(value);
             }
         }
-        
+
         // Auto-size columns
         for (int i = 0; i < 4; i++) {
             sheet.autoSizeColumn(i);
         }
     }
-    
-    private void createDeviceOperatingTimeSheet(Sheet sheet, List<ThietBi> devices, 
-                                                 LocalDateTime start, LocalDateTime end) {
+
+    private void createDeviceOperatingTimeSheet(Sheet sheet, List<ThietBi> devices,
+            LocalDateTime start, LocalDateTime end) {
         // Lọc thiết bị controller (switch/relay)
         List<ThietBi> controllers = devices.stream()
-                .filter(d -> d.getLoaiThietBi() != null && 
+                .filter(d -> d.getLoaiThietBi() != null &&
                         d.getLoaiThietBi().getNhomThietBi() != null &&
                         d.getLoaiThietBi().getNhomThietBi().name().equals("CONTROLLER"))
                 .toList();
-        
+
         int rowNum = 0;
-        
+
         // Header
         Row headerRow = sheet.createRow(rowNum++);
         headerRow.createCell(0).setCellValue("Thiết bị");
         headerRow.createCell(1).setCellValue("Tổng thời gian bật (giờ)");
         headerRow.createCell(2).setCellValue("Tổng thời gian bật (phút)");
         headerRow.createCell(3).setCellValue("Tỷ lệ hoạt động (%)");
-        
-        long totalRangeMs = java.sql.Timestamp.valueOf(end).getTime() - 
-                           java.sql.Timestamp.valueOf(start).getTime();
-        
+
+        long totalRangeMs = java.sql.Timestamp.valueOf(end).getTime() -
+                java.sql.Timestamp.valueOf(start).getTime();
+
         // Tính toán cho từng thiết bị
         for (ThietBi device : controllers) {
             List<NhatKyDuLieu> logs = nhatKyDuLieuService.getHistory(device.getMaThietBi(), start, end);
@@ -726,73 +744,77 @@ public class NhatKyDuLieuController {
                     })
                     .sorted((a, b) -> a.getThoiGian().compareTo(b.getThoiGian()))
                     .toList();
-            
+
             // Tính tổng thời gian ON
             long totalOnMs = 0;
             boolean currentState = false;
             LocalDateTime lastTimestamp = start;
-            
+
             long rangeStartMs = java.sql.Timestamp.valueOf(start).getTime();
             long rangeEndMs = java.sql.Timestamp.valueOf(end).getTime();
-            
+
             for (NhatKyDuLieu log : logs) {
                 long logTime = java.sql.Timestamp.valueOf(log.getThoiGian()).getTime();
-                if (logTime < rangeStartMs) continue;
-                
+                if (logTime < rangeStartMs)
+                    continue;
+
                 if (currentState) {
                     totalOnMs += (logTime - java.sql.Timestamp.valueOf(lastTimestamp).getTime());
                 }
-                
+
                 currentState = log.getGiaTriLogic() != null && log.getGiaTriLogic();
                 lastTimestamp = log.getThoiGian();
             }
-            
+
             if (currentState && lastTimestamp.isBefore(end)) {
                 totalOnMs += (rangeEndMs - java.sql.Timestamp.valueOf(lastTimestamp).getTime());
             }
-            
+
             double totalOnHours = totalOnMs / 3600000.0;
             long totalOnMinutes = totalOnMs / 60000;
             double percentage = totalRangeMs > 0 ? (totalOnMs * 100.0 / totalRangeMs) : 0;
-            
+
             Row row = sheet.createRow(rowNum++);
             row.createCell(0).setCellValue(device.getTenThietBi());
             row.createCell(1).setCellValue(String.format("%.2f", totalOnHours));
             row.createCell(2).setCellValue(totalOnMinutes);
             row.createCell(3).setCellValue(String.format("%.2f%%", percentage));
         }
-        
+
         // Auto-size columns
         for (int i = 0; i < 4; i++) {
             sheet.autoSizeColumn(i);
         }
     }
-    
+
     private void createInfoRow(Sheet sheet, int rowNum, String label, String value) {
         Row row = sheet.createRow(rowNum);
         Cell labelCell = row.createCell(0);
         labelCell.setCellValue(label);
-        
+
         CellStyle boldStyle = sheet.getWorkbook().createCellStyle();
         Font boldFont = sheet.getWorkbook().createFont();
         boldFont.setBold(true);
         boldStyle.setFont(boldFont);
         labelCell.setCellStyle(boldStyle);
-        
+
         row.createCell(1).setCellValue(value);
     }
 
-    // Hỗ trợ parse ISO8601 với hoặc không có 'Z' (UTC) hoặc offset, fallback LocalDateTime
+    // Hỗ trợ parse ISO8601 với hoặc không có 'Z' (UTC) hoặc offset, fallback
+    // LocalDateTime
     private LocalDateTime parseToLocalDateTime(String s) {
         try {
             // Try instant with offset or Z
             java.time.Instant inst = java.time.Instant.parse(s);
             return java.time.LocalDateTime.ofInstant(inst, java.time.ZoneId.systemDefault());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         try {
             // Try OffsetDateTime
             return java.time.OffsetDateTime.parse(s).toLocalDateTime();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         try {
             // Try LocalDateTime
             return java.time.LocalDateTime.parse(s);
